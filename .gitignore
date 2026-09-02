@@ -1,0 +1,21 @@
+.venv/
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.DS_Store
+__MACOSX/
+.vscode/
+.idea/
+
+# Local input data (each contributor provides the same original archive)
+NK_cell_dataset/
+
+# Local copies of source documents
+CellCNN.pdf
+Group_projects_ssbi_2026.pdf
+
+# Generated analysis artefacts
+results/figures/*
+results/tables/*
+!results/figures/.gitkeep
+!results/tables/.gitkeep
