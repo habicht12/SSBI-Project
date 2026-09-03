@@ -41,12 +41,25 @@ zählt nicht zu den drei Hauptmethoden.
 - Primäre Metrik: ROC-AUC auf Spender-Ebene.
 - Zusätzlich: PR-AUC und Balanced Accuracy.
 - Ergebnisse über wiederholte Splits als Median und Streuung berichten.
+- In der optionalen Gate-Sensitivitätsanalyse für jeden identischen Split die
+  gepaarte Differenz
+  `ΔROC-AUC = ROC-AUC(gated_NK) − ROC-AUC(gated_alive)` berechnen. Sie zeigt,
+  wie stark eine Methode von der manuellen NK-Vorauswahl profitiert. `gated_NK`
+  ist dabei kein unabhängiger Validierungsdatensatz.
+- Zusätzlich pro Split die gepaarten ROC-AUC-Differenzen zwischen CellCNN und den
+  beiden Hauptbaselines auswerten. Dafür sind keine weiteren Modellläufe nötig.
 
 ## Methoden
 
 ### CellCNN
 
-- Kleine moderne Reimplementierung, vorzugsweise mit PyTorch.
+- Die offiziellen alten Notebooks `NK_cell.ipynb` und `NK_cell_ungated.ipynb`
+  dienen als Referenz für Datenfluss, Modellaufbau, Parameter und Auswertung.
+- Die Notebooks selbst basieren auf Python 2.7; der offizielle `python3`-Branch
+  verwendet eine separate alte Python-3.7-/TensorFlow-Umgebung und enthält die
+  Notebooks nicht mehr. Diese Legacy-Abhängigkeiten übernehmen wir nicht.
+- CellCNN wird passend zur bestehenden Python-3.12-Projektumgebung klein und
+  nachvollziehbar neu implementiert, vorzugsweise mit aktuellem PyTorch.
 - Zufällige Multi-Cell-Inputs mit etwa 3.000 Zellen erzeugen.
 - Wenige lernbare Filter verwenden und die stärksten Zellantworten poolen.
 - Als Startwerte dienen die Angaben aus dem Paper: 3–5 Filter und Mittelung der
@@ -96,6 +109,14 @@ zählt nicht zu den drei Hauptmethoden.
 
 - Tabelle mit ROC-AUC, PR-AUC und Balanced Accuracy je Methode.
 - Box- oder Punktplot der ROC-AUC über die identischen Splits.
+- Kompakte Darstellung der gepaarten ROC-AUC-Differenzen zwischen den Methoden
+  und, falls durchgeführt, zwischen den beiden Gate-Stufen.
 - Kurze Diskussion von Leistung, Interpretierbarkeit und Laufzeit.
+- Als kleinen Qualitätscheck untersuchen, ob Messtag oder Instrumentversion das
+  CMV-Label erkennbar erklären könnten; das Ergebnis knapp dokumentieren.
+- Für die Verbindung zu Aufgabe 5 prüfen, ob CellCNN über die wiederholten Splits
+  stabil eine biologisch ähnliche `NKG2C+`/`CD57+` Population auswählt.
+- Nur wenn nach der Hauptanalyse Zeit bleibt, auf wenigen festen Splits optional
+  eine Ablation ohne `NKG2C` und `CD57` rechnen. Sie ist kein Pflichtbestandteil.
 - Deutlicher Hinweis auf die kleine Zahl von nur 20 unabhängigen Spendern und die
   daraus resultierende Unsicherheit.
