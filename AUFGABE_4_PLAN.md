@@ -32,6 +32,27 @@ zählt nicht zu den drei Hauptmethoden.
 - Eine Standardisierung nur auf den Trainingsspendern fitten und unverändert auf
   Validierungs- und Testspender anwenden.
 
+### Qualitätskontrolle und Vorverarbeitung
+
+- Der bereitgestellte Datensatz ist bereits vorverarbeitet und gegatet. Für den
+  Hauptvergleich enthält `gated_alive` lebende, von Doubletten bereinigte PBMCs.
+  Eine erneute umfangreiche Rohdaten-QC, insbesondere eine bead-basierte
+  Normalisierung, ist daher zunächst nicht vorgesehen.
+- Als Standard-QC pro Spender die Zellzahl, die Vollständigkeit und Reihenfolge
+  der gemessenen Marker sowie fehlende, nicht-endliche oder offensichtlich
+  ungültige Werte prüfen.
+- Die Verteilungen der 37 Analysemarker allgemein und nach Spender
+  kontrollieren, um auffällige Wertebereiche, einzelne Ausreißerproben oder
+  mögliche technische Unterschiede zu erkennen. Diese Prüfung ist deskriptiv
+  und darf keine Informationen aus Testlabels zur Vorverarbeitung nutzen.
+- Zusätzliche Vorverarbeitung nur dann einführen, wenn diese Kontrollen einen
+  konkreten Bedarf zeigen. Die Entscheidung, einschließlich einer Entscheidung
+  gegen weitere Vorverarbeitung, anhand der QC-Ergebnisse begründen und im
+  Bericht dokumentieren.
+- Unabhängig vom QC-Ergebnis die papernahe Transformation `arcsinh(x / 5)` auf
+  die 37 Analysemarker anwenden. Gelernte Schritte wie eine Standardisierung
+  weiterhin ausschließlich auf den jeweiligen Trainingsspendern fitten.
+
 ## Vergleichsprotokoll
 
 - Für alle Methoden dieselben zufälligen Seeds und spenderweisen Splits verwenden.
@@ -60,6 +81,10 @@ zählt nicht zu den drei Hauptmethoden.
   Notebooks nicht mehr. Diese Legacy-Abhängigkeiten übernehmen wir nicht.
 - CellCNN wird passend zur bestehenden Python-3.12-Projektumgebung klein und
   nachvollziehbar neu implementiert, vorzugsweise mit aktuellem PyTorch.
+- Die portable Projektumgebung bleibt CPU-fähig. Falls ein kompatibler
+  CUDA-PyTorch-Build verfügbar ist, darf CellCNN mit identischer Konfiguration
+  auf der GPU ausgeführt werden; das verwendete Gerät wird in den Artefakten
+  dokumentiert.
 - Zufällige Multi-Cell-Inputs mit etwa 3.000 Zellen erzeugen.
 - Wenige lernbare Filter verwenden und die stärksten Zellantworten poolen.
 - Als Startwerte dienen die Angaben aus dem Paper: 3–5 Filter und Mittelung der
@@ -69,11 +94,25 @@ zählt nicht zu den drei Hauptmethoden.
 
 ### Citrus
 
-- Möglichst die offizielle Citrus-Implementierung verwenden.
+- Die offizielle R-Implementierung `nolanlab/citrus` in einer getrennten,
+  reproduzierbaren R-Umgebung verwenden. Citrus und Rclusterpp auf feste
+  Git-Commits pinnen.
 - Clustering und Merkmalsauswahl innerhalb der Trainingsdaten durchführen.
 - Clusterhäufigkeiten beziehungsweise Markerstatistiken als spenderbezogene
   Merkmale verwenden.
 - Die Citrus-Ausgabe in dieselben Splits und Metriken wie CellCNN einordnen.
+
+## Notebook-Aufteilung
+
+- `04a_data_qc_and_splits.ipynb`: Laden, Standard-QC, Vorverarbeitungsentscheidung
+  und gemeinsame spenderweise Splits.
+- `04b_svm.ipynb`: technischer `gated_NK`-Test und lineare Single-Cell-SVM.
+- `04c_cellcnn.ipynb`: moderne PyTorch-Reimplementierung von CellCNN.
+- `04d_citrus.ipynb`: originale Citrus-R-Pipeline.
+- `04e_comparison.ipynb`: ausschließlich Laden, Validieren und Vergleichen der
+  gespeicherten vollständigen Spendervorhersagen.
+- Lange Methodenläufe speichern nach jedem äußeren Split einen Zwischenstand
+  und können fortgesetzt werden. Smoke- und Full-Ergebnisse werden getrennt.
 
 ### Lineare Single-Cell-SVM
 
@@ -94,7 +133,10 @@ zählt nicht zu den drei Hauptmethoden.
 
 ## Geplante Arbeitsreihenfolge
 
-1. Gemeinsames Laden, Vorverarbeiten und Erzeugen der Splits implementieren.
+1. Gemeinsames Laden und die Standard-QC implementieren: Spender- und
+   Zellzahlen, Marker-Konsistenz, fehlende oder ungültige Werte sowie kompakte
+   Marker-Verteilungen prüfen. Danach den begründeten Vorverarbeitungsumfang
+   festlegen, `arcsinh(x / 5)` anwenden und spenderweise Splits erzeugen.
 2. Die Pipeline zunächst mit `gated_NK` und wenigen Splits technisch prüfen.
 3. Die lineare SVM als schnellen Test der gesamten Auswertungspipeline umsetzen.
 4. CellCNN implementieren und zunächst auf wenigen Splits testen.
