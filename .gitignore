@@ -4,7 +4,9 @@ __pycache__/
 *.py[cod]
 .DS_Store
 __MACOSX/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 
 # Local input data (each contributor provides the same original archive)
@@ -19,3 +21,6 @@ results/figures/*
 results/tables/*
 !results/figures/.gitkeep
 !results/tables/.gitkeep
+
+# Report build products (selected report assets are versioned)
+report/build/

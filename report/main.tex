@@ -1,0 +1,292 @@
+% !TeX root = main.tex
+% !TeX program = pdflatex
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,microtype}
+\usepackage[margin=2cm,footskip=10mm]{geometry}
+\usepackage{amsmath,amssymb,graphicx,booktabs,xcolor,caption}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\definecolor{cellcnn}{HTML}{0072B2}
+\definecolor{citrus}{HTML}{E69F00}
+\definecolor{svm}{HTML}{009E73}
+\definecolor{muted}{HTML}{666666}
+\hypersetup{pdftitle={Predicting CMV Status from Single-Cell Profiles},
+  pdfauthor={SSBI project group}}
+\graphicspath{{figures/}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{8pt}
+\setlength{\intextsep}{7pt}
+\setlength{\abovedisplayskip}{5pt}
+\setlength{\belowdisplayskip}{5pt}
+\DeclareCaptionFont{report}{\fontsize{9}{10.5}\selectfont}
+\captionsetup{font=report,labelfont=bf,skip=4pt}
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{0pt}{9pt plus 2pt minus 1pt}{4pt}{\normalfont\large\bfseries}}
+\makeatother
+\renewcommand{\bibsection}{\section*{References}}
+\renewcommand{\bibfont}{\fontsize{9}{10.5}\selectfont}
+\setlength{\bibsep}{2pt}
+\raggedbottom
+
+\begin{document}
+{\LARGE\bfseries Predicting CMV Status from Single-Cell Profiles\par}
+\vspace{2pt}
+{\large Comparing CellCNN, Citrus and Linear SVM\par}
+\vspace{4pt}
+{\small SSBI Group Project \enspace\textcolor{muted}{|}\enspace \textbf{Authors: [add group members]}\par}
+
+\section{Question, approaches and data}
+Disease-associated cells may be rare within a blood sample. Arvaniti and Claassen~\cite{cellcnn}
+address this problem with CellCNN: shared filters score individual cells, pooling summarizes
+their responses, and a classifier learns which summaries predict the sample label. Learning
+the representation together with the prediction can focus on informative subsets that
+unsupervised clustering might overlook. Citrus\cite{citrus} instead clusters cells first and
+selects predictive cluster abundances or marker summaries using a regularized model.
+A single-cell SVM assigns each training cell its donor's label and learns a cell-level
+decision function. The paper also examines logistic regression, random forests, outlier
+detection, moment summaries and a denoising autoencoder. We focus on CellCNN, Citrus
+and a linear SVM: how accurately do they predict CMV status, and which cells support
+their predictions?
+
+The supplied benchmark\cite{dataset}, derived from Horowitz et al.\cite{horowitz}, contains
+\textbf{20 donors: 11 CMV-negative and 9 CMV-positive}. We use \texttt{gated\_alive}
+(3,438,750 cells), which retains live, singlet peripheral blood mononuclear cells without
+an additional NK gate, matching the paper's broad-cell analysis. The smaller
+\texttt{gated\_NK} files served only for technical tests. We retain all 37 supplied analysis
+markers, as in the official example; the paper describes 36. Technical channels are excluded.
+
+All analysis-marker values are finite and the marker schema is consistent. We apply
+$\operatorname{arcsinh}(x/5)$ to compress the intensity range while retaining negative
+background values. No further gating or bead normalization is introduced: the files are
+already gated and bead reference data are unavailable. Measurement-day patterns remain
+a possible technical influence. For exploration, we sample 500 cells per donor without
+replacement (seed $42+i$ for donor $i$ in sorted order), giving each donor equal weight.
+Marker-wise standardization uses this 10,000-cell sample. This joint exploratory fit is
+kept separate from classifier preprocessing, which uses training donors only.
+
+\section{Dimensions, parameters and neighbourhoods}
+We compare eight two-dimensional projections of these same standardized 37-marker
+profiles: PCA with and without whitening; t-SNE\cite{tsne} with perplexity 5, 30 and 50;
+and UMAP\cite{umap} with neighbour count/minimum-distance pairs (15, 0.1), (50, 0.1)
+and (15, 0.5).
+Whitening rescales PCA axes; perplexity and UMAP neighbour count control neighbourhood
+size, while \texttt{min\_dist} controls how tightly UMAP points can pack. We fix two
+components, Euclidean distances and seed 42; t-SNE uses PCA initialization and 1,000
+iterations, UMAP spectral initialization and 500 epochs. Other tunable choices include
+initialization, learning rate, iteration count and distance metric.
+
+To compare maps despite arbitrary orientations, we use local neighbour overlap rather
+than coordinate differences. For cell $i$ and maps $A,B$, let $N_{15}^{A}(i)$ be its 15
+nearest other cells. We calculate
+\[
+  J_i(A,B)=\frac{|N_{15}^{A}(i)\cap N_{15}^{B}(i)|}
+                    {|N_{15}^{A}(i)\cup N_{15}^{B}(i)|}.
+\]
+We average first within donors and then across donors. Values range from 0 (no shared
+neighbours) to 1 (identical sets). All 28 map pairs are evaluated; comparison with the
+standardized 37D space additionally measures neighbourhood retention. This is a local
+geometric criterion, not evidence that visible islands are biological cell types.
+
+Perplexity 5 fragments the t-SNE map more strongly than 30 (Fig.~\ref{fig:projections}).
+The highest 37D retention within each method is 0.0102 for unwhitened PCA,
+0.1824 for t-SNE at 30 and 0.0917 for UMAP at (15, 0.1).
+PCA whitening makes a negligible difference. Increasing UMAP neighbours or
+\texttt{min\_dist} lowers retention to 0.0738 or 0.0531, respectively.
+We therefore use t-SNE at 30 for interpretation. This choice concerns local geometry
+within our small grid; distances between islands and their areas are not biological
+distances or population frequencies.
+
+% Page breaks keep the initial five-page draft easy to inspect and edit.
+\clearpage
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{projections.pdf}
+\caption{\textbf{Projection structure and agreement.} A--D: the same 10,000 cells,
+coloured by transformed CD3 intensity on a shared scale; axis units have equal aspect.
+E: donor-averaged 15-neighbour Jaccard similarity for all eight maps.
+P/Pw: PCA without/with whitening; T5/T30/T50: t-SNE perplexity;
+U15/U50: UMAP neighbour count at \texttt{min\_dist}=0.1;
+Ud: 15 neighbours at \texttt{min\_dist}=0.5. UMAP in C uses (15, 0.1).}
+\label{fig:projections}
+\end{figure}
+
+\section{Clustering and biological plausibility}
+We cluster the same 10,000 cells in standardized \textbf{37D space}. K-Means minimizes
+within-cluster squared distances; Ward merges groups with the smallest increase in this
+quantity. Both use 6, 10 or 14 clusters (K-Means: 20 initializations, seed 42).
+Leiden\cite{leiden} finds communities on an unweighted, undirected 15-neighbour union
+graph; we test resolutions 0.5, 1.0 and 1.5 with the configuration-model objective and seed 42.
+
+Selection maximizes donor-averaged silhouette, comparing within-cluster distances with
+distances to the nearest other cluster. All nine solutions use the same 100 evaluation cells
+per donor (2,000 total; seed $43+i$), approximating full-sample distances to limit computation.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{clusters.pdf}
+\caption{\textbf{Marker evidence for the selected cluster solutions.}
+Rows summarize donor-specific cluster medians among represented donors, using their
+median and the saved exploratory z-scale. Panels share markers and colour range;
+row IDs are method-specific. Silhouettes use the common 2,000-cell evaluation sample in 37D.}
+\label{fig:clusters}
+\end{figure}
+
+K-Means with six clusters has the highest silhouette (0.079), ahead of Leiden with 11
+(0.067) and Ward with 14 (0.049). The low values indicate substantial overlap.
+CD3/CD4 or CD3/CD8 support T-compatible groups, CD19 supports B-compatible groups,
+and CD56/CD16/CD94 support NK-compatible groups\cite{horowitz}.
+K-Means provides the clearest coarse summary. Leiden separates a more distinct
+CD19-rich group and additional heterogeneous profiles, making it a useful finer-grained
+description. Ward adds subdivisions with several mixed profiles.
+\textbf{No biological winner is established}: silhouette favours compact geometry, and
+manual cell-type reference labels are unavailable.
+
+\clearpage
+\section{Donor-level classification benchmark}
+We use the same 100 Monte Carlo splits for all methods, following the paper: each split
+trains on seven donors per CMV group and tests on the remaining four negative and two
+positive donors. The 14 training donors are divided into three fixed inner folds for model
+selection. Cells from a donor never cross a train--validation--test boundary. The saved
+split seeds determine sampling; learned scaling, clustering and feature selection are
+restricted to the relevant training fold.
+
+\textbf{CellCNN.} Our Python 3.12/PyTorch implementation applies linear filters, ReLU,
+mean pooling of the strongest 1\% of responses per filter, and a two-class softmax output.
+Each inner training donor supplies 200 inputs of 3,000 cells sampled with replacement,
+giving donors equal weight and emphasizing rare high-response cells. A training-only
+scaler uses 20,000 cells per donor. We evaluate 3, 4 and 5 filters in each inner fold
+(nine candidates), with Adam, learning rate 0.01, batch size 128, L2 penalty $10^{-4}$,
+no dropout, and at most 100 epochs. Early stopping uses validation loss with patience 5.
+The candidate with highest donor-level validation accuracy is retained; ties use ROC-AUC,
+then validation loss, then fewer filters and fold order. As in the paper, this selected
+network remains trained on its nine or ten inner training donors; it is not refitted on 14.
+
+We fix this small filter grid instead of repeating the paper's broader random search.
+For validation and test prediction we average five softmax probabilities, each from a
+random input of up to 20,000 cells sampled without replacement. The paper's NK benchmark
+uses one test input; our averaging reduces sampling variation. Donor-level candidate
+evaluation also differs from evaluation of individual generated inputs in the reference.
+
+\textbf{Citrus.} We use the original R implementation (v0.8; pinned source revisions).
+Each donor supplies 1,000 randomly sampled cells, limiting the cost of hierarchical
+clustering. Clustering uses arcsinh-transformed markers without an additional marker
+z-score. Clusters containing at least 5\% of training events supply donor-level abundance
+features to L1-logistic regression, with feature standardization inside the training fit.
+The regularization parameter minimizes inner classification error; ties favour stronger
+regularization. Clustering and regression are then fitted on all 14 training donors.
+Test cells are mapped through their nearest training cell into the fixed hierarchy.
+We assemble the original fold-clustering functions around our shared donor splits,
+preserving Citrus's clustering, feature calculation and regression.
+
+\textbf{Linear SVM.} We sample 10,000 cells per training donor without replacement,
+standardize using training cells, and attach each donor's label to its cells. An L2-penalized
+linear SVM with squared-hinge loss is selected from $C\in\{0.01,0.1,1\}$ by mean inner
+ROC-AUC (ties favour smaller $C$), then refitted on all 14 donors. Its donor score is the
+mean of the highest 1\% of cell margins, evaluated on all cells of a test donor. This fixed
+aggregation targets rare informative cells. Balanced sampling and donor aggregation are
+our explicit adaptation of the paper's cell-level baseline. The decision threshold maximizes
+sensitivity plus specificity on inner out-of-fold donor scores.
+
+\begin{table}[!ht]
+\centering
+\caption{\textbf{Performance on the same 100 donor splits.} Median [first, third
+quartile]; larger values indicate better performance. Quartiles describe split sensitivity,
+not confidence intervals. Each split contains only six test donors.}
+\label{tab:classification}
+\small
+\input{tables/classification.tex}
+\end{table}
+
+ROC-AUC is the primary metric: it measures how often a positive donor ranks above a
+negative one. Average precision (AP) summarizes precision as recall increases;
+balanced accuracy averages sensitivity and specificity at the chosen threshold.
+CellCNN and Citrus use 0.5, whereas the SVM uses its inner-validated threshold.
+CellCNN and SVM both attain median ROC-AUC 0.875; the median paired difference is
+0.000. CellCNN exceeds Citrus by a median paired 0.250 and has higher median balanced
+accuracy than SVM. These results support useful discrimination, but do not establish
+CellCNN superiority over SVM in ranking donors.
+
+\clearpage
+\section{Which cells support the predictions?}
+We reuse the saved models and the t-SNE map with perplexity 30. A cell is scored only
+by models for which its donor was an \textbf{outer test donor}, using the original training
+scaler. For cell $i$ from donor $d$, let $S_d$ be the set of those test splits. Its positive
+selection frequency is
+\[
+ f_i^+=\frac{1}{|S_d|}\sum_{s\in S_d}
+ \mathbf{1}\{i\text{ is positively selected by model }s\}.
+\]
+The indicator is 1 when selected and 0 otherwise. The denominator includes all eligible
+models, including null models, and varies between donors. Negative selection is defined
+analogously; Fig.~\ref{fig:interpretation} focuses on positive selection.
+
+For \textbf{CellCNN}, a cell is selected if a filter response exceeds half that filter's
+maximum over all cells of its inner training donors. Selection is positive when the
+filter's output weight for CMV-positive exceeds its weight for CMV-negative.
+This paper-inspired phenotype rule differs from membership in the top-1\% pooling
+subset; a cell can be selected in both directions by different filters.
+For \textbf{Citrus}, we sum the regression coefficients of all hierarchical clusters to
+which the cell maps. A positive sum above $10^{-10}$ defines positive selection;
+coefficients below that absolute tolerance are treated as zero. For \textbf{SVM}, we select
+exactly the highest $\lceil0.01N_d\rceil$ margins among all $N_d$ cells of the test donor,
+breaking ties by event index. Selected cells above the learned donor threshold count as
+positive; those below it count as negative.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{interpretation.pdf}
+\caption{\textbf{Held-out cell selection and marker profiles.} A--C: identical t-SNE
+coordinates for 500 cells per donor. Grey means never positively selected; colour denotes
+$f_i^+$ on the same 0--1 scale. Frequencies use only models that excluded the cell's donor
+from training. Different selection rules prevent interpreting equal frequencies as equal
+effect sizes. Below: frequency-weighted marker medians within donors, then medians
+across supported donors, in arcsinh units. The reference uses unweighted donor medians
+on the same map. These marginal profiles do not demonstrate marker co-expression.}
+\label{fig:interpretation}
+\end{figure}
+
+At least one eligible model positively selects 1,313 map cells for CellCNN, 7,678 for
+Citrus and 219 for SVM. The SVM selects a small subset with elevated CD56, NKG2C and
+CD57 relative to the map reference; CellCNN shows the same marker trends less strongly
+for NKG2C/CD57. Both profiles retain high CD3. They therefore support NK-associated
+receptor patterns with T-compatible or heterogeneous contributions, not an isolated
+CD3-negative NK population. The positive Citrus profile is CD3/CD8-rich, with low CD56
+and NKG2C. Its broad coverage and mostly low frequencies do not define a narrow,
+consistently selected population.
+
+These summaries describe the 10,000 map cells. For SVM, a donor's positive profile may
+rest on just one mapped cell. Stronger marker enrichment consequently does not establish
+better biological recovery. The paper groups filter-subset centroids across runs; our
+cell-wise held-out frequencies provide a different view and do not reproduce its
+centroid groups or their reported selection rates.
+
+\clearpage
+\section{Discussion and limitations}
+The main result is comparable median ranking performance for CellCNN and linear SVM,
+with lower performance for Citrus under the chosen sampling and 5\% cluster-size threshold.
+These choices may affect sensitivity to rare populations. Fifteen Citrus null models remain
+in all summaries. Only 20 donors are independent; the overlapping splits are not independent
+studies. Both CMV groups occur on every measurement day, but batch effects remain possible.
+Different hardware and concurrent execution preclude a fair runtime comparison:
+CellCNN used a GPU, SVM and Citrus CPUs.
+
+Saved interpretation checks reconstruct all 600 SVM and CellCNN donor scores per method;
+Citrus checks relative logits because its intercept was not exported. These arithmetic checks
+support consistency, not biological validation. Full settings, seeds, provenance and
+supplementary plots remain in the accompanying notebooks and local analysis exports.
+
+% Reserved half-page: replace this entire minipage with the Task 6 experiment.
+\noindent\begin{minipage}[t][0.5\textheight][t]{\linewidth}
+\section{CellCNN extension (Task 6: reserved)}
+\textcolor{muted}{\textit{This half-page is reserved for the optional extension. No extension
+has been trained or evaluated. The final section will state the change and its motivation,
+compare it with the existing CellCNN on the same donor splits, and interpret a compact
+results table.}}
+\end{minipage}
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+\end{document}

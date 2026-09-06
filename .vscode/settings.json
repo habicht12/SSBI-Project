@@ -1,0 +1,21 @@
+{
+  "r.rpath.linux": "${userHome}/miniconda3/envs/ssbi-citrus/bin/R",
+  "r.rterm.linux": "${userHome}/miniconda3/envs/ssbi-citrus/bin/R",
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.outDir": "%DIR%/build",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.latex.recipes": [
+    { "name": "Report (latexmk)", "tools": ["report-latexmk"] }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "report-latexmk",
+      "command": "latexmk",
+      "args": [
+        "-cd", "-pdf", "-synctex=1", "-interaction=nonstopmode",
+        "-file-line-error", "-halt-on-error", "-outdir=%OUTDIR%", "%DOC%"
+      ]
+    }
+  ],
+  "[latex]": { "editor.wordWrap": "on" }
+}

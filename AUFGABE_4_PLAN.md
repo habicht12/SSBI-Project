@@ -60,7 +60,8 @@ zählt nicht zu den drei Hauptmethoden.
   verwenden; die übrigen 6 Spender bilden den Testdatensatz.
 - Hyperparameter nur mit den jeweiligen Trainingsspendern auswählen.
 - Primäre Metrik: ROC-AUC auf Spender-Ebene.
-- Zusätzlich: PR-AUC und Balanced Accuracy.
+- Zusätzlich: Average Precision (AP) und Balanced Accuracy. Die bisherige
+  trapezoidale PR-AUC bleibt separat dokumentiert; sie ist nicht mit AP identisch.
 - Ergebnisse über wiederholte Splits als Median und Streuung berichten.
 - In der optionalen Gate-Sensitivitätsanalyse für jeden identischen Split die
   gepaarte Differenz
@@ -149,7 +150,8 @@ zählt nicht zu den drei Hauptmethoden.
 
 ## Erwartete Darstellung
 
-- Tabelle mit ROC-AUC, PR-AUC und Balanced Accuracy je Methode.
+- Tabelle mit ROC-AUC, Average Precision und Balanced Accuracy je Methode;
+  trapezoidale PR-AUC zusätzlich als bisherige Vergleichsmetrik erhalten.
 - Box- oder Punktplot der ROC-AUC über die identischen Splits.
 - Kompakte Darstellung der gepaarten ROC-AUC-Differenzen zwischen den Methoden
   und, falls durchgeführt, zwischen den beiden Gate-Stufen.
