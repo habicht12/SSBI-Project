@@ -19,3 +19,6 @@ results/figures/*
 results/tables/*
 !results/figures/.gitkeep
 !results/tables/.gitkeep
+
+# Local report files
+report/
