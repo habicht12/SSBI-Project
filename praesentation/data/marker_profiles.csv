@@ -1,0 +1,35 @@
+method,cluster,cells,higher_markers (IQR units),lower_markers (IQR units)
+k-means,0,4301,"CD19 (+1.36), HLA-DR (+0.53), 2DL4 (+0.51)",CD3 (-0.82)
+k-means,1,4995,"CD34 (+1.37), CD33 (+0.81), CD11b (+0.74)",—
+k-means,2,7556,CD127 (+0.64),—
+k-means,3,3148,"NKp46 (+4.36), CD10 (+2.88), CD94 (+2.50)",—
+Hierarchical (single),0,19999,—,—
+Hierarchical (single),1,1,"NKp44 (+41.51), 3DL1-S1 (+33.70), TRAIL (+26.29)",—
+Hierarchical (average),0,19995,—,—
+Hierarchical (average),1,5,"TRAIL (+28.35), 3DL1-S1 (+25.67), 2DL1-S1 (+24...",—
+Hierarchical (complete),0,19992,—,—
+Hierarchical (complete),1,8,"CD117 (+32.34), 2DL1 (+31.98), 2DS4 (+28.41)",—
+Hierarchical (ward),0,2872,"CD19 (+1.93), 2DL4 (+0.68), HLA-DR (+0.63)",CD3 (-0.72)
+Hierarchical (ward),1,1911,"NKp46 (+5.19), CD10 (+2.78), CD94 (+2.53)",CD3 (-0.71)
+Hierarchical (ward),2,6367,"CD34 (+1.03), CD33 (+0.68), ILT2-CD85j (+0.63)",—
+Hierarchical (ward),3,7644,—,—
+Hierarchical (ward),4,519,"TRAIL (+14.23), CD16 (+0.84)",—
+Hierarchical (ward),5,687,"3DL1 (+26.51), 3DL1-S1 (+17.70), NKp44 (+2.41)",—
+Leiden,0,3588,"CD34 (+1.48), CD33 (+0.83), CD11b (+0.72)",—
+Leiden,1,2881,"CD4 (+0.97), CD127 (+0.96), CCR7 (+0.81)",—
+Leiden,2,2200,"NKG2D (+0.98), CD8 (+0.91), CD127 (+0.82)",—
+Leiden,3,2035,"CD19 (+2.00), 2DL4 (+0.67), HLA-DR (+0.63)",CD3 (-0.84)
+Leiden,4,1887,"NKp46 (+5.75), CD10 (+3.75), CD122 (+2.68)",CD3 (-0.78)
+Leiden,5,1165,"2DL1-S1 (+9.56), CD57 (+2.80), CD8 (+0.85)",—
+Leiden,6,1072,—,"CD3 (-0.80), CD8 (-0.50)"
+Leiden,7,857,"CD25 (+12.15), 2DL4 (+0.61)",—
+Leiden,8,757,"CD94 (+3.20), NKG2A (+2.28), NKG2D (+1.18)",—
+Leiden,9,615,"3DL1 (+28.98), 3DL1-S1 (+19.54), NKp44 (+5.61)",—
+Leiden,10,531,"CD117 (+13.74), 2DL4 (+0.58), CD34 (+0.55)",—
+Leiden,11,506,"2DS4 (+21.38), NKp30 (+3.50), CD56 (+0.57)",—
+Leiden,12,420,"CD10 (+10.81), 2DL2-L3-S2 (+3.33), CD16 (+2.64)",CD3 (-0.63)
+Leiden,13,401,"TRAIL (+15.17), CD16 (+0.85)",—
+Leiden,14,297,"CD19 (+2.13), CCR7 (+1.48), CD127 (+1.05)",—
+Leiden,15,284,"CD10 (+13.23), CD19 (+1.80), 2DL4 (+0.72)",CD3 (-0.73)
+Leiden,16,281,"NKG2C (+22.45), 2DL3 (+14.57), 2DL2-L3-S2 (+10...",—
+Leiden,17,223,"NKp44 (+14.11), CD127 (+0.56), CD27 (+0.56)",—
