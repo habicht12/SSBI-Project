@@ -62,11 +62,11 @@ def main():
         jitter = np.linspace(-.14, .14, len(values))
         ax.scatter(values, y + jitter, s=75, color=colors[method], edgecolor="white", linewidth=.6, zorder=3)
         weak = int((values < .6).sum())
-        ax.text(1.035, y, f"{weak}/{len(values)} unter 0,6", va="center", fontsize=11, color="#425466")
+        ax.text(1.035, y, f"{weak}/{len(values)} below 0.6", va="center", fontsize=11, color="#425466")
     ax.axvline(.6, color="#AF4D35", linestyle="--", linewidth=1.4)
     ax.set(yticks=[0, 1, 2], yticklabels=["K-means", "Ward", "Leiden"],
            xticks=np.arange(0, 1.01, .2), xlim=(-.03, 1.29), ylim=(2.5, -.5),
-           xlabel="Medianer Jaccard-Overlap je Cluster (10 Wiederholungen)")
+           xlabel="Median Jaccard overlap per cluster (10 repeats)")
     ax.spines[["left", "right", "top"]].set_visible(False)
     ax.tick_params(axis="y", length=0)
     ax.grid(axis="x", color="#E5EAF0", linewidth=.8)
@@ -75,7 +75,7 @@ def main():
     plt.close(fig)
 
     def number(value):
-        return f"{float(value):.3f}".replace(".", "{,}")
+        return f"{float(value):.3f}"
 
     rows = []
     for method, name, saved in zip(methods, ["K-means", "Single", "Average", "Complete", "Ward", "Leiden"], results.to_dict("records")):
@@ -100,10 +100,10 @@ def main():
         largest = 100 * cs.original_cells.max() / cs.original_cells.sum()
         bs = chr(92)
         parameter = (f"$k={int(winner.k)}$" if method != "Leiden"
-                     else f"$n={int(winner.neighbors)}, r={winner.resolution:g}$".replace(".", "{,}"))
+                     else f"$n={int(winner.neighbors)}, r={winner.resolution:g}$")
         rows.append(f"{name} & {parameter} & {n_clusters} & {number(winner.score)} & {number(winner.stability)} & {number(largest)}{bs},{bs}% {bs}{bs}")
     table_lines = [bs + "begin{tabular}{@{}llrrrr@{}}", bs + "toprule",
-                   f"Methode & Parameter & Cluster & DB ${bs}downarrow$ & Stabilität & Größtes Cluster{bs}{bs}",
+                   f"Method & Parameters & Clusters & DB ${bs}downarrow$ & Stability & Largest cluster{bs}{bs}",
                    bs + "midrule", *rows, bs + "bottomrule", bs + "end{tabular}"]
     (data / "winner_table.tex").write_text(chr(10).join(table_lines) + chr(10))
     manifest = {"source": "notebooks/03_clustering.ipynb", "sha256": hashlib.sha256(NOTEBOOK.read_bytes()).hexdigest(),
