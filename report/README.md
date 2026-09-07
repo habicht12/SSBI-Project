@@ -1,5 +1,49 @@
 # Editing the report
 
+## Deutscher Detail- und Prüfbericht
+
+`detailbericht_de.tex` erklärt die Aufgaben 1–5 einschließlich der einzelnen
+Schritte von CellCNN, Citrus und SVM, der Zellinterpretation und der Grenzen der
+Schlussfolgerungen. Die eigene PDF liegt neben der englischen Kurzfassung unter
+`build/detailbericht_de.pdf`. LaTeX Workshop erkennt beide Hauptdateien anhand
+ihrer jeweiligen Root-Direktive.
+
+```bash
+latexmk -cd -pdf -synctex=1 -interaction=nonstopmode -file-line-error -halt-on-error -outdir=build report/detailbericht_de.tex
+```
+
+Zusätzlich zur Ausstattung der Kurzfassung werden `babel-german` und
+`hyphen-german` für deutsche Beschriftungen und Silbentrennung benötigt. In der
+vorhandenen TinyTeX-Installation sind diese Pakete eingerichtet.
+
+Der separate Export wird nur nach einer bewussten Aktualisierung der Analyse
+gestartet, in der Python-Projektumgebung (hier `.venv/bin/python`):
+
+```bash
+python -m src.detail_report_assets
+python -m unittest discover -s tests -p 'test_detail_report_assets.py' -v
+```
+
+Er liest die vorhandenen Tabellen der Aufgaben 2–5 und die Original-FCS-Dateien
+beider Gates ausschließlich lesend. Er prüft die ursprünglichen Stichproben,
+Zellzuordnungen, 1.200 Metrikwerte, Auswahlregeln, Häufigkeitsnenner,
+5.180 Spender-Markerprofile und die Aufgabe-5-Provenienz. Gespeicherte
+Modellrekonstruktionsprüfungen werden auf Dateiidentität geprüft und zusammengefasst;
+sie werden nicht mit neu ausgeführten Modellinferenztests gleichgesetzt.
+
+Alle Ausgaben liegen getrennt unter `detail_assets/`: deutsche Grafiken,
+LaTeX-Tabellen, Zahlenmakros sowie `pruefung.json` und `quellen.json`.
+Diese ausgewählten Berichtsassets sind zur Versionierung vorgesehen. Der Export
+trainiert keine Modelle und verändert keine Dateien unter `results/`.
+Der normale LaTeX-Build benötigt nur die fertigen Berichtsassets, keine lokalen
+Originaldaten und keine erneute Analyse.
+
+Nach Text- oder Abbildungsänderungen die maximale Gesamtlänge von 40 Seiten und
+die Lesbarkeit kontrollieren. Neu entdeckte Probleme werden im Prüfteil benannt;
+die Analysepipeline wird durch den Bericht nicht stillschweigend korrigiert.
+
+## English five-page report
+
 Open `main.tex` in VS Code. LaTeX Workshop builds on save and shows the PDF in a
 tab beside the source. Use **LaTeX Workshop: View LaTeX PDF file** in the command
 palette to open the preview. SyncTeX connects source locations and PDF positions.

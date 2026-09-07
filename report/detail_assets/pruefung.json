@@ -1,0 +1,10 @@
+{
+  "metrics_recomputed": 1200,
+  "donor_profile_values_recomputed": 5180,
+  "provenance_hashes_checked": 48,
+  "historical_prediction_checks": 1800,
+  "classifier_fits": 0,
+  "projection_fits": 0,
+  "cluster_fits": 0,
+  "note": "Tabellen/QC/Hashes jetzt geprüft; Modellinferenz-Prüfungen aus hashverifiziertem Aufgabe-5-Artefakt."
+}

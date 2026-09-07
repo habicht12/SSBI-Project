@@ -1,0 +1,1856 @@
+% !TeX root = detailbericht_de.tex
+% !TeX program = pdflatex
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern,microtype}
+\usepackage[margin=2.1cm,headheight=14pt,footskip=11mm]{geometry}
+\usepackage{amsmath,amssymb,graphicx,booktabs,array,longtable,xcolor,caption}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\definecolor{blue}{HTML}{155F87}
+\definecolor{muted}{HTML}{555555}
+\hypersetup{pdftitle={NK/CMV: Deutscher Detail- und Prüfbericht},pdfauthor={SSBI-Projektgruppe},bookmarksnumbered=true}
+\graphicspath{{detail_assets/}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\textfloatsep}{8pt}
+\setlength{\intextsep}{8pt}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.16}
+\captionsetup{font=small,labelfont=bf,skip=4pt}
+\setcounter{tocdepth}{1}
+\raggedbottom
+\emergencystretch=2em
+\newcommand{\code}[1]{\expandafter\nolinkurl\expandafter{\detokenize{#1}}}
+\newcommand{\source}[1]{\par{\footnotesize\raggedright\color{muted}\textbf{Nachvollziehen:} #1\par}}
+\newcommand{\finding}[1]{\par\smallskip\noindent\textcolor{blue}{\textbf{Prüfbefund.}} #1\par}
+\newcommand{\fig}[4]{\begin{figure}[!ht]\centering\includegraphics[width=#2\linewidth]{#1.pdf}\caption{#3}\label{#4}\end{figure}}
+\newcommand{\tab}[4]{\begin{table}[!ht]\centering\caption{#2}\label{#3}{\small\input{detail_assets/#1.tex}}#4\end{table}}
+\newcommand{\stepbox}[2]{\fbox{\parbox[c]{#1}{\centering\small\vspace{4pt}#2\vspace{4pt}}}}
+\input{detail_assets/zahlen.tex}
+\begin{document}
+% Seite 1
+{\color{blue}\Large SSBI-Gruppenprojekt\par}
+\vspace{7mm}
+{\LARGE\bfseries NK/CMV-Single-Cell-Analyse\par}
+\vspace{3mm}
+{\Large Deutscher Detail- und Prüfbericht\par}
+\vspace{4mm}
+{\large Was wurde gemacht, warum wurde es gemacht, und was lässt sich daraus schließen?\par}
+\vspace{7mm}
+\textbf{Dokumentationsstand: 6. September 2026.} Grundlage ist der Analysecode des
+Commits \code{19432f2} und der vollständige gespeicherte Hauptlauf auf
+\code{gated_alive}. Dieser ergänzende Arbeitsbericht erklärt die Analyse;
+der englische fünfseitige Bericht bleibt die kompakte Abgabeversion.
+
+\section{Fragestellung und Leseanleitung}\label{sec:frage}
+Wir untersuchen, ob Einzelzell-Proteinmessungen aus Blutproben den CMV-Status
+bisher ungesehener Spender vorhersagen können. Anschließend fragen wir,
+welche Zellen nach den jeweiligen Modellen diese Vorhersage unterstützen.
+CMV-Status bedeutet hier die vorgegebene Zuordnung zu CMV-seronegativen bzw.
+-seropositiven Spendern. Es gibt \emph{keine unabhängig gemessenen CMV-Labels
+für einzelne Zellen} und keine Referenzannotation aller Zelltypen.
+
+Die Daten enthalten 20 Spender, aber Millionen Zellen. Diese große Zellzahl
+ersetzt keine große Spenderkohorte. Eine Zelle ist ein Messereignis mit 37
+Analysemarkern; ein Spender ist die unabhängige Beobachtung für den Benchmark.
+Unser Anspruch ist deshalb eine korrekte spenderweise Auswertung mit
+transparenten Grenzen, keine klinische Validierung.
+
+\textbf{Die drei Hauptmethoden beantworten die Frage unterschiedlich.}
+CellCNN lernt Zellfilter und Spenderklassifikation gemeinsam. Citrus bildet
+zuerst hierarchische Zellgruppen und modelliert deren Häufigkeiten. Die
+lineare Single-Cell-SVM lernt eine Zellmarge und verdichtet die höchsten
+Margen zu einem Spenderscore. Aufgabe 5 überträgt diese Modelle zurück auf
+konkrete Zellen derselben explorativen Karte.
+
+\textbf{Zentrales Ergebnis.} CellCNN und SVM erreichen beide eine mediane
+ROC-AUC von 0,875, Citrus 0,625. Daraus folgt keine nachgewiesene Überlegenheit
+von CellCNN gegenüber SVM. Die ausgewählten Zellprofile sind methodenspezifisch;
+auch ähnliche Markertrends beweisen keine identische biologische Population.
+
+Dieser Bericht erklärt zuerst die gemeinsame Grundlage, dann die drei
+Methoden und schließlich die Interpretation. Tabellen und Grafiken sind
+Bestandteil der Argumentation: Ihre Bildunterschriften nennen Datenbasis,
+Berechnung und Aussagegrenzen. Abweichungen vom Paper werden explizit
+benannt; Prüfungen erhalten einen unterscheidbaren Nachweisstatus.
+\source{Aufgabenblatt, Projekt 1; \code{CellCNN.pdf}; Notebooks 01--05;
+\code{results/tables/task4_metric_summary.csv}.}
+
+\clearpage
+% Seite 2
+\begingroup\small
+\setlength{\parskip}{3pt}
+\tableofcontents
+\vspace{4mm}
+\subsection*{Begriffe, die im ganzen Bericht gelten}
+\begin{description}
+\item[Zelle / Event:] Eine Zeile der ausgewählten FCS-Markermatrix. Ereignisindex
+und Spender-ID erlauben das Wiederfinden der unveränderten Originalmessung.
+\item[Spender / Sample:] Alle Zellen einer Person mit einem gemeinsamen CMV-Label.
+Die Zuordnung zu Training, Validierung und Test geschieht auf dieser Ebene.
+\item[Split und Fold:] Ein äußerer Split teilt die 20 Spender in 14 Trainings-
+und sechs Testspender. Ein innerer Fold bestimmt, welche der 14 Spender
+innerhalb der Modellauswahl als Validierung dienen.
+\item[Score und Wahrscheinlichkeit:] Ein Score ordnet Beobachtungen.
+SVM-Margen sind keine Wahrscheinlichkeiten. Auch numerische Softmax- und
+Logistikwerte sind ohne zusätzliche Prüfung nicht als kalibrierte Risiken belegt.
+\item[OOF:] \emph{Out of fold}, also bewertet von einem Modell, dessen
+Trainingsmenge den betreffenden Spender ausschließt. Aufgabe 5 verwendet
+strenger ausschließlich dessen \emph{äußere Testmodelle}.
+\item[Selektion:] Eine quantitativ definierte Auswahl von Zellen. Sie ist
+kein zusätzlich gemessenes Zelltyp-Label und kein Kausalnachweis.
+\end{description}
+\subsection*{Wie Prüfungen gekennzeichnet werden}
+\textbf{Jetzt geprüft} bezeichnet Berechnungen oder Codeabgleiche, die beim
+Erstellen dieses Berichts tatsächlich ausgeführt wurden. \textbf{Vorhandener
+Prüfnachweis} bezeichnet frühere Rechenprüfungen, deren gespeicherte Artefakte
+auf den aktuellen Stand geprüft wurden. \textbf{Offen / nicht verifiziert}
+bezeichnet fehlende Belege oder nicht erneut ausgeführte Modellrechnungen.
+Ein erfolgreicher Konsistenztest bedeutet nicht automatisch, dass eine
+biologische Schlussfolgerung richtig oder das gewählte Verfahren optimal ist.
+\endgroup
+
+\clearpage
+% Seite 3
+\subsection*{Aufgabe 1: Was zeigt das Originalpaper?}
+Arvaniti und Claassen entwickeln CellCNN für die Suche nach
+phänotypassoziierten Zellsubsets aus ungeordneten Einzelzellmessungen
+\cite{cellcnn}. Ein Gesamtlabel, beispielsweise eine Erkrankungsgruppe,
+überwacht die Bildung einer passenden Zellrepräsentation. Der Ansatz
+verbindet damit \emph{Multiple Instance Learning}: Viele Instanzen (Zellen)
+gehören zu einer beschrifteten Menge (Spenderprobe).
+
+Das Paper behandelt mehrere Aufgaben: stimulierte PBMC-Proben, mit
+AIDS-freiem Überleben assoziierte T-Zellsubsets, CMV-assoziierte seltene
+NK-Subsets und künstliche Leukämie-Spike-ins. Die Resultate dieser
+Experimente sind nicht austauschbar. Unser Datensatz betrifft ausschließlich
+die CMV-Kohorte; wir reproduzieren weder Überlebensanalysen noch AML-Spike-ins.
+
+\begin{table}[!ht]\centering\small
+\caption{Im Paper diskutierte oder verglichene Ansätze und ihre Rolle im Projekt.}
+\begin{tabular}{p{3.5cm}p{7.2cm}p{4.5cm}}\toprule
+Ansatz & Grundprinzip & Projektstatus\\\midrule
+CellCNN & Gelernte Zellfilter, Pooling, überwachte Ausgabe & Hauptmethode\\
+Citrus & Hierarchische Cluster, Probenmerkmale, regulärer Prädiktor & Hauptmethode\\
+Single-Cell-SVM & Jede Zelle erhält das Label ihrer Probe & Lineare Hauptbaseline mit eigener Spenderaggregation\\
+Logistische Regression / Random Forest & Zellbasierte überwachte Klassifikation & Literaturübersicht; nicht zusätzlich trainiert\\
+Distanzbasierte Ausreißersuche & Abweichung von Kontrollzellen & Literaturübersicht; nicht implementiert\\
+Momente & Erste vier Momente der Marker-Verteilungen als Probenbeschreibung & Optional geplant; nicht als vierte Methode ausgeführt\\
+Denoising-Autoencoder & Rekonstruktion gestörter Zellinputs, unüberwachte Repräsentation & Literaturübersicht; nicht implementiert\\
+\bottomrule\end{tabular}
+\end{table}
+
+\textbf{Warum diese Auswahl?} Die Aufgabenstellung verlangt drei vergleichende
+Ansätze. Im Projekt sind CellCNN, Citrus und die lineare Single-Cell-SVM
+als Hauptmethoden festgelegt. Der CMV-Vergleich des Papers und der dortige
+allgemeine Single-Cell-Baselinevergleich sind nicht exakt dieselbe Auswertung.
+Insbesondere unsere Top-1-\%-Aggregation für SVM ist eine Projektanpassung;
+das Paper beschreibt nicht diesen vollständigen CMV-SVM-Benchmark.
+
+\textbf{Referenzen sind keine identischen Rezepte.} Die offiziellen
+Notebooks \code{NK_cell.ipynb} und \code{NK_cell_ungated.ipynb} zeigen einzelne
+Beispielläufe mit eigener Train-/Validierungsaufteilung und Bibliotheksdefaults
+\cite{cellcnncode}. Das Paper beschreibt hingegen 100 äußere Wiederholungen
+mit innerer dreifacher Auswahl. Bei Widersprüchen haben Aufgabenstellung und
+Paper Vorrang. Wir übernehmen keine veraltete Python-/Keras-Umgebung, sondern
+implementieren den relevanten Kern in PyTorch neu.
+\source{Paper: Methodenabschnitte „Model selection and interpretation“ und
+„Baseline methods“; offizielle Notebooks lesend abgerufen, nicht ausgeführt.}
+
+\clearpage
+% Seite 4
+\section{Daten, Vorverarbeitung und Qualitätskontrolle}\label{sec:daten}
+Die bereitgestellten Daten stammen aus der Untersuchung menschlicher
+NK-Zelldiversität von Horowitz et al.\cite{horowitz}; das Benchmarkarchiv
+wird über Zenodo bereitgestellt\cite{dataset}. Es enthält zwei Gate-Stufen
+für dieselben 20 Spender: \code{gated_alive} mit lebenden, von Doubletten
+bereinigten PBMCs und \code{gated_NK} nach zusätzlicher NK-Selektion.
+AppleDouble-Begleitdateien im macOS-Ordner sind keine Messproben.
+
+Die gemeinsame Labeldatei nennt NK-Dateinamen. Der Loader entfernt den
+Gate-Suffix und ordnet anhand der Spender-ID die Alive-Datei zu. Der
+Dateiname entscheidet damit nicht versehentlich über das Haupt-Gate.
+11 Labels sind 0 (CMV−), neun sind 1 (CMV+). Diese Zuordnung wurde jetzt
+gegen sämtliche Split- und Testvorhersagezeilen geprüft.
+\tab{spender}{Vollständiges Spenderinventar. Zellzahlen jetzt gegen die FCS-Dateien
+geprüft. „Testmodelle“ zählt äußere Testauftritte je Methode über 100 Splits.}{tab:spender}{}
+
+\textbf{Warum gleiche Stichprobengrößen?} Ohne Ausgleich dominieren zellreiche
+Proben eine zusammengeführte Zellverteilung. Das Sampling gleicht deshalb
+die Zahl der Zellen bzw. Multi-Cell-Inputs pro Spender an. Es gleicht nicht
+automatisch die Anzahl der Spender je Klasse in jedem inneren Fold an.
+
+Die 37 Marker stehen in verbindlicher Reihenfolge in \code{NK_markers.csv}.
+Technische Kanäle wie Zeit, Ereignislänge, DNA oder Totzellkanal werden nicht
+als Analysemarker verwendet. Das Paper nennt 36 Marker; beide offiziellen
+Beispielnotebooks enthalten dieselben 37 wie unsere Datei. Diese konkrete
+Abweichung der Markerzahl wird nicht durch stilles Entfernen eines Markers
+„korrigiert“.
+\source{Notebook 01, Abschnitte 2--4; Notebook 04a, Abschnitte 2--4;
+\code{untersuchung/inspect_fcs.py}, \code{read_fcs_metadata}.}
+
+\clearpage
+% Seite 5
+\subsection*{Die anfängliche NK-Exploration}
+Notebook 01 untersucht zunächst die kleinere NK-Stufe. Pro Spender werden
+1.000 Zellen ohne Zurücklegen gezogen, mit \code{DataFrame.sample} und Seed
+\(42+i\), wobei \(i\) die nullbasierte Position in der sortierten Spenderliste
+ist. Es entstehen 20.000 Zellen. Dies ist eine explorative Sicht auf bereits
+NK-vorselektierte Daten und keine unabhängige Gate-Sensitivitätsanalyse.
+\fig{zellzahlen}{.98}{Zellzahlen und Stärke des NK-Gatings. Links logarithmische
+Zellzahl je Spender, rechts Anteil der NK-Ereignisse an Alive-Ereignissen.
+Jeder schwarze Punkt rechts ist ein Spender; keine Signifikanzprüfung.}{fig:zahlen}
+\fig{nk_histogramme}{.93}{Sechs Marker der ursprünglichen NK-Exploration,
+1.000 Zellen je Spender, \(\operatorname{arcsinh}(x/5)\). Dichten sind innerhalb
+jeder CMV-Gruppe normiert. Die Kurven illustrieren Verteilungen; sie bewerten
+keinen Klassifikator und sind kein Test auf unabhängigen Zellen.}{fig:nkhist}
+\clearpage
+\subsection*{Was die gemeinsame NKG2C-/CD57-Verteilung zeigt}
+Die vorherigen Histogramme zeigen jeden Marker einzeln. Zwei erhöhte
+Randverteilungen lassen offen, ob dieselben Zellen beide Marker tragen.
+Die zweidimensionale Verteilung ergänzt deshalb eine konkrete gemeinsame
+Messung. Jeder Punkt der zugrunde liegenden Daten beschreibt die NKG2C-
+und CD57-Werte ein und desselben NK-gegateten Ereignisses.
+
+\fig{nk_koexpression}{1}{Gemeinsame NKG2C-/CD57-Verteilung derselben
+NK-Stichprobe. Gemeinsame logarithmische Farbskala mit Zellzahlen pro Hexagon.
+Hier sind tatsächlich gemeinsame Messungen sichtbar; daraus folgt noch keine
+Definition eines validierten CMV-assoziierten Gates.}{fig:nkhex}
+
+Hexagone fassen nahe Messpunkte zusammen; ihre Farbe zeigt Ereigniszahlen,
+keine Erkrankungswahrscheinlichkeit. Eine gemeinsame logarithmische Skala
+verhindert, dass dieselbe Farbe zwischen den Panels verschiedene Häufigkeiten
+bedeutet. Die CMV−-Gruppe enthält 11.000, die CMV+-Gruppe 9.000 Zellen,
+weil jede Person gleich viele Zellen beiträgt, aber die Gruppen verschieden
+viele Personen umfassen. Die Farben sind daher keine unmittelbar
+vergleichbaren gruppennormierten Wahrscheinlichkeitsdichten.
+
+Das Paper berichtet eine NKG2C-/CD57-assoziierte NK-Population. Die Grafik
+ist damit eine zielgerichtete Plausibilitätsansicht der Ausgangsdaten.
+Sie legt weder Expressionsschwellen fest noch trainiert sie ein Gate.
+Aus ihr wurden keine Spender ausgeschlossen und keine Hyperparameter der
+Klassifikatoren anhand äußerer Testlabels ausgewählt.
+
+Auch eine sichtbare gemeinsame Expression ist noch kein Nachweis, dass
+genau diese Zellen für die spätere Spendervorhersage verantwortlich sind.
+Die Grafik verwendet das kleinere NK-Gate und eine andere Zellstichprobe
+als Aufgabe 5. Der Hauptvergleich und dessen Interpretation verwenden
+Alive-Daten. Die beiden Ansichten dürfen deshalb nicht als wiederholte
+Bestätigung derselben ausgewählten Zellpopulation behandelt werden.
+\source{Notebook 01, Abschnitte 3, 5 und 6. Die deutsche Neuzeichnung verwendet
+identisches Sampling; die Hexagon-Farbskala ist ausdrücklich gemeinsam normiert.}
+
+\clearpage
+% Seite 6
+\subsection*{Haupt-Gate: kontrolliertes Laden und numerische Transformation}
+FlowKit liest die Originaldateien mit \code{ignore_offset_error=True}:
+Der bekannte Datenendoffset ist um ein Byte inkonsistent.
+\code{source="raw"} liefert untransformierte Werte; die vorhandenen
+biologischen Gates bleiben Teil der Datenbasis.
+
+Die feste Transformation lautet
+\[
+ u=\operatorname{arcsinh}(x/5)
+   =\log\!\left(x/5+\sqrt{1+(x/5)^2}\right).
+\]
+Nahe null ist sie annähernd linear, große Werte werden komprimiert;
+negative Werte bleiben erhalten. Kofaktor 5 stammt aus der Referenz,
+nicht aus einer Testlabel-Optimierung. Beispiele: \(0\mapsto0\),
+\(5\mapsto0{,}8814\), \(-5\mapsto-0{,}8814\) (gerundet).
+\fig{qc_marker}{.95}{Alive-QC: 2.000 Zellen je Spender, insgesamt 40.000,
+\code{default_rng(12345)}, ohne Zurücklegen. Links Boxplots aller 37
+transformierten Marker; ausgeblendete Ausreißersymbole bedeuten keine
+Datenentfernung. Rechts Spender-Mediane, je Marker robust skaliert:
+\((m_d-\operatorname{median}(m))/(1{,}4826\operatorname{MAD}(m))\).
+Die Farbgrenzen bei ±3 betreffen nur die Darstellung.}{fig:qc}
+
+Alle ausgewählten Markerwerte der 40 FCS-Dateien wurden jetzt erneut auf
+Endlichkeit geprüft, die Eventzahlen unabhängig aus den Metadaten
+gegengelesen. Die Alive-Stufe umfasst 3.438.750 Zellen. Die QC-Heatmap zeigt
+mögliche technische Verschiebungen; sie begründet keine automatische
+Batchkorrektur. Es werden keine Spender entfernt und keine zusätzliche
+Bead-Normalisierung durchgeführt, da Bead-Referenzdaten fehlen.
+\source{Notebook 04a, Abschnitte 3--8. Die robuste QC-Skalierung wird nicht an
+SVM oder CellCNN weitergegeben. Der Bericht exportiert keine geänderten FCS-Dateien.}
+
+\clearpage
+% Seite 7
+\section{Aufgabe 2: Dimensionsreduktion}\label{sec:task2}
+\subsection*{Eine feste Zellbasis für alle Karten}
+Aus \code{gated_alive} werden 500 Zellen je Spender ohne Zurücklegen gewählt,
+zusammen 10.000. \code{default_rng(42+i)} erzeugt die Indizes, die danach
+sortiert werden. Das ist nicht derselbe Zufallsgenerator wie
+\code{DataFrame.sample} in der NK-Vorexploration. Die Zell-ID
+\code{gated_alive:Spender:Ereignisindex} hält jede Messung stabil fest.
+Alle acht Karten verwenden dieselben IDs und dieselbe Markerreihenfolge.
+
+Nach \(u_{ij}=\operatorname{arcsinh}(x_{ij}/5)\) werden Marker standardisiert:
+\[
+ z_{ij}=\frac{u_{ij}-\mu_j}{\sigma_j},\quad
+ \mu_j=\frac1N\sum_i u_{ij},\qquad
+ \sigma_j^2=\frac1N\sum_i(u_{ij}-\mu_j)^2.
+\]
+\code{StandardScaler} verwendet die Populationsvarianz mit Divisor \(N\).
+Hier wird auf allen 20 Spendern gemeinsam gefittet: eine ausdrücklich
+vereinbarte Ausnahme für die \emph{explorativen} Aufgaben 2/3. Diese
+Skalierung und die Karten sind keine Eingangsdaten der Klassifikatoren.
+Für Aufgabe 5 liefern sie nur die Darstellungsebene.
+
+\subsection*{PCA: lineare Varianzachsen}
+PCA bestimmt orthogonale Richtungen maximaler Varianz in der 37D-Matrix.
+Wir behalten zwei Komponenten, berechnet mit vollständiger SVD. Ohne
+Whitening wird auf diese Achsen projiziert. Whitening teilt jede Achse
+zusätzlich durch ihre geschätzte Standardabweichung. Die Richtungen bleiben
+gleich, die Achsenskalierung und damit euklidische Nachbarschaften können
+sich ändern. Die ersten beiden Komponenten erklären hier 16,09 und
+10,31\%, zusammen rund 26,39\% der standardisierten Gesamtvarianz.
+
+\subsection*{t-SNE: lokale Nachbarschaftswahrscheinlichkeiten}
+t-SNE\cite{tsne} passt eine zweidimensionale Verteilung so an, dass lokale
+Nachbarschaften aus dem hochdimensionalen Raum ähnlich repräsentiert werden.
+Die Perplexität steuert die effektive Nachbarschaftsgröße. Wir testen 5, 30
+und 50, mit PCA-Initialisierung, automatischer Lernrate, 1.000 Iterationen,
+Early Exaggeration 12, Barnes-Hut-Näherung mit Winkel 0,5 und Seed 42.
+Andere wählbare Parameter sind Distanzmetrik, Initialisierung und Lernrate;
+sie werden hier konstant gehalten, nicht zusätzlich durchsucht.
+
+\subsection*{UMAP: Nachbarschaftsgraph und zweidimensionale Anordnung}
+UMAP\cite{umap} konstruiert eine gewichtete Nachbarschaftsstruktur und sucht
+eine entsprechende Anordnung. Wir vergleichen \((n,d)=(15;0{,}1)\),
+\((50;0{,}1)\), \((15;0{,}5)\), mit \(n\) (\code{n_neighbors}) und
+\(d\) (\code{min_dist}). Größeres \(n\) berücksichtigt größere Umgebung;
+\(d\) beeinflusst die mögliche Verdichtung. Fix sind euklidische Distanz,
+spektrale Initialisierung, 500 Epochen, zwei Komponenten und Seed 42.
+\source{\code{src/task23_analysis.py}: \code{load_exploratory_data},
+\code{projection_configs}, \code{fit_projection}; Notebook 02, Abschnitte 1--2.}
+
+\clearpage
+% Seite 8
+\subsection*{Alle acht Karten und ihr sichtbarer Parameter-Effekt}
+\fig{projektionen}{1}{Alle acht Projektionen der gleichen 10.000 Alive-Zellen.
+Farbe: gemessene CD3-Intensität nach ArcSinh, gemeinsame Skala und identische
+Punktreihenfolge. Die Karte selbst wird aus allen 37 standardisierten
+Markern berechnet. Koordinaten werden unverändert aus
+\code{task2_embeddings.csv} geladen; keine neue Anpassung.}{fig:projektionen}
+
+PCA zeigt breite Überlagerungen. Die Nichtlinearität von t-SNE und UMAP
+stellt lokale Zellgruppen stärker räumlich getrennt dar. Bei Perplexität 5
+zerfällt die t-SNE-Karte stärker in kleine Bereiche; 30 und 50 liefern
+weniger stark fragmentierte lokale Strukturen. Bei UMAP ändern sich Form,
+Packung und Trennung sichtbar mit Nachbarzahl und Mindestabstand.
+
+Diese Beobachtungen sind Parameterempfindlichkeiten der Darstellung.
+\textbf{Eine Insel ist nicht automatisch ein Zelltyp.} Zwischeninselabstände,
+Flächengrößen und relative Orientierung sind insbesondere bei t-SNE keine
+direkt ablesbaren biologischen Abstände oder Populationshäufigkeiten.
+CD3 ist hier eine Interpretationshilfe, keine zur Kartenoptimierung
+verwendete Zelltypannotation.
+
+Ein bloßer Koordinatenvergleich wäre ungeeignet: Eine gedrehte oder
+verschobene Karte kann dieselben Beziehungen ausdrücken. Deshalb wird im
+nächsten Schritt ein orientierungsunabhängiger Vergleich der lokalen
+Nachbaridentitäten verwendet. Er beantwortet eine konkrete Frage: Bleiben
+für eine Zelle dieselben anderen Zellen in ihrer unmittelbaren Umgebung?
+
+\finding{Die beiden PCA-Varianten unterscheiden sich geringfügig in der
+Nachbarschaftsmetrik. „Whitening ändert nichts“ wäre zu stark; korrekt ist
+„in diesem Raster nahezu gleicher gemessener Nachbarschaftserhalt“. Die
+berichtete Auswahl ungewichtet standardisierter PCA-Achsen folgt den Zahlen.}
+\source{Notebook 02, Abschnitt 2; \code{task2_parameters.csv},
+\code{task2_provenance.json}, \code{task2_embeddings.csv}.}
+
+\clearpage
+% Seite 9
+\subsection*{Quantitativer Vergleich und begrenzte Empfehlung}
+Für jede Zelle \(i\) bestimmt jede Karte die 15 nächsten \emph{anderen}
+Zellen. Mit \(N^A_{15}(i)\) und \(N^B_{15}(i)\) ist
+\[
+ J_i(A,B)=\frac{|N^A_{15}(i)\cap N^B_{15}(i)|}
+ {|N^A_{15}(i)\cup N^B_{15}(i)|}.
+\]
+Bei zehn gemeinsamen Nachbarn sind es beispielsweise
+\(10/(15+15-10)=0{,}5\), nicht \(10/15\). Zuerst wird innerhalb jedes
+Spenders gemittelt, anschließend über die 20 Spender. Alle
+\(\binom82=28\) Kartenpaare werden bewertet; die Diagonale einer Karte
+mit sich selbst beträgt eins.
+\fig{nachbarschaften}{.65}{Vollständige Paarmatrix. P/Pw: PCA ohne/mit Whitening;
+T5/T30/T50: t-SNE-Perplexität; U15/U50: UMAP-Nachbarzahl bei \(d=0{,}1\);
+Ud: UMAP mit \(n=15,d=0{,}5\). Der Jaccard-Index bewertet lokale Geometrie,
+keine biologische Richtigkeit.}{fig:jaccard}
+\begin{minipage}[t]{.47\linewidth}\small
+\input{detail_assets/projektion_werte.tex}
+\captionof{table}{Nachbarschaftserhalt gegenüber den standardisierten 37
+Markerdimensionen; gleiche Zellen, \(k=15\).}\label{tab:projektion}
+\end{minipage}\hfill
+\begin{minipage}[t]{.49\linewidth}
+Je Verfahren wird die Einstellung mit höchstem 37D-Jaccard gewählt.
+Gleichstand innerhalb \(10^{-12}\) bevorzugt die Baseline, danach die
+Rasterreihenfolge. Gewählt werden PCA ohne Whitening, t-SNE mit 30 und
+UMAP mit \((15;0{,}1)\). Für Aufgabe 5 wird die t-SNE-30-Karte verwendet.
+
+Die kleinen absoluten Werte zeigen Informationsverlust. Die Empfehlung
+gilt für dieses Kriterium, diese Stichprobe und dieses Raster, nicht für
+alle möglichen Einstellungen oder ein global bestes biologisches Bild.
+\end{minipage}
+\source{\code{neighbor_indices}, \code{neighbor_jaccard}, \code{recommend_projections};
+Notebook 02, Abschnitte 3--5. Exakte euklidische Nachbarn; Eigenidentitäten
+werden auch bei Distanzgleichständen entfernt.}
+
+\clearpage
+% Seite 10
+\section{Aufgabe 3: Clustering und Zelltypen}\label{sec:task3}
+Clustering wird in den \textbf{37 standardisierten Markerdimensionen}
+durchgeführt, nicht auf einer verzerrenden 2D-Karte. Daten, Sampling und
+explorative Skalierung entsprechen Aufgabe 2. Notebook 03 lädt sie
+selbstständig und benötigt keinen gemeinsam gehaltenen Notebook-Kernel.
+
+\textbf{K-Means} minimiert \(\sum_i\|z_i-\mu_{c_i}\|^2\). Getestet werden
+6, 10 und 14 Cluster, jeweils 20 Initialisierungen, maximal 300 Iterationen
+und Seed 42. K-Means bevorzugt kompakte Gruppen im euklidischen Raum.
+\textbf{Ward} verbindet schrittweise diejenigen Gruppen, deren Vereinigung
+die innerhalb der Gruppen liegende Quadratsumme am wenigsten vergrößert.
+Ein gemeinsamer Hierarchiebaum wird bei 6, 10 und 14 Clustern geschnitten.
+
+\textbf{Leiden}\cite{leiden} arbeitet auf einem Graphen: Eine Zelle wird mit
+ihren 15 nächsten Nachbarn verbunden. Die Vereinigung beider Richtungen
+bildet einen ungewichteten, ungerichteten Graphen ohne Selbstkanten und
+Mehrfachkanten. Der resultierende Grad muss nicht 15 sein. Optimiert wird
+\code{RBConfigurationVertexPartition}, mit Auflösungen 0,5, 1,0, 1,5,
+Seed 42 und Iteration bis zum Stillstand (\code{n_iterations=-1}). Die
+Auflösung ist keine fest vorgegebene Clusterzahl.
+\tab{clustervergleich}{Alle neun Lösungen. Silhouetten auf einer gemeinsamen
+Stichprobe von 100 Zellen je Spender, insgesamt 2.000. Mindestgrößen betreffen
+hingegen die vollständigen 10.000 explorativen Zellen.}{tab:cluster}{}
+
+\textbf{Silhouette als Auswahlkriterium.} Für eine Zelle ist \(a_i\) die
+mittlere Distanz zu anderen Zellen desselben Clusters, \(b_i\) das kleinste
+mittlere Distanzmaß zu einem anderen Cluster. Dann
+\[
+ s_i=\frac{b_i-a_i}{\max(a_i,b_i)}\in[-1,1].
+\]
+Positive Werte sprechen für größere Nähe zur eigenen Gruppe. Die Distanzen
+werden hier innerhalb der gemeinsamen 2.000-Zell-Stichprobe berechnet;
+es ist eine Approximation der Vollstichprobensilhouette, nicht nur ein
+Mittel ausgewählter exakt berechneter Vollstichprobenwerte.
+
+Die Auswertungszellen werden mit Seed \(43+i\) gewählt. Falls einem
+Verfahren dadurch ein Cluster vollständig fehlen würde, stellt die
+Implementierung \emph{alle} Lösungen auf die Gesamtauswertung um. Im
+vorliegenden Lauf war dies nicht nötig. Pro Methode gewinnt die höchste
+spendergemittelte Silhouette; Gleichstand innerhalb \(10^{-12}\) bevorzugt
+weniger Cluster, danach die Rasterreihenfolge.
+\source{\code{fit_clusterings}, \code{make_neighbor_graph},
+\code{silhouette_evaluation}, \code{select_clusterings}; Notebook 03.}
+
+\clearpage
+% Seite 11
+\subsection*{Clusterkarten und die zugehörigen Markerprofile}
+\fig{clusterkarten}{1}{Ausgewählte Clusterlösungen auf derselben gespeicherten
+UMAP-Basiskarte (15 Nachbarn, Mindestabstand 0,1). Die Farben kodieren nur
+methodenspezifische IDs; gleiche Farbe bedeutet nicht denselben Zelltyp.
+Clusterbildung im 37D-Raum, Projektion nur zur Darstellung.}{fig:clusterkarten}
+\fig{clusterprofile}{1}{Markerprofile der ausgewählten Lösungen für zwölf
+interpretierbare Marker. Je Spender und Cluster wird der Marker-Median
+berechnet, anschließend der Median über vertretene Spender. Danach wird
+die gespeicherte explorative z-Skala angewandt. Gemeinsame Farbskala,
+keine neue Standardisierung.}{fig:clusterprofile}
+
+Fehlende Spender-Cluster-Kombinationen werden bei Profilen nicht als
+Null-Expression imputiert. Für Clusterhäufigkeiten ist dagegen ein fehlender
+Cluster in einer Probe korrekt eine Häufigkeit null. Diese beiden Fälle
+sind fachlich verschieden. Zusätzlich werden Zellzahl, Spenderabdeckung
+und Anteil des größten beitragenden Spenders pro Cluster gespeichert.
+
+Die Silhouetten sind insgesamt niedrig: 0,0793 für K-Means, 0,0671 für
+Leiden und 0,0489 für Ward. Das unterstützt keine Behauptung perfekt
+getrennter Zelltypen. K-Means liefert die stärkste kompakte Zusammenfassung
+unter den getesteten Einstellungen; Leiden eine feinere Aufteilung mit
+biologisch plausiblen zusätzlichen Profilen.
+\source{Notebook 03, Abschnitte 3--4; \code{cluster_profiles};
+\code{task3_donor_cluster_counts.csv}, \code{task3_cluster_counts.csv}.}
+
+\clearpage
+% Seite 12
+\subsection*{Biologische Annotation: Evidenz statt Etikettensicherheit}
+Die Annotation verwendet relative Markerprofile und die biologische
+Einordnung der Ausgangsstudie\cite{horowitz}. „Kompatibel“ bezeichnet
+Plausibilität, keine durch Referenzlabels bestätigte Identität. Insbesondere
+CD117 allein definiert keine Stammzelle, CD3 mit NK-Rezeptoren allein keine
+NKT-Zelle. Die IDs gelten nur innerhalb des jeweiligen Verfahrens.
+\begin{table}[!ht]\centering\small
+\caption{Vollständige Kurzannotation der 31 ausgewählten Cluster.
+Die zugehörigen Markerwerte stehen in \code{task3_marker_profiles.csv}, die
+ausführlichen Begründungen in \code{task3_annotations.csv}.}
+\begin{tabular}{p{2.3cm}p{1cm}p{11.8cm}}\toprule
+Verfahren & ID & Einordnung und entscheidende Markerhinweise\\\midrule
+K-Means & 0 & B-kompatibel, breit: CD19/HLA-DR erhöht, mögliche Mischung\\
+ & 1 & CD4-T-kompatibel: CD3/CD4/CD127\\
+ & 2 & NK-kompatibel: CD56/CD16/CD94/NKp46; relativ niedrigeres CD3\\
+ & 3 & CD8-T-kompatibel: CD3/CD8; wenig CD56/CD16\\
+ & 4 & NK-kompatibel, KIR-reich: CD56/CD16 und 3DL1; CD3 intermediär\\
+ & 5 & Myeloid-kompatibel, breit: CD33/HLA-DR/ILT2-CD85j\\\midrule
+Ward & 0 & Gemischt, CD25-reich; zugleich CD19/CD33/HLA-DR\\
+ & 1 & Myeloid-kompatibel: CD33/HLA-DR/ILT2-CD85j\\
+ & 2 & CD4-T-kompatibel: CD3/CD4/CD127\\
+ & 3 & B-kompatibel: CD19/HLA-DR\\
+ & 4 & Unklar, NKp44-reich; kein eindeutiges NK-Gesamtprofil\\
+ & 5 & CD8-T-kompatibel: CD3/CD8\\
+ & 6 & Gemischt mit CD4-T-kompatiblem Anteil und CD19/CD33\\
+ & 7 & Myeloid-kompatibel, CD117-reich\\
+ & 8 & Gemischt: intermediäres CD3, CD57/NKp30\\
+ & 9 & T-kompatibel mit NK-Rezeptoren: CD3/CD8, CD94/NKG2A\\
+ & 10 & NK-kompatibel, NKG2A-reich: CD56/CD16/NKp46/CD94\\
+ & 11 & NK-kompatibel, KIR-reich; intermediäres CD3\\
+ & 12 & Unklar, TRAIL-reich\\
+ & 13 & NK-kompatibel, CD57-reich; weniger NKG2A als Cluster 10\\\midrule
+Leiden & 0 & Myeloid-kompatibel: CD33/HLA-DR/ILT2-CD85j\\
+ & 1 & CD4-T-kompatibel: CD3/CD4/CD127\\
+ & 2 & CD8-T-kompatibel: CD3/CD8\\
+ & 3 & B-kompatibel: deutlicheres CD19/HLA-DR als K-Means 0\\
+ & 4 & NK-kompatibel: CD56/CD16/CD94/NKp46\\
+ & 5 & Unklar: schwache CD3/CD19/CD56/CD16-Linienmarker\\
+ & 6 & T-kompatibel mit NK-Rezeptoren: CD3/CD8/CD57, CD94/NKG2A\\
+ & 7 & Myeloid-kompatibel, CD117-reich\\
+ & 8 & Gemischt, CD25-reich; intermediäres CD3/CD19/CD33\\
+ & 9 & NK-kompatibel, KIR-reich; intermediäres CD3\\
+ & 10 & Unklar, TRAIL-reich; CD3 messbar\\
+\bottomrule\end{tabular}
+\end{table}
+\finding{Auf die Frage nach dem biologisch besten Verfahren lässt sich kein
+eindeutiger Sieger belegen. K-Means gewinnt das festgelegte geometrische
+Kriterium; Leiden ist eine nützliche feinere Beschreibung. Ohne Referenzlabels,
+Coexpressionsprüfung aller Gruppen oder externe Annotation bleibt biologische
+Richtigkeit offen. Dieser Unterschied ist Teil der Antwort auf Aufgabe 3.}
+
+\clearpage
+% Seite 13
+\section{Aufgabe 4: gemeinsames Vergleichsprotokoll}\label{sec:protokoll}
+\subsection*{Äußere Tests und innere Auswahl}
+Wir übernehmen das spenderbezogene CMV-Schema des Papers: 100 Monte-Carlo-
+Splits, jeweils sieben negative und sieben positive Trainingsspender.
+Die übrigen vier negativen und zwei positiven Spender bilden den Test.
+Die gespeicherte Splitdatei enthält daher \(100\times20=2.000\) Zeilen.
+Sie ist die gemeinsame Quelle für alle drei Methoden.
+
+\begin{figure}[!ht]\centering
+\stepbox{13cm}{20 Spender: 11 CMV− und 9 CMV+\\Feste Label- und Markerzuordnung}
+\par\(\downarrow\)\par
+\stepbox{8cm}{14 äußere Trainingsspender: 7 CMV−, 7 CMV+\\Drei innere Folds zur Auswahl}
+\hfill\stepbox{6cm}{6 äußere Testspender: 4 CMV−, 2 CMV+\\Bis zur fertigen Modellauswahl ausgeschlossen}
+\par\(\downarrow\)\par
+\stepbox{8cm}{Je innerem Fold: 9 oder 10 Trainingsspender\\4 oder 5 andere Spender zur Validierung}
+\hfill\stepbox{6cm}{SVM / Citrus: finales 14-Spender-Modell\\CellCNN: ausgewähltes inneres Modell}
+\caption{Erklärendes Schema des Informationsflusses, keine zusätzliche Analyse.
+Alle Zellen eines Spenders folgen dessen Partition. Die rechte untere Box
+beschreibt, welches fertige Modell auf die äußere Testgruppe angewandt wird.}
+\label{fig:splits}
+\end{figure}
+
+Ein \code{default_rng(12345)} erzeugt für jeden Split einen uint32-Seed.
+Mit diesem Seed werden pro Klasse sieben Trainingsspender ohne Zurücklegen
+gewählt. Der Test ist exakt das Komplement. \code{StratifiedKFold(3,
+shuffle=True, random_state=split_seed)} verteilt nur die 14 äußeren
+Trainingsspender in innere Folds. Bei einem inneren Fold sind die anderen
+beiden Folds Training. Äußere Testspender haben \code{inner_fold=-1}.
+
+\textbf{Beispiel Split 0:} Der Seed ist 3.003.105.692. Jede Methode verwendet
+die identische Spenderzuordnung. Der ausgewählte CellCNN-Kandidat stammt
+aus innerem Fold 1 und ist auf neun Spendern trainiert; vier Filter werden
+behalten. Die sechs äußeren Testspender sind weder an seinem Scaler-Fit
+noch an Gewichtsoptimierung oder Kandidatenwahl beteiligt.
+
+\textbf{Keine neue unabhängige Kohorte pro Wiederholung.} Ein Spender kann
+in einem Split trainieren und in einem anderen testen. Innerhalb desselben
+Splits wird er vollständig getrennt. Wiederholte Testauftritte sind abhängig;
+600 Testvorhersagen pro Methode sind weiterhin Vorhersagen für nur 20 Personen.
+\source{Notebook 04a, Abschnitt 9; \code{task4_donor_splits.csv};
+CellCNN-Auswahl in Tabelle~\ref{tab:cnnbeispiel}.}
+
+\clearpage
+% Seite 14
+\subsection*{Welche Daten darf welcher Schritt sehen?}
+Die elementweise ArcSinh-Transformation lernt keine Parameter. Ihre
+Berechnung vor der technischen Aufteilung ist deshalb bei festem Kofaktor
+unproblematisch. Mittelwerte, Streuungen, Cluster und Regressionsparameter
+sind dagegen gelernte Größen. Für die äußere Prüfung darf keiner dieser
+Schritte die Testspender verwenden.
+
+\begin{table}[!ht]\centering\small
+\caption{Tatsächliche Datenmengen und Modellauswahl im Full-Modus.
+„Alle“ meint alle Zellen des betreffenden Spenders im Alive-Gate.}
+\begin{tabular}{p{4cm}p{3.6cm}p{3.6cm}p{3.6cm}}\toprule
+Schritt & CellCNN & Citrus & SVM\\\midrule
+Markerbasis & 37; ArcSinh, dann z & 37; ArcSinh & 37; ArcSinh, dann z\\
+Zellen für Scaler & 20.000 je innerem Trainingsspender & Kein Marker-z; Standardisierung der Häufigkeitsfeatures im Fit & 10.000 je Trainingsspender\\
+Trainingsinputs & 200 Gruppen je Spender mit je 3.000 Ziehungen & 1.000 Zellen je Spender & 10.000 Zellen je Spender\\
+Zurücklegen & Ja, innerhalb der Inputs & Nein & Nein\\
+Innere Auswahl & Beste Accuracy eines konkreten Kandidaten & Minimaler OOF-Klassifikationsfehler über Lambda & Mittlere Fold-ROC-AUC über C\\
+Finale Trainingsspender & 9 oder 10; kein Refit & 14 & 14\\
+Testauswertung & 5 Inputs à 20.000 Zellen & 1.000 gezogene Zellen & Alle\\
+Spenderentscheidung & Mittlere Wahrscheinlichkeit ≥ 0,5 & Wahrscheinlichkeit ≥ 0,5 & Topscore ≥ OOF-Schwelle\\
+\bottomrule\end{tabular}
+\end{table}
+
+\textbf{Spendergleichheit ist methodenspezifisch.} Gleiche Zellstichproben
+geben Spendern im SVM-Zellverlust gleiches Gesamtgewicht. Gleiche Inputzahlen
+bewirken dies im CellCNN-Trainingsverlust. Citrus hat eine Featurezeile je
+Spender. Bei Auswertungen liefert jeder Testspender genau einen Score.
+Zwei positive und vier negative Testspender bedeuten trotzdem nicht gleiche
+Klassenhäufigkeit; Balanced Accuracy behandelt die beiden Klassen separat.
+
+\textbf{Grenze der inneren Trennung bei Citrus.} Die originalen Funktionen
+erzeugen den gemeinsamen Lambda-Pfad aus den Features und Labels aller
+14 äußeren Trainingsspender. Die foldweisen Hierarchien und Fits verwenden
+ihre jeweiligen inneren Trainingsspender, aber das Kandidatenraster kennt
+indirekt die inneren Validierungslabels. Eine vollständig isolierte innere
+Suche wäre strenger. Diese Präzisierung betrifft den originalen
+Auswahlmechanismus; ein Zugriff auf äußere Testspender wurde dabei nicht
+gefunden (Details S.~\pageref{sec:citruslambda}).
+
+\textbf{Fortsetzen und Nachweise.} Methodenläufe speichern Vorhersagen,
+Auswahl und Modellparameter nach jedem äußeren Split. Konfigurationen
+enthalten Parameter, Versionen, Code und Eingabeprüfsummen. Abweichende oder
+unvollständige Zustände dürfen nicht als passende Checkpoints fortgesetzt
+werden. Der Bericht lädt nur die vorhandenen vollständigen Full-Ergebnisse.
+\source{\code{src/task4_artifacts.py}, \code{src/task4_artifacts.R};
+Methoden-Notebooks und Konfigurationsdateien mit Suffix \code{gated_alive_full}.}
+
+\clearpage
+% Seite 15
+\section{CellCNN: vom Zellprofil zur Spenderwahrscheinlichkeit}\label{sec:cellcnn}
+\subsection*{Architektur und Bedeutung der Tensoren}
+CellCNN betrachtet eine Probe als ungeordnete Menge. Derselbe lineare
+Filter wird auf jede Zelle angewandt, unabhängig von ihrer Position.
+Es gibt keine Nachbarschaft zwischen aufeinanderfolgenden FCS-Zeilen,
+die wie ein Bildpixelmuster gefaltet werden müsste. \code{nn.Linear}
+implementiert hier den relevanten gemeinsamen Filteroperator.
+
+Ein Batch enthält \(B\) Multi-Cell-Inputs mit je \(n\) Zellen und \(m=37\)
+Markern. Der Tensor hat Form \(B\times n\times37\). Bei \(K\) Filtern
+entstehen \(B\times n\times K\) Antworten. Für standardisierte Zelle
+\(z_i\) berechnet Filter \(k\)
+\[
+ a_{ik}=b_k+\sum_{j=1}^{37}W_{kj}z_{ij},\qquad
+ r_{ik}=\max(0,a_{ik}).
+\]
+\(W\) sind Gewichte, \(b\) Biases. ReLU setzt negative lineare Antworten
+auf null. Ein großer positiver Wert bedeutet gute Übereinstimmung mit
+\emph{diesem gelernten linearen Muster}, nicht automatisch hohe Expression
+aller Marker oder eine positive CMV-Klasse.
+
+\begin{figure}[!ht]\centering
+\stepbox{14cm}{Input: \(B\times3.000\times37\) standardisierte Markerwerte}
+\par\(\downarrow\)\par
+\stepbox{14cm}{Gemeinsame lineare Filter und ReLU: \(B\times3.000\times K\)}
+\par\(\downarrow\)\par
+\stepbox{14cm}{Je Filter Mittel der 30 höchsten Antworten: \(B\times K\)}
+\par\(\downarrow\)\par
+\stepbox{14cm}{Lineare Ausgabe: \(B\times2\) Logits; Softmax liefert zwei Wahrscheinlichkeiten}
+\caption{Erklärendes Architekturschema für Trainingsinputs. Im Full-Modus
+ist \(B\le128\), \(K\in\{3,4,5\}\). Bei Testinputs mit 20.000 Zellen
+werden 200 Antworten je Filter gepoolt.}\label{fig:cnn}
+\end{figure}
+
+Die Zahl \(K\) ist klein: Zusammen einschließlich beider Biasvektoren hat
+das Netz \(37K+K+2K+2=40K+2\) Parameter, also 122, 162 oder 202.
+Es gibt keine zusätzliche versteckte Schicht und kein Dropout.
+
+Permutation der Zellen ändert den Vorwärtsscore mathematisch nicht:
+Filter arbeiten zeilenweise, Top-k-Pooling ignoriert die Reihenfolge.
+Distanzkarten aus Aufgabe 2 werden dem Netz nicht zugeführt. Das Netz
+sieht die 37 Marker direkt und lernt die Zellrepräsentation über den
+Spenderverlust. Diese Eigenschaft begründet den Vergleich mit einer
+separaten unüberwachten Clusterbildung.
+\source{Notebook 04c, Abschnitt 3, Klasse \code{CellCNN}; Parameterexport
+in \code{task4_cellcnn_filters_gated_alive_full.csv}.}
+
+\clearpage
+% Seite 16
+\subsection*{Trainings-Scaler und Erzeugung der Multi-Cell-Inputs}
+Für jeden Kandidaten werden ausschließlich dessen neun oder zehn innere
+Trainingsspender verwendet, um den Scaler zu fitten. Aus jedem werden
+20.000 Zellen ohne Zurücklegen gezogen. Die verkettete Matrix hat somit
+180.000 oder 200.000 Zeilen und 37 Spalten. \(\mu_j\) und \(\sigma_j\)
+werden aus dieser Matrix berechnet und unverändert auf Training,
+Validierung und später Test angewandt. Ein neuer Scaler für jeden
+Testspender würde das gelernte Koordinatensystem verändern und ist nicht
+Teil der Methode.
+
+Dann erzeugt jeder Trainingsspender 200 Inputs mit je 3.000 Zellziehungen
+\emph{mit Zurücklegen}. Ein Kandidat erhält damit 1.800 oder 2.000
+Trainingsinputs. Innerhalb eines Inputs dürfen dieselben Originalzellen
+mehrfach vorkommen; zwischen Inputs ebenso. Die 200 Inputs sind zusätzliche
+Trainingsbeispiele, aber keine 200 unabhängigen Menschen.
+
+\textbf{Warum große zufällige Zellmengen?} Ein Input soll mit ausreichender
+Wahrscheinlichkeit Zellen einer seltenen Population enthalten. Für einen
+hypothetischen Anteil \(p\) beträgt bei unabhängigen Ziehungen mit Zurücklegen
+die Wahrscheinlichkeit mindestens einer solchen Zelle
+\[
+ P(\text{mindestens eine})=1-(1-p)^{3000}.
+\]
+Für \(p=0{,}001\) ergibt das ungefähr 95,0\%, für \(p=0{,}0001\) etwa
+25,9\%. Dies ist eine illustrative Samplingrechnung, keine Schätzung des
+wahren CMV-Subsets in unseren Daten. Sie zeigt auch, weshalb 3.000 Zellen
+nicht jede beliebig seltene Population zuverlässig erfassen.
+
+Die vier oder fünf Validierungsspender liefern ebenfalls je 200 feste
+3.000-Zell-Inputs, also 800 oder 1.000 Beispiele für den Validierungsverlust.
+Sie werden mit dem Trainings-Scaler transformiert. Ihre Zellen werden
+nicht zum Gradientenupdate verwendet.
+
+\textbf{Feste Inputs, wechselnde Batchreihenfolge.} Die Funktion
+\code{materialize_multicell_inputs} erzeugt sämtliche Inputs einmal je
+Kandidat und hält sie als Tensoren auf dem Rechengerät. Die Zellen werden
+nicht in jeder Epoche neu gezogen. Der Trainings-DataLoader mischt die
+Reihenfolge dieser festen Inputs; Validierungsinputs bleiben in fester
+Reihenfolge. Batchgröße ist 128; der letzte Batch darf kleiner sein.
+
+\textbf{Seed-Kette.} Für äußeren Seed \(s\), inneren Fold \(f\) und
+Filterzahl \(K\) lautet der Kandidatenseed \(s+10.000f+100K\).
+Er steuert Gewichtsinitialisierung und Scaler-Sampling. Trainingsinputs
+beginnen mit Offset 1.000, Validierungsinputs mit 2.000; jeder Input addiert
+seine laufende Indexposition. Die Konstruktion sortiert Spender-IDs.
+Da der Kandidatenseed auch \(K\) enthält, unterscheiden sich zwischen
+Filterzahlen nicht nur Gewichte, sondern auch zufällige Stichproben.
+
+Python-Modelldaten werden zuerst nach Float32 konvertiert, danach wird
+ArcSinh berechnet. Diese Reihenfolge ist in der späteren Modellrekonstruktion
+beizubehalten; Float64-ArcSinh mit anschließendem Cast ist nicht bitgleich.
+\source{\code{fit_balanced_scaler}, \code{scale_donors},
+\code{materialize_multicell_inputs}, \code{train_candidate}.}
+
+\clearpage
+% Seite 17
+\subsection*{Pooling, Ausgabe und Optimierung}
+Für Filter \(k\) seien die Antworten eines Inputs absteigend sortiert.
+Die Implementierung definiert
+\[
+ q(n)=\max\{1,\lfloor0{,}01n\rfloor\},\qquad
+ h_k=\frac1{q(n)}\sum_{\ell=1}^{q(n)}r_{(\ell)k}.
+\]
+Es wird \emph{abgerundet}: bei 3.000 Zellen sind es 30, bei 20.000 sind
+es 200. Verschiedene Filter dürfen verschiedene Zellen auswählen. Auch
+Nullantworten können in die Top-k-Menge gelangen, falls zu wenige positive
+Antworten vorhanden sind. Pooling misst eine gewichtete Reaktionsstärke;
+es ist weder eine direkt gezählte Zellhäufigkeit noch ein harter Zelltypanteil.
+
+Die Ausgabeschicht bildet aus \(h\) zwei Logits:
+\[
+ \ell_c=d_c+\sum_k V_{ck}h_k,\qquad
+ P(c\mid X)=\frac{e^{\ell_c}}{e^{\ell_0}+e^{\ell_1}}.
+\]
+Für CMV+ ist die Differenz \(\ell_1-\ell_0\) entscheidend. Daher hat
+Filter \(k\) die Richtung \(\Delta V_k=V_{1k}-V_{0k}\). Erst dieser
+Kontrast bestimmt, ob mehr Filterantwort das Netz in Richtung CMV+ oder
+CMV− bewegt.
+
+Die Verlustfunktion pro Batch ist
+\[
+ L=-\frac1B\sum_{b=1}^B\log P(y_b\mid X_b)
+   +10^{-4}\left(\sum_{kj}W_{kj}^2+\sum_{ck}V_{ck}^2\right).
+\]
+Beide Gewichtsmatrizen werden L2-bestraft, \emph{beide Biasvektoren nicht}.
+Die Strafe wird explizit addiert, nicht als AdamW-Gewichtszerfall umgesetzt.
+\code{cross_entropy} erhält Logits und berechnet die nötige Normalisierung
+intern; vor dem Verlust wird kein zusätzliches Softmax angewandt.
+
+Adam aktualisiert nach \code{zero_grad}, Vorwärtsrechnung,
+\code{backward} und \code{step} alle Netzparameter. Lernrate ist 0,01;
+die unveränderten PyTorch-Adam-Defaults sind \(\beta_1=0{,}9\),
+\(\beta_2=0{,}999\), \(\epsilon=10^{-8}\), ohne Weight Decay.
+\code{nn.Linear} verwendet seine Standardinitialisierung nach dem
+Kandidatenseed, keine aus dem alten Keras-Netz importierten Gewichte.
+
+\textbf{Early Stopping.} Nach jeder Epoche wird ohne Gradienten der
+regularisierte Verlust aller festen Validierungsinputs berechnet.
+Batchverluste werden nach ihrer Beispielzahl gewichtet. Ein Zustand wird
+nur gespeichert, wenn der Verlust um mehr als \(10^{-6}\) sinkt.
+Nach fünf Epochen ohne solche Verbesserung stoppt der Kandidat, spätestens
+nach 100 Epochen. Anschließend wird der beste gespeicherte Zustand geladen,
+nicht einfach der letzte.
+
+\finding{Der historische Trainingsverlust ist ein ungewichtetes Mittel der
+Batchmittel, der Validierungsverlust hingegen beispielgewichtet. Der
+Trainingsmittelwert steuert den Stopp nicht. Epochenkurven werden nicht
+nachträglich erfunden: Die vollständige Historie wird vom Training erzeugt,
+aber nicht in den dauerhaften CSV-Artefakten exportiert.}
+\source{\code{regularized_loss}, \code{evaluate_loader}, \code{train_candidate};
+PyTorch-Quellcode der installierten Version für Optimiererdefaults.}
+
+\clearpage
+% Seite 18
+\subsection*{Neun Kandidaten, eine explizite Auswahlregel}
+Je äußerem Split werden drei Filterzahlen in drei inneren Folds trainiert.
+Das ergibt neun Kandidaten und insgesamt 900 Fits im vorhandenen
+Full-Benchmark. Es wird nicht zuerst die mittlere Leistung einer Filterzahl
+über die Folds ermittelt. Stattdessen konkurrieren neun konkrete Netze,
+die auf unterschiedlichen Trainings-/Validierungsmengen entstanden sind.
+
+Für die Kandidatenbewertung liefert jeder innere Validierungsspender eine
+Wahrscheinlichkeit: fünf zufällige Inputs mit bis zu 20.000 Zellen,
+Vorwärtsrechnung, dann Mittelwert. Daraus werden Accuracy bei Schwelle 0,5
+und ROC-AUC auf \emph{Spenderebene} berechnet. Das ist eine andere Bewertung
+als der Verlust der 3.000-Zell-Inputs, der Early Stopping steuert.
+
+Die deterministische Sortierung verwendet der Reihe nach:
+\begin{enumerate}
+\item höchste Validierungs-Accuracy;
+\item bei Gleichstand höchste Validierungs-ROC-AUC;
+\item danach kleinster bester Validierungsverlust;
+\item danach weniger Filter;
+\item zuletzt kleinere innere Foldnummer.
+\end{enumerate}
+\tab{cellcnn_split0}{Tatsächliche neun Kandidaten für äußeren Split 0.
+Accuracy und AUC beziehen sich auf vier bzw. fünf Validierungsspender.
+„Epochen“ ist die Zahl durchlaufener Epochen, nicht die beste Epoche.}{tab:cnnbeispiel}{}
+
+Der Kandidat mit Fold 1 und vier Filtern gewinnt mit Accuracy 0,8. Der
+Kandidat mit Fold 2 und fünf Filtern erreicht zwar AUC 1,0, aber nur
+Accuracy 0,75 und wird nicht gewählt. Diese Tabelle macht prüfbar,
+welches Auswahlziel tatsächlich Priorität hat. Primäre \emph{äußere}
+Berichtsmetrik ROC-AUC und primäres \emph{inneres} CellCNN-Auswahlkriterium
+Accuracy sind unterschiedliche Entscheidungen.
+
+\tab{cellcnn_auswahl}{Verteilung der 100 ausgewählten Netze nach Filterzahl
+und innerem Fold. Quelle: alle 900 Kandidatenzeilen, Auswahlflag und
+Sortierschlüssel unabhängig abgeglichen.}{tab:cnnauswahl}{}
+
+\finding{Die ausgewählten Netze haben zusammen \CellcnnFilters{} Filter.
+Sie wurden im Median \CnnEpochMedian{} Epochen trainiert; \CnnMaxEpochs{}
+erreichen die Grenze von 100. Das sagt nichts über die Lage der besten
+Epoche aus. Die häufigere Auswahl eines Folds oder einer Filterzahl ist
+keine unabhängige biologische Bestätigung.}
+\source{\code{train_outer_split}; \code{task4_cellcnn_selection_gated_alive_full.csv}.}
+
+\clearpage
+% Seite 19
+\subsection*{Endgültige Vorhersage und gespeichertes Modell}
+Nach der Auswahl wird das Netz \textbf{nicht auf 14 Spendern neu trainiert}.
+Es behält seinen besten Zustand und den Scaler der neun oder zehn inneren
+Trainingsspender. Dies orientiert sich am im Paper beschriebenen NK-
+Auswahlschema. Die übrigen inneren Validierungsspender haben Auswahl und
+Stopp beeinflusst, aber nicht seine Gradienten oder seinen Scaler-Fit.
+
+Für einen äußeren Testspender \(d\) werden fünf Inputs \(X_d^{(1)},\dots,
+X_d^{(5)}\) gezogen. Jeder enthält \(\min(20.000,N_d)\) Zellen ohne
+Zurücklegen. Zwischen den fünf Inputs können Zellen mehrfach vorkommen.
+Es gibt keine gemeinsame feste Partition in fünf disjunkte Mengen.
+Die Vorhersage lautet
+\[
+ \widehat p_d=\frac15\sum_{b=1}^5P(1\mid X_d^{(b)}),\qquad
+ \widehat y_d=\mathbf1\{\widehat p_d\ge0{,}5\}.
+\]
+Dies ist der Mittelwert der Wahrscheinlichkeiten, nicht das Softmax eines
+mittleren Logits. Beispiel: Die fünf illustrativen Werte 0,4; 0,6; 0,7;
+0,8; 0,9 ergeben \(\widehat p_d=0{,}68\) und Klasse 1.
+
+Der Zufallsgenerator wird mit \(s+900.000+i\) initialisiert, wobei \(s\)
+der äußere Splitseed und \(i\) die Position des Spenders in der sortierten
+Testliste ist. Fünf aufeinanderfolgende Ziehungen mit demselben Generator
+machen den Samplingablauf rekonstruierbar. Bei der inneren Kandidatenbewertung
+lautet der entsprechende Offset zum Kandidatenseed 50.000.
+
+\begin{table}[!ht]\centering\small
+\caption{Welche Parameter den ausgewählten CellCNN vollständig beschreiben.}
+\begin{tabular}{p{5cm}p{10cm}}\toprule
+Exportinhalt & Bedeutung für die Wiederverwendung\\\midrule
+Filtergewicht pro Marker & Matrix \(W\), gleiche Markerreihenfolge wie beim Fit\\
+Filterbias & Vektor \(b\), je Filter in den Markerzeilen wiederholt\\
+Beide Ausgabegewichte & \(V_{0k}\), \(V_{1k}\); ihr Kontrast bestimmt die Richtung\\
+Beide Ausgabebiases & \(d_0,d_1\); notwendig für vollständige Wahrscheinlichkeiten\\
+Scaler-Mittel und -Skala & \(\mu_j,\sigma_j\) des ausgewählten Kandidaten\\
+Fold, Seed, Gate, Gerät & Zuordnung zu Trainingsspendern und Rechenbedingungen\\
+Poolinganteil und Kofaktor & Rechenregeln für Antwortaggregation und Transformation\\
+\bottomrule\end{tabular}
+\end{table}
+
+CSV-Dateien werden für die Rekonstruktion mit
+\code{float_precision="round_trip"} gelesen. Aufgabe 5 stellt einen
+\code{StandardScaler} wieder her, statt dessen Transformationsarithmetik
+durch eine vermeintlich äquivalente Formel mit anderer Gleitkommagenauigkeit
+zu ersetzen. Auch das verwendete Rechengerät wird dokumentiert: Der
+vorhandene vollständige CellCNN-Lauf verwendete CUDA.
+
+Die gespeicherten Aufgabe-5-Checks enthalten 600 rekonstruierte
+Spenderwahrscheinlichkeiten für CellCNN und zugehörige Logitidentitäten.
+Ihre aktuelle Dateiidentität ist geprüft; für diesen Bericht werden
+nicht nochmals 100 Netze trainiert oder alle Inferenzläufe wiederholt.
+\source{\code{predict_donor}; Export in \code{train_outer_split};
+\code{SavedCellCNN} und \code{restore_scaler} in Aufgabe 5.}
+
+\clearpage
+% Seite 20
+\subsection*{Paper-Nähe, Referenznotebooks und bewusst andere Entscheidungen}
+Die beiden offiziellen Notebooks wurden beim Bericht lesend geprüft.
+Das NK-Beispiel verwendet \code{ncell=200,nsubset=1000}; das Alive-Beispiel
+\code{ncell=3000,nsubset=1000,maxpool_percentages=[0.5,1]}.
+Beide demonstrieren einen einzelnen zufälligen äußeren Split mit einer
+weiteren festen inneren Teilung und rufen die historische Bibliothek auf.
+Sie sind daher nicht identisch mit dem 100-Split-Protokoll des Papers.
+
+\begin{table}[!ht]\centering\small
+\caption{Abgleich des Projekts mit dem CMV-Protokoll des Papers bzw. der
+Referenzimplementierung. Unterschiede sind keine stillschweigenden Gleichsetzungen.}
+\begin{tabular}{p{3.5cm}p{5.5cm}p{6cm}}\toprule
+Aspekt & Bezug & Umsetzung und Bedeutung\\\midrule
+Äußere Auswertung & Paper: 100 Splits, 7+7 Training & Übernommen; identische Splits für alle Methoden\\
+Innere Auswahl & Paper: 3 Folds, Zufallssuche & 3 Folds, festes Raster von 3/4/5 Filtern; kleinere Suche\\
+Inputs & Paper: 3.000 Zellen, 200 Inputs je Probe & Übernommen; feste materialisierte Inputs je Kandidat\\
+Pooling & Paper: Mittel der höchsten 1\% & Übernommen mit genauer Abrundungsregel\\
+Optimierung & Paper: Lernrate 0,01, kein Dropout & Übernommen; aktuelle PyTorch-Initialisierung/Adam statt altem Framework\\
+Skalierung & Gelernte Trainingsnormalisierung & Gleich viele Scaler-Zellen je Trainingsspender; andere Stichproben als Legacy-Code\\
+Kandidatenbewertung & Höchste Validierungsgenauigkeit & Spenderweise Mittelung; zusätzliche festgelegte Tie-Breaker\\
+Finales Netz & Paper: bestes Netz aus inneren Läufen & Kein Refit auf allen äußeren Trainingsspendern\\
+Testinputs & Paper: ein Input mit 20.000 Zellen & Fünf Inputs; geringere Samplingstreuung beabsichtigt, nicht separat als Verbesserung nachgewiesen\\
+Interpretation & Paper: Halbmaximum-Subsets und Gruppen ihrer Zentroiden & Trainingsgebundene Halbmaxima, OOF-Zellhäufigkeiten; keine Zentroidgruppenreplikation\\
+Markerzahl & Papertext 36, Beispiele 37 & Alle 37 gelieferten Marker\\
+\bottomrule\end{tabular}
+\end{table}
+
+\textbf{Was ist damit reproduziert?} Wir bilden den biologischen
+Problemtyp, die zentrale Architektur und das spenderbezogene CMV-
+Evaluationsschema nach. Wir behaupten keine numerisch exakte Replikation
+aller Paperresultate, keine Reproduktion der alten Zufallssuche und keine
+identische Interpretation der wiederkehrenden Zellpopulationen.
+
+\textbf{Was fehlt für stärkere Aussagen?} Eine isolierte Untersuchung des
+Nutzens der fünf Testinputs, ein Vergleich mit einem Refit auf 14 Spendern
+oder eine systematische Ablation der Filterantwort sind nicht vorhanden.
+Diese Änderungen würden neue, ausdrücklich getrennte Experimente erfordern.
+Die optionale Aufgabe 6 wurde bislang nicht ausgeführt.
+\source{Paper, S. 8, „NK-cell benchmark data set“; offizielle Beispiele
+\cite{cellcnncode}; \code{task4_cellcnn_predictions_gated_alive_full.config.json}.}
+
+\clearpage
+% Seite 21
+\section{Citrus: Hierarchie, Häufigkeiten und Regression}\label{sec:citrus}
+\subsection*{Originalimplementation und Zellraum}
+Citrus\cite{citrus} wird in einer separaten R-Umgebung verwendet, nicht als
+vereinfachte Python-Ersatzmethode. Fixiert sind Citrus 0.8, Commit
+\code{d02baae544abdc403704aaceb75d1e7931a0331c}, und Rclusterpp,
+Commit \code{a07380683ce7a6849af8ec27db6439ea3a707890}.
+Die Funktionen und Defaults der installierten Pakete wurden für diesen
+Bericht lesend kontrolliert\cite{citruscode}.
+
+Pro Spender zieht Citrus 1.000 Zellen ohne Zurücklegen, nach der
+festen Reihenfolge der sortierten Dateiliste. Der äußere Trainingsbaum
+umfasst 14.000 Zellen. Marker werden mit ArcSinh und Kofaktor 5
+transformiert; \textbf{kein zusätzliches Marker-z-Scoring} wird vor dem
+Clustering angewandt. Dies unterscheidet Citrus von Aufgabe 3, deren Ward-
+Clustering auf der standardisierten explorativen Stichprobe arbeitet.
+
+\code{citrus.cluster.hierarchical} ruft \code{Rclusterpp.hclust} auf.
+Dessen hier geprüfte Defaults sind Ward-Linkage und euklidische Distanz.
+Die Cluster sind Knoten einer Hierarchie: Eltern enthalten die Zellen ihrer
+Kinder. Sie sind keine einzige disjunkte Partition mit festgelegter
+Clusterzahl. Eine Zelle kann mehreren berücksichtigten Knoten angehören.
+
+\begin{figure}[!ht]\centering
+\stepbox{14cm}{14 Trainingsspender × 1.000 Zellen; 37 ArcSinh-Marker}
+\par\(\downarrow\)\par
+\stepbox{14cm}{Ward-Hierarchie; Knoten mit mindestens 5\% der Trainingszellen}
+\par\(\downarrow\)\par
+\stepbox{14cm}{Pro Spender eine Zeile: relative Häufigkeit jedes zulässigen Knotens}
+\par\(\downarrow\)\par
+\stepbox{14cm}{L1-logistische Regression; ausgewählte Clusterkoeffizienten}
+\caption{Erklärendes Citrus-Schema. Die entsprechende Hierarchie wird auch
+innerhalb jedes inneren Folds nur aus dessen Trainingsspendern aufgebaut.
+Überlappende Cluster sind ausdrücklich Teil der Repräsentation.}\label{fig:citrus}
+\end{figure}
+
+\code{minimumClusterSizePercent=0.05} bedeutet einen Anteil von 5\%,
+nicht 0,05\%. Im äußeren Baum entspricht das mindestens 700 Zellen;
+bei 9.000 bzw. 10.000 inneren Trainingszellen sind es 450 bzw. 500.
+Ein seltenes Subset unterhalb dieser Grenze kann keinen so kleinen
+eigenständigen Cluster als Merkmal liefern, möglicherweise aber größere
+Clusterhäufigkeiten verändern. Die Grenze ist daher eine plausible
+Sensitivitätsbeschränkung, kein Beweis einer zwangsläufigen Fehlklassifikation.
+\source{Notebook 04d, \code{read_citrus_files}, \code{build_fixed_fold_clustering};
+\code{citrus.cluster.hierarchical}, Defaults von \code{Rclusterpp.hclust}.}
+
+\clearpage
+% Seite 22
+\subsection*{Von der Hierarchie zu einer Spender-Featurematrix}
+Für Cluster \(k\) mit Zellmenge \(C_k\) und die gezogenen Zellen
+\(I_d\) eines Spenders ist das Häufigkeitsmerkmal
+\[
+ F_{dk}=\frac{|I_d\cap C_k|}{|I_d|}.
+\]
+Im finalen Training ist \(|I_d|=1.000\). Ein Beispielcluster mit
+120 Zellen eines Spenders liefert somit \(F_{dk}=0{,}12\), nicht 12.
+Das R-Paket verwendet Anteile zwischen null und eins. Fehlende
+Mitgliedschaft ergibt null. Weil die Cluster überlappen, müssen ihre
+Spaltenwerte pro Spender nicht zu eins summieren.
+
+Die Featurematrix hat 14 Zeilen und eine vom Trainingsbaum abhängige
+Spaltenzahl. Die Labels gehören in derselben Reihenfolge zu diesen
+Spenderzeilen. Der Faktor hat die Klassenreihenfolge \code{CMV-},
+\code{CMV+}; die ausgegebene positive Wahrscheinlichkeit ist CMV+.
+
+\textbf{Logistischer Prädiktor.} Auf Häufigkeitsmerkmalen lautet das Modell
+\[
+ \eta_d=\beta_0+\sum_k\beta_kF_{dk},\qquad
+ p_d=\operatorname{sigmoid}(\eta_d)=\frac1{1+e^{-\eta_d}}.
+\]
+Eine positive \(\beta_k\) erhöht bei sonst gleichen Features den Logit,
+eine negative senkt ihn. Die Hierarchie erzeugt jedoch korrelierte,
+überlappende Merkmale. Ein einzelner Koeffizient ist daher nicht die
+unabhängige kausale Wirkung eines Zelltyps.
+
+Mit \code{glmnet}, binomialer Familie und \(\alpha=1\) wird sinngemäß
+\[
+ \min_{\beta_0,\beta}\left\{-\frac1D\sum_{d=1}^D
+ [y_d\log p_d+(1-y_d)\log(1-p_d)]
+ +\lambda\sum_k|\widetilde\beta_k|\right\}
+\]
+optimiert. Die Tilde erinnert daran, dass die Regularisierung auf intern
+standardisierten Features wirkt. \code{standardize=TRUE} zentriert und
+skaliert die \emph{Clusterhäufigkeiten} im jeweiligen Trainingsfit;
+der Intercept wird nicht penalisiert. Die exportierten Koeffizienten
+werden von glmnet wieder auf die ursprüngliche Feature-Skala zurückgegeben.
+Sie können deshalb später direkt mit den unstandardisierten Häufigkeiten
+multipliziert werden\cite{glmnet}.
+
+\textbf{Was bewirkt L1?} Bei größerem \(\lambda\) wird eine sparsamere
+Lösung bevorzugt; viele Koeffizienten werden exakt null. Das liefert die
+Auswahl der mit dem Label verbundenen Cluster. Die Größe des Rasters
+soll nicht mit der Zahl unabhängiger Beobachtungen verwechselt werden:
+Auch Hunderte Features werden aus lediglich 14 Spenderzeilen geschätzt.
+
+Zusätzlich exportiert das Notebook für jeden wirksamen Cluster den
+\emph{arithmetischen Mittelwert} jedes transformierten Markers über dessen
+Trainingszellen. Dieser Zentroid ist eine Beschreibung des ausgewählten
+Knotens. Er ist weder ein trainierter Markerkoeffizient noch identisch mit
+den spendergewichteten Medianprofilen aus Aufgabe 5.
+\source{\code{citrus.calculateFileClusterAbundance},
+\code{citrus.buildModel.classification}, \code{extract_selected_cluster_profiles}.}
+
+\clearpage
+% Seite 23
+\subsection*{Innere Auswahl und der gemeinsame Lambda-Pfad}\label{sec:citruslambda}
+Die öffentliche Citrus-Funktion zur Foldbildung würde eigene zufällige
+Folds erzeugen. Deshalb baut das Notebook das benötigte
+\code{citrus.foldClustering}-Objekt mit den bereits gespeicherten
+Spenderfolds auf. Dazu werden originale Funktionen zum Fold-Clustering
+und Mapping verwendet. Clustering, Häufigkeitsberechnung und Regression
+selbst werden nicht durch neue Verfahren ersetzt.
+
+Für jeden der drei inneren Folds entstehen ein Baum aus den neun oder zehn
+Trainingsspendern, Features dieser Trainingsspender und gemappte Features
+der vier oder fünf Validierungsspender. Die Validierungszellen werden in
+die feste Trainingshierarchie eingeordnet. Ihre Marker werden nicht für
+den inneren Baumfit verwendet. Spalten sind foldinterne Cluster; dieselbe
+numerische Cluster-ID in verschiedenen Bäumen hat keine gemeinsame Identität.
+
+\textbf{Regulierung auswählen.} Die Originalfunktion
+\code{citrus.endpointRegress} erzeugt zunächst einen absteigenden
+Lambda-Pfad aus \code{allFeatures} und den Labels aller 14 äußeren
+Trainingsspender. \code{nlambda=100} ist die angeforderte Pfadlänge,
+nicht zwingend die Anzahl tatsächlich zurückgelieferter Lambda-Werte.
+An denselben Lambda-Werten werden die inneren Fits bewertet. Die
+OOF-Klassifikationsfehler der 14 Spender werden zusammengeführt.
+Gewählt wird \code{cv.min}: minimale Fehlerrate, bei Gleichstand der
+erste Eintrag im absteigenden Pfad, also stärkere Regularisierung.
+Die zusätzlich berechnete 1-SE-Alternative wird nicht verwendet.
+
+\finding{Das Lambda-Raster ist datenabhängig und sieht alle 14 äußeren
+Trainingslabels. Damit ist es nicht unabhängig von den inneren
+Validierungsspendern. Dies ist im Originalpaket so implementiert und
+wird hier übernommen. Der Satz „jede datenabhängige Entscheidung wird nur
+auf inneren Trainingsspendern gefittet“ wäre für Citrus zu weitgehend.
+Die sechs äußeren Testspender bleiben weiterhin ausgeschlossen; die
+berichtete äußere Leistung bewertet genau dieses Auswahlverfahren.}
+
+Das endgültige Regressionsmodell wird auf den Häufigkeitsfeatures des
+14-Spender-Baums trainiert. Technisch berechnet das Paket den finalen
+Regularisierungspfad bereits während \code{endpointRegress}; die innere
+CV bestimmt anschließend, welcher Punkt dieses Pfads für Vorhersagen
+verwendet wird. „Nach Auswahl refitten“ beschreibt daher die statistische
+Rolle, nicht exakt die Reihenfolge jedes internen Funktionsaufrufs.
+
+Der auf R abgebildete Seed ist
+\(s_R=s\bmod(2^{31}-1)\). Die Modulo-Abbildung verändert weder die
+Spenderzuordnung noch die gemeinsamen Folds. Sie passt den uint32-Seed
+an Rs ganzzahligen Wertebereich an. Training verwendet \(s_R\),
+das äußere Testsampling \(s_R+1\).
+
+\textbf{Nachweisgrenze.} Die finalen CSVs speichern das gewählte Lambda,
+Clusterzahl und Vorhersagen, aber nicht sämtliche inneren
+Lambda-Fehlerraten. Deren vollständige historische Auswahl lässt sich
+allein aus diesen CSVs nicht neu nachrechnen. Ältere gezielte Prüfungen
+existieren; der Bericht trainiert dafür keine neuen Citrus-Modelle.
+\source{Jetzt lesend geprüft: \code{citrus.endpointRegress},
+\code{citrus.generateRegularizationThresholds.classification},
+\code{citrus.getCVMinima}; Notebook 04d, Abschnitt 4.}
+
+\clearpage
+% Seite 24
+\subsection*{Neue Spender zuordnen und Nullmodelle verstehen}
+Jeder äußere Testspender liefert 1.000 neue gezogene Zellen. Für jede
+Testzelle wird eine nächste Zelle des festen Trainingsdatensatzes in den
+37 ArcSinh-Markern gesucht. Die Testzelle übernimmt deren Mitgliedschaften
+in der Hierarchie. Es wird weder ein Baum mit Testzellen ergänzt noch
+lediglich der nächste Clusterzentroid gewählt. Die resultierenden
+Häufigkeiten werden in exakt derselben Spaltenreihenfolge wie die
+Trainingsfeatures an die finale Regression übergeben.
+
+\textbf{Illustratives Mapping.} Eine nächste Trainingszelle gehört zum
+Elternknoten A und dessen Kind B. Dann erhöht die Testzelle beide
+Zählungen. Bei \(\beta_A=2\) und \(\beta_B=-3\) beträgt ihr addierter
+Zellbeitrag \(-1\). Das Beispiel erklärt, warum „liegt in einem positiven
+Cluster“ bei überlappenden Gruppen nicht für eine positive Nettorichtung
+ausreicht.
+
+Vor dem Export werden die Testwahrscheinlichkeiten auf 15 Nachkommastellen
+gerundet. Wirksame Cluster werden konsistent durch
+\(|\beta_k|>10^{-10}\) definiert. Die Toleranz betrifft Zählung und
+Interpretation; sie ist von der Rundung der Wahrscheinlichkeiten zu
+unterscheiden. Werte in der Größenordnung \(10^{-15}\) werden nicht als
+biologisch relevante Clusterkoeffizienten ausgegeben.
+\fig{modellauswahl}{1}{Vorhandene Modellauswahl im Hauptlauf. Links
+Epochenzahlen aller 900 CellCNN-Kandidaten und der 100 ausgewählten Netze;
+keine Lernkurven. Rechts Zahl wirksamer Citrus-Cluster pro äußerem Split
+nach \(|\beta|>10^{-10}\). Die 15 Nullmodelle bleiben Teil des Vergleichs.}{fig:auswahl}
+
+In 15 Splits sind keine wirksamen Cluster vorhanden. Bei sieben positiven
+und sieben negativen Trainingsspendern liefert das reine Interceptmodell
+\(p=0{,}5\). Mit der Regel \(p\ge0{,}5\) werden alle Testspender positiv
+klassifiziert. Dann sind Sensitivität 1, Spezifität 0, Balanced Accuracy
+0,5 und ROC-AUC 0,5. Dies ist eine gültige, aber uninformative Modelllösung.
+Die Nullmodelle werden weder im Leistungsbericht noch aus den Nennern
+von Aufgabe 5 entfernt.
+
+\finding{Schwächere Citrus-Ergebnisse unter diesen Einstellungen beweisen
+nicht, dass Citrus grundsätzlich ungeeignet ist. 1.000 Zellen je Spender,
+5\%-Mindestclustergröße, hoch korrelierte Cluster und kleine innere Folds
+beschränken die konkrete Analyse. Deren getrennte Effekte wurden nicht
+systematisch abgetragen.}
+\source{\code{run_citrus_split}, \code{citrus.mapToClusterSpace};
+\code{task4_citrus_selection_gated_alive_full.csv}; \code{src/task4_artifacts.R}.}
+
+\clearpage
+% Seite 25
+\section{Lineare Single-Cell-SVM im Detail}\label{sec:svm}
+\subsection*{Die Modellannahme und der Zellverlust}
+Jede Trainingszelle erhält das binäre Label ihres Spenders. Das ist eine
+\emph{schwache Beschriftung}: Nicht jede Zelle eines CMV+-Spenders muss
+selbst eine krankheitsassoziierte Zelle sein. Die SVM erhält aber keine
+feineren Trainingslabels. Diese Annahme stammt aus der Zellbaseline des
+Papers; unsere spenderweise Aggregation wird zusätzlich festgelegt.
+
+Pro innerem Trainingsspender werden 10.000 Alive-Zellen ohne Zurücklegen
+gezogen. Bei neun oder zehn Spendern sind es 90.000 bzw. 100.000
+Trainingszeilen. Ein \code{StandardScaler} wird auf genau dieser
+verketteten Stichprobe gefittet. ArcSinh wurde bereits auf Float32-
+Markerwerten berechnet. Validierungszellen verwenden unveränderte
+Trainingsmittel und -skalen. Alle drei C-Werte erhalten für denselben
+Fold dieselbe Zellstichprobe und denselben Scaler.
+
+Das Zellmodell lautet
+\[
+ g(z_i)=w^\top z_i+b.
+\]
+Positive Margen sprechen in der binären Klassenrichtung zunächst für
+CMV+. Die Parameter sind Gewichte der \emph{standardisierten} Marker,
+nicht direkt der Rohintensitäten. Ein einzelnes Gewicht lässt sich daher
+nicht unabhängig von Transformation, Skala und anderen Markern biologisch
+als Relevanzgröße lesen.
+
+\code{LinearSVC} verwendet L2-Regularisierung und Squared-Hinge-Verlust.
+Mit \(t_i=2y_i-1\in\{-1,+1\}\) und Intercept-Skalierung 1 entspricht
+seine Optimierung hier der Form
+\[
+ \min_{w,b}\ \frac12(\|w\|_2^2+b^2)
+     +C\sum_i\big[\max(0,1-t_i(w^\top z_i+b))\big]^2.
+\]
+Der Intercept wird in liblinear über eine synthetische konstante
+Featurekomponente repräsentiert und bei diesen Defaults mitregularisiert.
+Das unterscheidet ihn von den unbestraften CellCNN-Biases und dem
+unbestraften glmnet-Intercept\cite{linearsvc}.
+
+Für eine illustrative positive Zelle mit Marge 0,2 beträgt der
+Squared-Hinge-Term \((1-0{,}2)^2=0{,}64\). Bei Marge 1,5 ist er null;
+bei falscher Marge −0,5 beträgt er \((1+0{,}5)^2=2{,}25\).
+\(C\) gewichtet diese Zellverluste gegenüber der Strafe.
+
+Weitere Parameter sind \code{dual="auto"}, maximal 10.000 Iterationen
+und Optimierungstoleranz \(10^{-4}\). Das Problem hat erheblich mehr Zellen
+als Marker; die automatische Solverwahl nutzt dafür den passenden
+Optimierungsweg. Der gesetzte Seed dient der Reproduzierbarkeit, ist aber
+nicht mit einer biologischen Randomisierung gleichzusetzen.
+\source{Notebook 04b, \code{prepare_inner_fold},
+\code{select_svm_hyperparameters}; \code{LinearSVC}-Dokumentation\cite{linearsvc}.}
+
+\clearpage
+% Seite 26
+\subsection*{C-Auswahl und die gelernte Spenderschwelle}
+Getestet werden \(C\in\{0{,}01;0{,}1;1\}\). Je C wird eine neue SVM
+in jedem der drei inneren Folds trainiert. Die Validierung bewertet alle
+Zellen der jeweils ausgeschlossenen vier oder fünf Spender. Deren
+Zellmargen werden zunächst je Spender aggregiert (nächste Seite), erst
+danach wird ROC-AUC berechnet.
+
+\[
+ \overline{\mathrm{AUC}}(C)=\frac13\sum_{f=0}^2\mathrm{AUC}_f(C).
+\]
+Das ist das ungewichtete Mittel der drei Fold-AUCs, nicht eine einzige AUC
+aller zusammengeführten OOF-Scores. Das größte Mittel gewinnt; bei
+Gleichstand wird das kleinste C gewählt. Alle 900 exportierten
+C-/Fold-/Split-Zeilen sind erhalten.
+
+Im vorliegenden Lauf sind die AUCs der drei C-Werte in jedem inneren Fold
+gleich. Deshalb wird in allen 100 äußeren Splits C=0,01 ausgewählt. Das
+bedeutet \emph{nicht}, dass alle Modelle oder Zellmargen identisch sind.
+AUC hängt nur von Rangvergleichen ab; kleine Wertänderungen ohne
+Rangänderung verändern diese Metrik nicht. Mit vier oder fünf
+Validierungsspendern ist ihre Auflösung zudem grob.
+
+\textbf{Schwellenwahl aus inneren OOF-Scores.} Für das gewählte C liegt
+für jeden der 14 äußeren Trainingsspender genau ein Score eines Modells
+vor, das diesen Spender nicht trainiert hat. Auf diesen 14 Scores wird
+\[
+ J(\tau)=\operatorname{Sensitivität}(\tau)+
+         \operatorname{Spezifität}(\tau)-1
+        =\operatorname{TPR}(\tau)-\operatorname{FPR}(\tau)
+\]
+maximiert. Die Schwellen stammen aus \code{roc_curve}; unendliche
+Schwellen werden ausgeschlossen. Bei Gleichstand gewinnt der erste endliche
+Maximierer in der absteigenden Schwellenreihenfolge, also die höchste dort
+angebotene Schwelle. Es werden keine äußeren Testlabels verwendet.
+
+Erst danach wird eine neue finale SVM auf 10.000 Zellen aus jedem der
+14 äußeren Trainingsspender trainiert. Ihr Scaler wird ebenfalls auf
+dieser neuen Trainingsstichprobe gefittet. Die Schwelle bleibt der
+zuvor bestimmte Wert. Trainingssampling nutzt Seed
+\(s+20.000+100\); inneres Sampling \(s+20.000+f\).
+
+\finding{Die Schwelle verbindet rohe Scores verschiedener innerer Modelle
+und wird auf ein neu gefittetes Modell übertragen. Vergleichbare
+Scoreskalen werden dabei angenommen; eine gesonderte Kalibrierung ist
+nicht implementiert. Das kann Balanced Accuracy beeinflussen, nicht die
+schwellenunabhängige ROC-AUC. Die historischen 14 OOF-Einzelscores je C
+werden nicht exportiert; eine vollständige Neuberechnung der Schwellenwahl
+würde innere Fits erfordern und ist hier nicht erfolgt.}
+\source{\code{select_youden_threshold}, \code{select_svm_hyperparameters},
+\code{fit_and_predict_outer_split}; \code{task4_svm_selection_gated_alive_full.csv}.}
+
+\clearpage
+% Seite 27
+\subsection*{Top-1-\%-Aggregation und endgültige SVM-Vorhersage}
+Für einen Testspender mit \(N_d\) Zellen berechnet die SVM alle Margen.
+Die \(k_d=\max(1,\lceil0{,}01N_d\rceil)\) größten werden gemittelt:
+\[
+ S_d=\frac1{k_d}\sum_{i\in T_d}g(z_i),\qquad
+ \widehat y_d=\mathbf1\{S_d\ge\tau\}.
+\]
+Hier wird \textbf{aufgerundet}, im Unterschied zu CellCNN. Bei 101 Zellen
+würden zwei SVM-Margen gepoolt, CellCNN würde im entsprechenden Input nur
+eine Antwort nehmen. Die realen Proben sind wesentlich größer; die
+Rundungsregel wird dennoch exakt dokumentiert.
+
+\textbf{Illustrative Rechnung.} Bei 1.000 Zellen werden zehn Margen
+verwendet. Sind diese
+\[1{,}1;1{,}2;1{,}2;1{,}3;1{,}3;1{,}4;1{,}4;1{,}5;1{,}6;2{,}0,\]
+ist \(S_d=1{,}4\). Bei gelernter Schwelle 1,3 wird der Spender positiv
+klassifiziert. Die anderen 990 Zellen beeinflussen diesen Mittelwert
+nicht direkt. Sie können die Zugehörigkeit zur Top-Menge aber verändern,
+wenn ihre Margen bei anderen Parametern steigen.
+
+\textbf{Warum Top-Pooling?} Der vorab festgelegte Anteil soll seltene,
+stark reagierende Zellen gegenüber der großen Hintergrundpopulation
+hervorheben. Das ist eine Projektanpassung der Zellbaseline. Sie wurde
+nicht anhand der äußeren Test-AUC optimiert. Ein alternatives Mittel über
+alle Zellmargen ist kein Teil dieses Benchmarks.
+
+Die \code{partition}-Operation findet die größten Werte, ohne alle Margen
+vollständig zu sortieren. Bei gleichen Randwerten ist deren konkrete
+Zellidentität für den Spenderscore irrelevant. Für Aufgabe 5 wird sie
+hingegen relevant: Dort entscheidet zusätzlich der Originalereignisindex,
+damit exakt dieselbe Zahl konkreter Zellen eindeutig gewählt werden kann.
+
+\begin{table}[!ht]\centering\small
+\caption{Gespeicherte SVM-Parameter und ihre Kontrollfunktion.}
+\begin{tabular}{p{5cm}p{10cm}}\toprule
+Bestandteil & Zweck\\\midrule
+37 Markergewichte, Intercept & Zellmarge \(g(z)\) rekonstruieren\\
+Scaler-Mittel und -Skalen & Dieselbe Trainingsstandardisierung anwenden\\
+Klassenreihenfolge und Schwelle & Richtung und Spenderentscheidung prüfen\\
+C, Seed, Gate, Zellzahl & Fit und Sampling dem richtigen Split zuordnen\\
+Top-Anteil / Top-Zellzahl & Aggregationsregel und tatsächlich verwendete Anzahl prüfen\\
+\bottomrule\end{tabular}
+\end{table}
+
+Alle 600 gespeicherten SVM-Spenderscores sind positiv. Dies widerspricht
+einem funktionierenden Klassifikator nicht: Ein Mittel der höchsten Margen
+liegt erwartbar deutlich höher als ein globales Zellmittel. Eine
+nachträglich eingesetzte Schwelle null würde die ausgewählte
+Spenderentscheidung verändern. Die gespeicherten Schwellen liegen
+ungefähr zwischen 0,676 und 1,664.
+
+\textbf{Interpretationsgrenze.} Das lineare Zellmodell lernt auf vielen
+schwach beschrifteten Zellen; die getestete Vorhersage stammt von deren
+Extrembereich. Ein gutes Spender-Ranking beweist deshalb weder ein korrektes
+CMV-Label einzelner Zellen noch vollständige Wiederfindung eines seltenen
+biologischen Subsets.
+\source{\code{aggregate_top_fraction}, \code{fit_and_predict_outer_split};
+\code{task4_svm_models_gated_alive_full.csv}, Vorhersagetabelle mit Top-Zellzahl.}
+
+\clearpage
+% Seite 28
+\section{Klassifikationsergebnisse und ihre Aussagekraft}\label{sec:ergebnisse}
+\subsection*{Vier Metriken beantworten verschiedene Fragen}
+\textbf{ROC-AUC} bewertet Rangordnung. Mit \(n_+=2\) positiven und
+\(n_-=4\) negativen Testspendern gilt
+\[
+ \mathrm{AUC}=\frac1{n_+n_-}\sum_{d:y_d=1}\sum_{e:y_e=0}
+ \left[\mathbf1(S_d>S_e)+\tfrac12\mathbf1(S_d=S_e)\right].
+\]
+Es gibt nur acht positiv-negative Paare. Ohne Gleichstände springt AUC in
+Schritten von 0,125, mit halben Paarpunkten auch von 0,0625. Eine monotone
+Scoretransformation ändert die Rangfolge nicht.
+
+\textbf{Average Precision (AP)} gewichtet Precision mit Recall-Zuwächsen:
+\(\mathrm{AP}=\sum_j(R_j-R_{j-1})P_j\). Gleiche Scores werden gemeinsam
+als Schwelle behandelt. \textbf{Trapezoidale PR-AUC} integriert dagegen
+linear zwischen den Kurvenpunkten:
+\(\sum_j(R_j-R_{j-1})(P_j+P_{j-1})/2\).
+Beide Größen liegen zwischen null und eins, sind aber nicht gleich.
+\textbf{Balanced Accuracy} ist
+\(\tfrac12[TP/(TP+FN)+TN/(TN+FP)]\) an der jeweiligen Modellschwelle.
+
+\tab{metriken}{Vollständige Metrikübersicht über 100 gemeinsame äußere
+Splits. Q1/Q3 sind Quartile, SD die Stichprobenstandardabweichung über
+Splits. Die 1.200 Einzelwerte und ihre Zusammenfassungen wurden für den
+Bericht unabhängig nachgerechnet.}{tab:metrics}{}
+
+\textbf{Konstantes Modell als Handrechnung.} Sechs gleiche Scores ordnen
+kein Paar: AUC=0,5. Bei zwei Positiven ist AP=\(2/6=1/3\).
+Die trapezoidale PR-Kurve verbindet den Startpunkt \((R=0,P=1)\) mit
+\((R=1,P=1/3)\), daher ist ihre Fläche \((1+1/3)/2=2/3\).
+Die gleiche Zahl kann somit eine überraschend hohe PR-AUC ergeben, obwohl
+keine Ranginformation vorliegt. Dieser Unterschied begründet, AP zusätzlich
+zu berichten. Der positive Anteil ist keine passende Referenzlinie für
+diese trapezoidale Fläche.
+\source{Notebook 04e; unabhängige Umsetzung \code{independent_metrics}
+in \code{src/detail_report_assets.py}; tests mit Ranggleichständen und
+konstanten Scores.}
+
+\clearpage
+% Seite 29
+\subsection*{Leistung auf denselben Splits vergleichen}
+\fig{roc_auc}{.88}{ROC-AUC auf Spenderebene für den Full-Hauptlauf.
+Boxen: Quartile, Mittellinie: Median; überlagerte Punkte: einzelne Splits.
+Die Linie bei 0,5 bezeichnet fehlende Rangtrennung. Punkte können wegen der
+groben Metrikauflösung exakt übereinanderliegen.}{fig:auc}
+\fig{auc_differenzen}{.88}{Gepaarte Differenzen: pro identischem Split wird
+die AUC der Baseline von der CellCNN-AUC abgezogen. Positive Werte sprechen
+in diesem Split für CellCNN. Null ist gleiche AUC. Die Paarung berücksichtigt,
+dass alle Methoden dieselben sechs Testspender beurteilen.}{fig:diff}
+\tab{differenzen}{Paarvergleich einschließlich der Zahl positiver, gleicher
+und negativer Splitdifferenzen. Dies sind beschreibende Häufigkeiten,
+keine 100 unabhängigen experimentellen Wiederholungen.}{tab:diff}{}
+
+CellCNN liegt in 73 Splits vor Citrus, in neun gleich und in 18 dahinter.
+Gegenüber SVM sind es 41, 35 und 24. Die mediane gepaarte Differenz zu
+Citrus beträgt 0,25, zu SVM null. CellCNN hat eine höhere mediane Balanced
+Accuracy als SVM, aber diese verwendet unterschiedliche Entscheidungsregeln
+und hängt von Schwellen ab.
+
+\finding{Belegt ist eine unter den gewählten Bedingungen stärkere
+Rangtrennung von CellCNN gegenüber Citrus im Median. Gegenüber SVM wird
+kein genereller Rangvorteil nachgewiesen. Quartile sind keine
+Konfidenzintervalle; ein ungepaarter oder auf unabhängigen Splits beruhender
+Signifikanztest wird nicht nachträglich behauptet.}
+
+\clearpage
+% Seite 30
+\subsection*{Batchkontrolle, Laufzeit und allgemeine Grenzen}
+Messtag und Instrumentversion können Expressionsmuster beeinflussen.
+Die QC-Heatmap zeigt mögliche blockartige Verschiebungen. Als beschreibende
+Kontrolle wird deshalb pro äußerem Trainingssplit die CMV+-Häufigkeit jedes
+Messtags bzw. Instruments berechnet. Ein Testspender erhält die geschätzte
+Rate seiner Gruppe; bei unbekannter Gruppe die Gesamttrainingsrate.
+Dieser Kontrollscore ist keine vierte Hauptmethode.
+
+\begin{table}[!ht]\centering
+\caption{CMV-Labelzahlen je Messtag und Metadaten-Kontrollleistung.
+Die Gruppenverteilung betrifft 20 unabhängige Spender.}
+\begin{tabular}{lrr}\toprule
+Messtag & CMV− & CMV+\\\midrule
+1. Mai 2012 & 3 & 3\\
+8. Mai 2012 & 3 & 2\\
+12. Juni 2012 & 5 & 4\\\bottomrule
+\end{tabular}\qquad
+\begin{tabular}{lrr}\toprule
+Kontrollvariable & AUC-Median & AUC-Mittel\\\midrule
+Messtag & 0,250 & 0,306\\
+Instrument & 0,375 & 0,376\\\bottomrule
+\end{tabular}
+\end{table}
+
+Beide CMV-Gruppen kommen an jedem Messtag vor. Die niedrigen Kontroll-AUCs
+sind kein Beweis vertauschter Labels: Wenn viele positive Spender eines
+Batches im Training landen, bleiben in dessen komplementärem Test eher
+negative übrig. In der nahezu balancierten kleinen Kohorte kann die
+Trainingsrate dann gegenläufig zum Testlabel rangieren.
+
+Frühere Prüfnotizen untersuchen diesen Mechanismus auch über alle möglichen
+Testmengen und permutierte Labels. Diese Zusatzversuche wurden für den
+Bericht nicht erneut ausgeführt; ihre historischen Detailzahlen werden
+nicht als neue Prüfergebnisse ausgegeben. Die hier gezeigte Tabelle
+beschreibt die bestehenden 100 Splits und die Originalmetadaten.
+
+\textbf{Zulässige Schlussfolgerung:} Die Gruppen sind über Messtage
+annähernd gleich verteilt; ein reiner Metadatenscore zeigt in diesem
+Splitprotokoll keine positive Vorhersageleistung. \textbf{Nicht zulässig:}
+„Batch-Effekte sind ausgeschlossen.“ Instrument und Messtag sind außerdem
+gekoppelt und keine unabhängigen Kontrollen. Eine Validierung auf einem
+neuen Messtag oder einer externen Kohorte liegt nicht vor.
+
+\textbf{Keine faire Laufzeit-Rangliste.} CellCNN lief auf einer GPU,
+SVM und Citrus auf CPUs; konkurrierende Prozesse und verschiedene
+Implementierungen beeinflussen Zeiten. Verfügbare Protokollzeiten sind
+keine kontrollierten Messungen vergleichbarer Rechenbudgets. Deshalb
+wird kein vermeintlich exakter Geschwindigkeitssieger berichtet.
+
+\textbf{Weitere Grenzen des Benchmarks.} Die Testmenge umfasst immer nur
+sechs Spender. Die drei Verfahren verwenden verschiedene Zellzahlen,
+Suchräume, Auswahlmetriken und finale Trainingsgrößen. Der Benchmark
+vergleicht diese dokumentierten Pipelines, nicht einen isolierten
+Architekturunterschied unter identischen Optimierungsbedingungen.
+Es wurden weder eine vollständige Gate-Sensitivitätsanalyse noch
+Markerablationen oder eine Moment-Baseline durchgeführt.
+\source{Notebook 04e, Abschnitt 7; \code{task4_batch_control.csv},
+\code{task4_batch_label_counts.csv}; historische Notiz
+\code{untersuchung/AUFGABE_4_PRUEFUNG.md}.}
+
+\clearpage
+% Seite 31
+\section{Aufgabe 5: welche Zellen unterstützen die Modelle?}\label{sec:task5}
+\subsection*{Identität, unveränderte Modelle und zulässige Testauftritte}
+Aufgabe 5 soll ein quantitatives Zellsubset bestimmen und auf einer
+Dimensionsreduktionskarte zeigen. Dafür werden keine neuen Klassifikatoren
+trainiert. Wir laden die gespeicherten SVM-/CellCNN-Parameter,
+Citrus-Koeffizienten und die t-SNE-Karte mit Perplexität 30 aus Aufgabe 2.
+Die Karte zeigt dieselben 500 Zellen je Spender, insgesamt 10.000.
+
+Die Verbindung erfolgt über Zell-ID, Spender-ID und nullbasierten
+Originalereignisindex. Das Laden kontrolliert das ursprüngliche Sampling,
+die Reihenfolge und eine gemeinsame SHA-256-Prüfsumme über IDs, Marker
+und rohe Kartenwerte. Ein stilles Zusammenfügen bloß gleich langer
+Tabellen wäre unzureichend: Es könnte Scores anderen Zellen zuordnen.
+Die Kartenidentität wurde beim Bericht erneut geprüft.
+
+Für eine Zelle \(i\) aus Spender \(d\) sei
+\[
+ \mathcal S_d=\{s:\ d\text{ ist äußerer Testspender in Split }s\}.
+\]
+Nur diese Modelle dürfen die Zelle für die berichtete Selektion bewerten.
+Daten aus \emph{anderen} äußeren Splits dürfen denselben Spender beim
+Training enthalten; sie zählen für dessen OOF-Interpretation dann nicht.
+Die t-SNE-Geometrie wurde explorativ auf allen Spendern angepasst und ist
+selbst kein OOF-Prädiktor. Ihre Verwendung zur Darstellung ändert die
+getrennten Zellbewertungen nicht, bietet aber auch keine unabhängige
+Validierung ihrer räumlichen Struktur.
+
+Für binäre Auswahlindikatoren \(I_{is}^{+}\) und \(I_{is}^{-}\) werden
+\[
+ f_i^+=\frac{\sum_{s\in\mathcal S_d}I_{is}^+}{|\mathcal S_d|},\qquad
+ f_i^-=\frac{\sum_{s\in\mathcal S_d}I_{is}^-}{|\mathcal S_d|}
+\]
+berechnet. Die Nenner variieren hier zwischen 12 und 42 Testauftritten
+je Spender. Alle zulässigen Modelle zählen, auch Nullmodelle. Fehlende
+Modellbewertungen sind dagegen Fehler und dürfen nicht stillschweigend
+als Nullselektion gelten.
+
+\textbf{Beispiel.} Wird eine Zelle in drei von zwölf zulässigen Modellen
+positiv gewählt, ist \(f_i^+=0{,}25\). Drei von 42 entsprechen nur
+0,0714. Eine gleiche Anzahl positiver Wahlen ist deshalb noch keine gleiche
+Stabilität. Auch gleiche \emph{Häufigkeit} verschiedener Methoden bedeutet
+keine gleiche Effektstärke, denn deren Auswahlregeln unterscheiden sich.
+
+Am Ende gibt es 30.000 Zeilen: eine pro Methode und Karten-Zelle. Sie
+enthalten Auswahlzählungen, Nenner, Häufigkeiten und vorhandene
+Koordinaten. Das ist eine Zusammenfassung vieler Modelle und kein
+zusätzlich gelerntes Ensemble mit neu gemessener Klassifikationsleistung.
+\source{\code{load_inputs}, \code{align_projection}, \code{validate_models},
+\code{aggregate_frequencies} in \code{src/task5_interpretation.py}.}
+
+\clearpage
+% Seite 32
+\subsection*{CellCNN: Phänotypregel ist nicht Poolingmitgliedschaft}
+Das gespeicherte Netz berechnet \(r_{ik}=\max(0,W_kz_i+b_k)\) wie beim
+Training. Für jeden ausgewählten Filter wird zunächst sein Maximum
+\(M_{sk}\) über \emph{alle ursprünglichen Zellen seiner tatsächlichen
+inneren Trainingsspender} bestimmt. Es werden also nicht nur die 3.000
+Zellziehungen einzelner Inputs und auch nicht die äußeren Testspender
+als Referenz verwendet.
+
+Die papernahe Halbmaximumregel lautet
+\[
+ H_{isk}=\mathbf1\{M_{sk}>0\}\,
+          \mathbf1\{r_{isk}>M_{sk}/2\}.
+\]
+Bei genau halbem Maximum ist eine Zelle nicht ausgewählt. Ein Filter,
+der auf Trainingszellen nur null antwortet, definiert kein Subset.
+Mit \(\Delta V_{sk}=V_{1k}-V_{0k}\) folgt
+\[
+ I_{is}^+=\mathbf1\{\exists k:\ H_{isk}=1,\ \Delta V_{sk}>0\},
+ \quad
+ I_{is}^-=\mathbf1\{\exists k:\ H_{isk}=1,\ \Delta V_{sk}<0\}.
+\]
+Für den Kontrast wird hier keine zusätzliche numerische Nulltoleranz
+verwendet; sie ist bei Citrus eine andere explizite Regel.
+
+\textbf{Illustration.} Ein Filter mit Trainingsmaximum 8 und positivem
+Kontrast wählt eine Testzelle mit Antwort 5 positiv aus. Ein zweiter Filter
+mit Maximum 6, Antwort 4 und negativem Kontrast wählt dieselbe Zelle
+negativ. Beide Indikatoren dürfen gleichzeitig eins sein. Im gespeicherten
+Lauf betrifft eine solche gleichzeitige Auswahl mindestens einmal sieben
+Karten-Zellen. Über \emph{verschiedene} Splits können Richtungen auch bei
+viel mehr Zellen wechseln.
+
+Die Halbmaximumregel beschreibt einen zu einem Filter passenden Phänotyp.
+Sie besagt nicht, dass die Zelle in einem tatsächlich für die
+Spendervorhersage gezogenen Testinput lag. \code{exposed_models} zählt,
+in wie vielen zulässigen Modellen die Karten-Zelle wenigstens in einem
+der fünf Testinputs vorkam. Das ist wiederum nicht identisch mit der
+Top-k-Mitgliedschaft: Auch eine vorkommende Zelle kann unter der
+Poolinggrenze liegen. Die Pipeline exportiert keine vollständigen
+zellweisen Top-k-Beiträge aller fünf Inputs.
+
+Der tatsächliche Inputlogit erfüllt hingegen die prüfbare Identität
+\[
+ \ell_1-\ell_0=(d_1-d_0)+\sum_k\Delta V_k\,
+       \frac1q\sum_{i\in T_k}r_{ik}.
+\]
+Hier taucht nur die pro Input und Filter gepoolte Menge \(T_k\) auf.
+Aufgabe 5 kontrolliert diese Identität, berichtet auf der Karte aber die
+Halbmaximumselektion. Zudem ist die Spendervorhersage der Mittelwert von
+fünf \emph{Wahrscheinlichkeiten}; sie besitzt nicht einfach den Logit
+eines einzigen gepoolten Gesamtinputs.
+
+\finding{Die Aussage „jede markierte Zelle hat die konkrete
+Spendervorhersage mitbestimmt“ ist für CellCNN nicht belegt. Belegt ist
+ihre wiederholte Übereinstimmung mit gerichteten Filtern von Modellen,
+die ihren Spender nicht trainiert haben.}
+\source{\code{cellcnn_masks}, \code{SavedCellCNN}, \code{run_python_methods};
+\code{task5_filter_thresholds.csv}; Paper-Halbmaximumregel\cite{cellcnn}.}
+
+\clearpage
+% Seite 33
+\subsection*{Citrus: addierte Clusterbeiträge und Baumrekonstruktion}
+Citrus wurde nicht mit vollständigen Baumobjekten exportiert. Für die
+Interpretation werden deshalb die finalen Trainingsbäume aus denselben
+1.000 Zellen je ursprünglichem Trainingsspender und denselben R-Seeds
+rekonstruiert. Das ist eine erneute \emph{unüberwachte Baumkonstruktion}
+als Teil des bereits ausgeführten Aufgabe-5-Laufs, kein neues
+Regressions- oder CV-Training. Dieser Bericht selbst führt auch diese
+Baumrekonstruktionen nicht erneut aus.
+
+Das R-Skript prüft Originaldaten, Splitzuordnung, R- und Paketversionen,
+Quellcommits, ausgewählte Cluster-IDs, Mindestgrößen und die exportierten
+Markerzentroiden. Von 100 Modellen besitzen 85 wirksame Cluster und
+benötigen einen rekonstruierten Baum. Bei den 15 Nullmodellen sind alle
+Zellbeiträge null; dort ist ein Baum für die Auswertung nicht erforderlich.
+
+Für eine Karten-Zelle wird die nächste Trainingszelle mit dem nativen
+Citrus-Mapping ermittelt. Der Zellscore ist
+\[
+ a_{is}=\sum_{k:\,|\beta_{sk}|>10^{-10}}
+         \beta_{sk}\,\mathbf1\{i\text{ wird in }C_{sk}\text{ gemappt}\}.
+\]
+Alle überlappenden Mitgliedschaften zählen. Die positive Richtung gilt
+bei \(a_{is}>10^{-10}\), die negative bei \(a_{is}<-10^{-10}\).
+Eine nahezu vollständige Aufhebung positiver und negativer Gewichte
+kann deshalb trotz Clusterzugehörigkeit zu keiner gerichteten Auswahl führen.
+
+Für die 1.000 tatsächlich zur Testvorhersage gezogenen Zellen eines
+Spenders gilt die lineare Identität
+\[
+ \frac1{1000}\sum_i a_{is}=\sum_k\beta_{sk}F_{dk}.
+\]
+Das erklärt den Zusammenhang zwischen Zell- und Spenderrepräsentation.
+Die Kartenstichprobe umfasst jedoch 500 andere, fest gespeicherte Zellen
+pro Spender; ihr Mittelwert ist nicht automatisch derselbe Testfeaturescore.
+\code{exposed=True} bedeutet hier, dass das Phänotypmapping für alle
+Karten-Zellen definiert ist. Es bestätigt nicht deren Zugehörigkeit zur
+ursprünglichen 1.000-Zell-Teststichprobe.
+
+\textbf{Was lässt sich ohne Intercept prüfen?} Das gespeicherte
+\(\beta_0\) fehlt. Aufgabe 5 rekonstruiert daher keine absoluten
+Citrus-Wahrscheinlichkeiten. Mit \(L_d=\operatorname{logit}(p_d)\)
+und \(A_d=\sum_k\beta_kF_{dk}\) prüft es
+\[
+ L_d-\overline L=A_d-\overline A,
+ \qquad L_d-L_e=A_d-A_e.
+\]
+Der unbekannte gemeinsame Intercept fällt weg. Zusätzlich wird die
+Feature-Summe unabhängig gegen die gemittelten Zellbeiträge kontrolliert.
+Das Feld \code{decision_matches} prüft für Citrus nur, ob die gespeicherte
+Klasse zur gespeicherten Wahrscheinlichkeit und Schwelle 0,5 passt.
+Es ist keine unabhängig rekonstruierte absolute Entscheidung.
+\source{\code{src/task5_citrus.R}: \code{cluster_cell_scores},
+\code{centered_logit_errors}, \code{run_task5_citrus};
+\code{task5_citrus_cluster_checks.csv}.}
+
+\clearpage
+% Seite 34
+\subsection*{SVM: exakte Poolingzellen und Richtung an der Spenderschwelle}
+Aus den gespeicherten Parametern werden alle Zellmargen eines Testspenders
+rekonstruiert. \code{exact_top_indices} wählt genau
+\(\lceil0{,}01N_d\rceil\) der höchsten Margen. Bei Gleichstand am
+Rand entscheiden die kleineren Originalereignisindizes. Diese zusätzliche
+Regel ändert nicht den aggregierten Score, sorgt aber für eindeutige
+Zellidentitäten.
+
+Nur innerhalb dieser Menge \(T_d\) wird die Richtung relativ zur
+gelernten Spenderschwelle \(\tau_s\) bestimmt:
+\[
+ I_{is}^+=\mathbf1\{i\in T_d\}\mathbf1\{g_s(z_i)>\tau_s\},\qquad
+ I_{is}^-=\mathbf1\{i\in T_d\}\mathbf1\{g_s(z_i)<\tau_s\}.
+\]
+Eine exakt auf der Schwelle liegende gepoolte Zelle zählt zu keiner
+Richtung. Pro Modell sind positiv und negativ disjunkt. Über mehrere
+Modelle kann eine Zelle trotzdem in beiden Richtungen auftreten.
+
+Der Zusammenhang zur Entscheidung ist unmittelbar:
+\[
+ S_d-\tau_s=\frac1{k_d}\sum_{i\in T_d}(g_s(z_i)-\tau_s).
+\]
+Positive und negative Beiträge innerhalb der Top-Menge ergeben gemeinsam
+die Lage des Spenders zur Schwelle. Eine als negativ markierte SVM-Zelle
+ist also nicht die Zelle mit der niedrigsten Marge der gesamten Probe.
+Sie gehört weiterhin zu den höchsten 1\%, liegt aber unter der
+Spenderschwelle. Der Begriff „negativ“ ist ohne diese Definition leicht
+missverständlich.
+
+\tab{selektion}{Auswahl auf den 10.000 Karten-Zellen. „Zellen“ zählt pro
+Methode und Richtung die mindestens einmal gewählten Zellen. „Mittl. Anteil“
+ist dagegen die mittlere Auswahlhäufigkeit innerhalb eines Spenders,
+anschließend über Spender gemittelt. Min.–Max. zählt mindestens einmal
+gewählte Karten-Zellen pro Spender.}{tab:selektion}{}
+
+\textbf{Warum ist der SVM-Anteil nicht genau 1\%?} Die Top-1-\%-Regel gilt
+für alle Zellen eines Testspenders. Die Tabelle zeigt nur die 500 zufällig
+auf die Karte gelangten Zellen je Spender. Außerdem werden die Richtungen
+getrennt und über Modelle gemittelt. „Mindestens einmal gewählt“ und
+„durchschnittlich pro Modell gewählt“ sind verschiedene Größen.
+
+Bei positiver SVM-Selektion tragen alle 20 Spender Profile bei, teilweise
+aber nur \emph{eine einzige Karten-Zelle}. Eine starke Markeranreicherung
+kann deshalb ein sehr kleines, fragiles Teilbild beschreiben. Sie belegt
+nicht, dass die SVM die biologisch korrekte Population besser wiederfindet.
+\source{\code{exact_top_indices}, \code{svm_cell_selection},
+\code{run_python_methods}, \code{summarize_profiles};
+\code{task5_selection_summary.csv}.}
+
+\clearpage
+% Seite 35
+\subsection*{Positive und negative Auswahl auf identischer t-SNE-Karte}
+\fig{selektion_positive}{1}{Positive Auswahlhäufigkeit \(f_i^+\) auf der
+unveränderten t-SNE-30-Karte. Je Methode dieselben 10.000 Alive-Zellen,
+500 je Spender. Grau: nie positiv gewählt; farbig: Häufigkeit über alle
+äußeren Testmodelle des Spenders, gemeinsame Skala 0--1. Methodenregeln
+siehe vorherige Seiten; gleicher Farbwert bedeutet keine gleiche Wirkung.}{fig:pos}
+\fig{selektion_negative}{1}{Negative Auswahlhäufigkeit \(f_i^-\), identische
+Koordinaten und Skala. Bei SVM ist dies die unterhalb der Spenderschwelle
+liegende Teilmenge der höchsten 1\% Zellmargen. Bei CellCNN können sich
+positive und negative Filterselektionen überlagern; Citrus verwendet die
+Nettosumme der Clustergewichte.}{fig:neg}
+\fig{abdeckung}{.86}{Links: Zahl äußerer Testauftritte pro Spender, also der
+Nenner der Zellhäufigkeiten. Rechts: kumulative Verteilung positiver
+Häufigkeiten unter den mindestens einmal positiv gewählten Karten-Zellen.
+Nicht gewählte Zellen sind rechts ausgeschlossen; die Kurven haben daher
+unterschiedlich große Bezugsgruppen.}{fig:abdeckung}
+
+CellCNN wählt 1.313, Citrus 7.678 und SVM 219 Karten-Zellen mindestens
+einmal positiv. Breite Citrus-Abdeckung und schmale SVM-Abdeckung folgen
+teilweise bereits aus den Auswahlregeln. Die Häufigkeiten dürfen deshalb
+nicht als ein gemeinsamer Zellklassifikationsscore gegeneinander in
+ROC-Kurven gewertet werden: Wahrheitslabels für die gesuchten Zellsubsets
+fehlen. Der OOF-Bezug begrenzt Überanpassung bei der Zellbewertung,
+erzeugt aber keine biologische Ground Truth.
+\source{\code{task5_cell_scores.csv}, \code{task2_embeddings.csv};
+keine erneute t-SNE-Anpassung.}
+
+\clearpage
+% Seite 36
+\subsection*{Markerprofile: wie die Zahlen entstehen und was sie bedeuten}
+Für Methode, Richtung, Spender und Marker werden die ArcSinh-Werte der
+500 Karten-Zellen mit deren Auswahlhäufigkeit gewichtet. Nach Sortierung
+wird der kleinste Wert gewählt, bei dem die kumulierte positive
+Gewichtssumme mindestens die Hälfte der gesamten Gewichtssumme erreicht.
+Das ist ein gewichteter Median mit unterem Wert bei exaktem Halbgewicht.
+Ohne positives Gewicht entsteht ein fehlendes Profil, keine Null-Expression.
+Danach wird der Median der vorhandenen Spenderprofile berechnet.
+
+Die Kartenreferenz verwendet ungewichtete Mediane je Spender, dann den
+Median über Spender. Alle Profile verwenden Float64-ArcSinh ohne Modell-z;
+Vorhersagen behalten ihre ursprüngliche Float32-/Trainingsscaler-Arithmetik.
+\fig{selektionsprofile}{.82}{Positive und negative Profile gegenüber der
+Kartenreferenz. Häufigkeitsgewichtete Mediane innerhalb der Spender,
+anschließend Median über unterstützte Spender, in ArcSinh-Einheiten.
+Dies sind marginale Markerzusammenfassungen; benachbarte hohe Werte
+beweisen keine gemeinsame Expression in derselben Zelle.}{fig:profile5}
+\tab{markerwerte}{Ausgewählte Marker der positiven Profile als genaue
+Zahlen. Alle 37 Marker und beide Richtungen sind in
+\code{task5_marker_profiles.csv} dokumentiert.}{tab:marker5}{}
+
+SVM zeigt gegenüber der Kartenreferenz erhöhte NKG2C-, CD57- und
+CD56-Werte. CellCNN zeigt diese Richtung ebenfalls, für NKG2C/CD57
+schwächer. Beide Profile behalten jedoch hohes CD3. Das unterstützt
+NK-assoziierte Rezeptormuster mit T-kompatiblen oder heterogenen Anteilen,
+\emph{keinen isolierten CD3-negativen NK-Zelltyp}. Citrus ist im positiven
+Profil CD3/CD8-reich, mit niedrigerem CD56/NKG2C, und beschreibt keine
+schmale stabil wiederkehrende NK-Population. Negative Selektionen liefern
+zusätzliche Gegenprofile, aber ebenfalls keine eindeutigen Zelltyp-Labels.
+
+\finding{Die Aufgabe ist als quantitative modellbezogene Selektion mit
+Visualisierung bearbeitet. Ein biologisch validiertes Wiederfinden genau
+der NKG2C+/CD57+-NK-Population des Papers oder dessen Zentroidgruppen
+ist damit nicht nachgewiesen.}
+\source{Aufgabe 5: \code{weighted_median}, \code{summarize_profiles}; Profile jetzt nachgerechnet.}
+
+\clearpage
+% Seite 37
+\section{Prüfnachweise, Vollständigkeit und Reproduzierbarkeit}\label{sec:pruefung}
+\subsection*{Was jetzt geprüft wurde und was aus dem Analyseprotokoll stammt}
+Der deutsche Export führt keine Modellfits und keine neue Dimensionsreduktion
+aus. Er liest FCS-Dateien, rekonstruierte Stichproben und bestehende Tabellen,
+prüft deren Zuordnung und berechnet Berichtszahlen neu. Folgende Ebenen
+sind auseinanderzuhalten:
+\begin{table}[!ht]\centering\small
+\caption{Nachweisstatus dieses Detailberichts. „Jetzt“ bedeutet bei seiner
+Erstellung ausgeführt; ein vorhandener Nachweis ist kein neuer Trainingslauf.}
+\begin{tabular}{p{4.5cm}p{2.6cm}p{7.8cm}}\toprule
+Gegenstand & Status & Umfang und Grenze\\\midrule
+FCS-Inventar und Werte & Jetzt geprüft & 40 Dateien, Endlichkeit der 37 Marker, Eventzahlen; Originaldateien nur gelesen\\
+Kartenidentität & Jetzt geprüft & 10.000 Eventindizes und Rohwertprüfsumme; Koordinatenzuordnung aller drei Methoden\\
+Spendersplits / Labels & Jetzt geprüft & 2.000 Zuordnungen und 600 Testvorhersagen je Methode\\
+Metriken & Jetzt geprüft & 1.200 Werte über Rangpaare, Schwellen und Klassenquoten; Zusammenfassungen abgeglichen\\
+Auswahlhäufigkeiten & Jetzt geprüft & 30.000 Zellzeilen, spenderabhängige Nenner, Richtungszählungen und Zusammenfassungen\\
+Markerprofile & Jetzt geprüft & 5.180 gewichtete bzw. Referenz-Spenderwerte aus Original-Kartenzellen nachgerechnet\\
+Aufgabe-5-Provenienz & Jetzt geprüft & 48 SHA-256-Nachweise zu Eingaben, Artefakten, Umsetzung und Ausgaben\\
+Netz-/SVM-Inferenz & Vorhandener Nachweis & Je 600 Rekonstruktionen; Artefaktidentität geprüft, nicht erneut vollständig inferiert\\
+Citrus-Bäume / Logits & Vorhandener Nachweis & 85 Bäume; 15 Nullmodelle; 600 relative Logitprüfungen, kein exportierter Intercept\\
+Biologische Richtigkeit & Offen & Keine Zelltyp-Ground-Truth oder externe Validierung\\
+\bottomrule\end{tabular}
+\end{table}
+\tab{rekonstruktion}{Maximale Fehler des gespeicherten Aufgabe-5-Prüflaufs,
+nicht eines neuen Benchmarktrainings. Bei CellCNN betrifft der Rechenfehler
+die Logitidentität, bei SVM die Schwellenzentrierung, bei Citrus zentrierte
+Logits. Diese Größen haben unterschiedliche Bedeutungen.}{tab:checks}{}
+
+Die Prüftoleranzen sind SVM-Score \(10^{-10}\), CellCNN-Wahrscheinlichkeit
+\(10^{-6}\), CellCNN-Logitidentität \(10^{-5}\), Citrus-relative Logits
+\(10^{-8}\). Die maximale paarweise Citrus-Logitabweichung ist etwa
+\(3{,}0\times10^{-12}\); die Identität von Häufigkeits- und Zellbeiträgen
+weicht höchstens etwa \(1{,}8\times10^{-15}\) ab. Kleine Rechenfehler
+belegen numerische Konsistenz, nicht richtige biologische Annotation.
+
+\textbf{Historische Befunde einordnen.} Die Notiz vom 5. September enthält
+auch Probleme des Ausgangsstands: fehlende Konfigurationsnachweise,
+unvollständige Modellparameter und numerische Nullclusterzählungen.
+Die aktuellen Artefakte enthalten die entsprechenden Ergänzungen.
+Diese früheren Probleme werden nicht als weiterhin bestehende Fehler
+übernommen. Die hier neu benannte innere Lambda-Abhängigkeit und die
+Interpretationsgrenzen bleiben ausdrücklich sichtbar.
+\source{Beim Bericht bestanden alle 29 Python-Tests und beide R-Testskripte.
+Drei neue Handrechentests prüfen Metriken einschließlich Ranggleichständen;
+die übrigen Tests prüfen bestehende Analyse- und Exportfunktionen.}
+
+\clearpage
+% Seite 38
+\subsection*{Anforderungen, offene Punkte und reproduzierbarer Arbeitsstand}
+\begin{table}[!ht]\centering\small
+\caption{Abgleich mit sämtlichen Aufgaben des bereitgestellten Projektblatts.}
+\begin{tabular}{p{2cm}p{6.7cm}p{6.2cm}}\toprule
+Anforderung & Umsetzung und Beleg & Grenze / offener Punkt\\\midrule
+1: Literatur & Überblick zu Paper, CellCNN und Baselines, S. 3 & Kein Anspruch auf vollständige unabhängige Literaturübersicht\\
+2: Karten & PCA/t-SNE/UMAP, acht Parameterbeispiele; Abb.\ \ref{fig:projektionen} & Kleines Raster, eine Stichprobe und ein Seed\\
+2: Vergleich & Alle 28 Kartenpaare und 37D-Bezug; Abb.\ \ref{fig:jaccard} & Lokale Geometrie, kein Zelltypbeweis\\
+3: Clustering & K-Means, Ward, Leiden, neun Lösungen; Tabelle\ \ref{tab:cluster} & Biologisch bester Ansatz nicht eindeutig validierbar\\
+3: Zelltypen & Markerprofile und Annotation aller ausgewählten Cluster & Plausibilität; Referenzlabels fehlen\\
+4: Methoden & Drei dokumentierte Pipelines, gleiche äußere Splits & Unterschiede in Sampling, Auswahlziel und finaler Trainingsmenge\\
+4: Bewertung & Vier Metriken, gepaarte AUC-Differenzen & 20 Spender; keine externe Kohorte oder faire Laufzeitmessung\\
+5: Zellscore & Gerichtete methodenspezifische Selektion und OOF-Häufigkeit & CellCNN-Halbmaximum nicht identisch mit tatsächlichem Poolingbeitrag\\
+5: Visualisierung & Gleiche t-SNE-30-Karte, beide Richtungen, Markerprofile & Keine bewiesene Wiedergewinnung des Paper-NK-Subsets\\
+6: Bonus & Als offen dokumentiert & Keine Erweiterung trainiert oder bewertet\\
+\bottomrule\end{tabular}
+\end{table}
+
+\textbf{Wie der Bericht reproduziert wird.} Zuerst müssen die bestehenden
+Aufgaben-2--5-Ergebnisdateien und Originaldaten lokal verfügbar sein. Der
+separate Export prüft Eingaben und erzeugt ausschließlich
+\code{report/detail_assets}. Der normale LaTeX-Build benötigt diese
+fertigen Assets, keine Python-/R-Analyse und keinen Datensatz.
+\begin{quote}\small\ttfamily
+python -m src.detail\_report\_assets\par
+latexmk -cd -pdf -outdir=build report/detailbericht\_de.tex\par
+latexmk -cd -pdf -outdir=build report/main.tex
+\end{quote}
+Im vorhandenen System ist Python 3.12 über \code{.venv/bin/python}
+verfügbar. Methodenversionen stehen in den gespeicherten Konfigurationen;
+der Full-Lauf verwendete unter anderem scikit-learn 1.9.0 und
+PyTorch 2.14.0 mit CUDA. Die R-Umgebung und festgelegte Citrus-Quellstände
+stehen in der Projekt-README. Der PDF-Build benötigt zusätzlich deutsche
+Babel-/Trennmuster. \code{quellen.json} dokumentiert die gelesenen
+Tabellenprüfsummen, \code{pruefung.json} den Umfang des Berichtsexports.
+
+\textbf{Was für eine stärkere Schlussfolgerung fehlen würde.} Eine externe
+Spenderkohorte, Referenzzelltypen und gemeinsame Expressionsprüfungen der
+selektierten Zellen wären für biologische Bestätigung nötig. Strengere
+innere Citrus-Abstimmung, SVM-Kalibrierung und CellCNN-Ablationen wären
+separate methodische Experimente. Sie sind keine versteckten Bestandteile
+des aktuellen Berichts und werden nicht als bereits erledigt dargestellt.
+
+Die vorliegenden Ergebnisse tragen eine vorsichtige Schlussfolgerung:
+Die Pipelines erkennen in dieser Kohorte CMV-bezogene Ranginformation;
+ihr Verhältnis zu einem eng definierten biologischen Zellsubset bleibt
+teilweise offen. Genau diese Trennung macht die Arbeit überprüfbar.
+
+\clearpage
+% Seite 39
+\section*{Literatur und technische Primärquellen}
+\addcontentsline{toc}{section}{Literatur und technische Primärquellen}
+\renewcommand{\bibsection}{}
+\renewcommand{\bibfont}{\small}
+\setlength{\bibsep}{3pt}
+\bibliographystyle{unsrtnat}
+\bibliography{references,detail_references}
+\vspace{3mm}
+\subsection*{Lokale Quellen und Zuordnung}
+Das Aufgabenblatt \code{Group_projects_ssbi_2026.pdf}, Projekt 1,
+legt Anforderungen 1--6 fest. Die lokale \code{CellCNN.pdf} enthält den
+Originalartikel. Beide werden unverändert behandelt. Berichtsgrundlage ist
+der versionierte Analysecode; die durch Analyseläufe erzeugten Original-
+CSV-Dateien bleiben gemäß \code{.gitignore} lokal.
+
+Für die Methodendetails sind die Abschnitte und Funktionsnamen an den
+betreffenden Stellen angegeben. Das verhindert eine Abhängigkeit von
+verschiebbaren Notebook-Ausgabezeilen. Die Tabellen des Detailberichts
+werden aus den genannten CSVs erzeugt und sind keine manuell geschätzten
+Ablesewerte aus Plots. Kleinere Rundungen dienen nur der Lesbarkeit.
+
+Die beiden offiziellen CellCNN-Notebooks wurden am 6. September 2026
+lesend vom Master-Branch abgerufen. Dies ist kein unveränderlich gepinnter
+Bibliotheksstand; für ihre hier genannten expliziten Beispielargumente
+wurden die Notebookquellen selbst kontrolliert. Die tatsächlich
+verwendete Python-Neuimplementierung ist separat im Projekt versioniert.
+Die Citrus- und Rclusterpp-Implementierungen sind hingegen auf die im
+Methodenteil genannten Commits festgelegt.
+
+Biologische Bezeichnungen werden bewusst als kompatible Profile
+formuliert. Weder Antikörpermarker noch der auf der Karte sichtbare Ort
+werden als alleiniger Beleg einer exakten Zellidentität behandelt.
+Der Detailbericht dokumentiert sowohl die Ergebnisse als auch den
+Schlussfolgerungsspielraum des vorhandenen Arbeitsstands.
+\end{document}

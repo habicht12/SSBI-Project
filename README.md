@@ -62,6 +62,13 @@ kompiliert ihn in VS Code beim Speichern; die PDF entsteht unter
 und einer halben reservierten Seite für Aufgabe 6. Anleitung und separater
 Abbildungsexport: [report/README.md](report/README.md).
 
+Der ergänzende deutsche Detail- und Prüfbericht liegt in
+[report/detailbericht_de.tex](report/detailbericht_de.tex). Er erklärt die
+Aufgaben 1–5 mit Formeln, Ergebnisgrafiken und einem Abgleich der
+Schlussfolgerungen; seine PDF entsteht separat unter
+`report/build/detailbericht_de.pdf`. Bauanleitung und eigener Export stehen
+ebenfalls in der [Berichts-README](report/README.md).
+
 ### Notebooks starten
 
 ```bash
