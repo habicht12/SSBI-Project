@@ -13,6 +13,7 @@ dependencies:
   - matplotlib=3.11
   - seaborn=0.13
   - scikit-learn=1.9
+  - openTSNE=1.0.2
   - umap-learn=0.5
   - scanpy=1.12
   - python-igraph=1.0
