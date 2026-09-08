@@ -2,6 +2,13 @@
 
 ## Deutscher Detail- und Prüfbericht
 
+**Historischer Stand:** Der Detailbericht und seine Assets dokumentieren den
+Lauf vom 6. September 2026 (einschließlich der alten Citrus-Konfiguration und
+Aufgabe 5). Der aktuelle Aufgabe-4-Vergleich steht im Kurzbericht `main.tex`
+und im Comparison-Notebook. Den Detailexport erst nach Aktualisierung von
+Aufgabe 5 erneut ausführen; seine bisherigen Zahlen sind nicht die neuen
+Klassifikationsergebnisse.
+
 `detailbericht_de.tex` erklärt die Aufgaben 1–5 einschließlich der einzelnen
 Schritte von CellCNN, Citrus und SVM, der Zellinterpretation und der Grenzen der
 Schlussfolgerungen. Die eigene PDF liegt neben der englischen Kurzfassung unter
@@ -65,6 +72,18 @@ See the [TinyTeX installation guide](https://yihui.org/tinytex/) and
 [LaTeX Workshop documentation](https://github.com/James-Yu/LaTeX-Workshop/wiki).
 
 ## Content and figures
+
+Für eine gezielte Aktualisierung ausschließlich der Aufgabe-4-Tabellen:
+
+```bash
+python -m src.report_assets --classification-only
+```
+
+Dies erzeugt `tables/classification.tex` für den Dreiervergleich über zehn
+gemeinsame Splits sowie `tables/classification_cellcnn_svm_100.tex` für den
+zusätzlichen CellCNN–SVM-Vergleich über 100 Splits. Aufgabe-5-Dateien und
+Abbildungen werden dabei nicht gelesen oder verändert. Der Interpretationsteil
+des Kurzberichts bleibt bis zur gesonderten Bearbeitung von Aufgabe 5 historisch.
 
 - Edit prose and captions in `main.tex`, and references in `references.bib`.
 - Replace the author placeholder before submission.

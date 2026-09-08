@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -48,7 +50,7 @@ def check_run_config(config_path, expected, artifact_paths, run_training):
     if not config_path.exists():
         raise ValueError(
             f"Konfigurationsnachweis fehlt: {config_path.name}. "
-            "Altbestände können in 04e historisch ausgewertet werden. "
+            "Auch der Comparison benötigt einen passenden Nachweis. "
             "Für einen neuen Methodenlauf die bisherigen Artefakte separat sichern "
             "und aus den aktiven Ergebnispfaden verschieben; sie werden nicht überschrieben."
         )
@@ -70,6 +72,52 @@ def check_run_config(config_path, expected, artifact_paths, run_training):
 def write_run_config(path, config):
     """Den tatsächlich verwendeten Konfigurationsnachweis speichern."""
     Path(path).write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def validate_comparison_configs(project_root):
+    """Bestehende Benchmark-Nachweise vor dem Vergleich prüfen; kein Training."""
+    root = Path(project_root)
+    tables = root / "results/tables"
+    data = root / "NK_cell_dataset/NK_cell_dataset"
+    inputs = [tables / "task4_donor_splits.csv", data / "NK_fcs_samples_with_labels.csv",
+              data / "NK_markers.csv", *sorted((data / "NK_cell_dataset/gated_alive").glob("*.fcs"))]
+    common = {"gate": "gated_alive", "run_mode": "full", "cofactor": 5.0, "top_fraction": .01}
+    specifications = [
+        ("svm", "04b_svm", [4, 6, 8, 13], "models", {
+            **common, "method": "linear_single_cell_svm", "C_values": [.01, .1, 1.],
+            "train_cells_per_donor": 10000, "sampling_seed_offset": 20000,
+            "max_iterations": 10000, "tolerance": 1e-4, "loss": "squared_hinge",
+            "penalty": "l2", "dual": "auto", "scaling": "training_donors_equal_cells",
+            "threshold": "inner_oof_youden", "selection": "mean_inner_auc_then_smallest_C",
+            "model_format": "marker_parameters_v1",
+        }),
+        ("cellcnn", "04c_cellcnn", [4, 6, 8, 10], "filters", {
+            **common, "method": "cellcnn", "learning_rate": .01, "l2_coefficient": 1e-4,
+            "training_cells_per_input": 3000, "training_inputs_per_donor": 200,
+            "prediction_cells_per_input": 20000, "prediction_inputs_per_donor": 5,
+            "scaler_cells_per_donor": 20000, "filter_counts": [3, 4, 5],
+            "batch_size": 128, "max_epochs": 100, "patience": 5, "threshold": .5,
+            "implementation_version": "pytorch_materialized_v1",
+            "model_format": "complete_filter_parameters_v1",
+        }),
+    ]
+    for method, notebook, cells, model_table, parameters in specifications:
+        path = tables / f"task4_{method}_predictions_gated_alive_full.config.json"
+        stored = json.loads(path.read_text(encoding="utf-8"))
+        # Historische Paketversionen/Geräte bleiben dokumentiert; die Modellvorgaben,
+        # Eingaben und der aktuelle Trainingscode werden unabhängig davon geprüft.
+        expected = make_run_config(stored["parameters"] | parameters, inputs,
+                                   root / f"notebooks/{notebook}.ipynb", cells)
+        artifacts = [tables / f"task4_{method}_{kind}_gated_alive_full.csv"
+                     for kind in ("predictions", "selection", model_table)]
+        check_run_config(path, expected, artifacts, run_training=False)
+
+    conda = shutil.which("conda") or str(Path.home() / "miniconda3/bin/conda")
+    subprocess.run([
+        conda, "run", "--no-capture-output", "-n", "ssbi-citrus", "Rscript", "-e",
+        'root <- commandArgs(TRUE)[1]; source(file.path(root, "src", "task4_artifacts.R")); '
+        'validate_comparison_config(root)', str(root),
+    ], check=True)
 
 
 def validate_prediction_splits(predictions, donor_splits):

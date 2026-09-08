@@ -128,8 +128,29 @@ unter Bash beziehungsweise WSL so gestartet:
 ```bash
 TASK4_RUN_MODE=full TASK4_RUN_TRAINING=1 jupyter nbconvert --to notebook --execute --inplace notebooks/04b_svm.ipynb --ExecutePreprocessor.kernel_name=ssbi-group-project --ExecutePreprocessor.timeout=14400
 TASK4_RUN_MODE=full TASK4_RUN_TRAINING=1 jupyter nbconvert --to notebook --execute --inplace notebooks/04c_cellcnn.ipynb --ExecutePreprocessor.kernel_name=ssbi-group-project --ExecutePreprocessor.timeout=14400
-TASK4_RUN_MODE=full TASK4_RUN_TRAINING=1 jupyter nbconvert --to notebook --execute --inplace notebooks/04d_citrus.ipynb --ExecutePreprocessor.kernel_name=ssbi-citrus --ExecutePreprocessor.timeout=14400
+TASK4_RUN_MODE=full TASK4_RUN_TRAINING=1 jupyter nbconvert --to notebook --execute --inplace notebooks/04d_citrus.ipynb --ExecutePreprocessor.kernel_name=ssbi-citrus --ExecutePreprocessor.timeout=-1
 ```
+
+Citrus verwendet im Full-Modus 10.000 Zellen je Trainings- und Testspender,
+zehn äußere Splits (IDs 0–9) und drei innere Folds. Zellzahl und Wiederholungen
+sind gegenüber den 20.000 Zellen und 100 Splits im Paper als Rechenkompromiss
+reduziert; die Mindestclustergröße bleibt
+papernah bei 0,05 % (Anteil `0.0005`).
+Der frühere Lauf mit 1.000 Zellen und 5 % wird vom Comparison zurückgewiesen.
+Vor dem vollständigen Neulauf zunächst mit `TASK4_SPLIT_LIMIT=1` Laufzeit
+und Speicherbedarf prüfen; das hierarchische Clustering ist deutlich aufwendiger.
+Nach allen zehn Citrus-Splits `04e_comparison.ipynb` erneut ausführen; dieses
+verwendet für den Dreiervergleich dieselben zehn Splits aller Methoden.
+Zusätzlich wertet es CellCNN und SVM über alle 100 vorhandenen Splits aus
+(`task4_cellcnn_svm_100_*`); die Vorhersagedateien dieser Methoden bleiben unverändert.
+Vor dem Comparison werden die Konfigurationsnachweise aller drei Methoden,
+Eingabeprüfsummen und Trainingscode geprüft. Für die Citrus-RDS-Datei wird die
+vorhandene Conda-Umgebung `ssbi-citrus` benötigt. Rclusterpp verwendet eigene
+OpenMP-Threads; `mc.cores = 1` begrenzt nur die R-Prozessparallelität.
+Bisherige Citrus-Interpretationen und Berichtsabbildungen aus Aufgabe 5
+gehören zur alten Konfiguration und müssen vor Wiederverwendung aktualisiert werden.
+Nur die Aufgabe-4-Berichtstabellen lassen sich mit
+`python -m src.report_assets --classification-only` aktualisieren.
 
 Mit `TASK4_RUN_TRAINING=0` werden vorhandene Ergebnisse mit passendem
 Konfigurationsnachweis geladen. `TASK4_SPLIT_LIMIT=N` begrenzt einen technischen Lauf auf
@@ -144,9 +165,9 @@ unvollständige Zwischenstände werden vor der Wiederverwendung abgewiesen.
 Ein Split-Limit verändert diese Konfiguration nicht; bereits vorhandene weitere
 Splits bleiben in den Dateien erhalten.
 
-Altbestände ohne Konfigurationsnachweis bleiben in `04e_comparison.ipynb` als
-historische Vorhersagen auswertbar. Die Methoden-Notebooks übernehmen sie nicht
+Die Methoden-Notebooks übernehmen Altbestände ohne Konfigurationsnachweis nicht
 zum Fortsetzen oder als vermeintlich passend zur aktuellen Konfiguration.
+Der Comparison setzt für Citrus die oben genannte Konfiguration voraus.
 Vor einem neuen Lauf müssen die bisherigen Dateien der betroffenen Methode und
 Gate-/Modus-Kombination einschließlich Konfigurations- und Modellparameterdateien
 separat gesichert und aus den aktiven Ergebnispfaden verschoben werden. Es gibt

@@ -37,6 +37,7 @@
 {\large Comparing CellCNN, Citrus and Linear SVM\par}
 \vspace{4pt}
 {\small SSBI Group Project \enspace\textcolor{muted}{|}\enspace \textbf{Authors: [add group members]}\par}
+{\footnotesize\color{muted} Aufgabe 4: aktualisierter Vergleich; Aufgabe 5: historischer Stand vor dem Citrus-Neulauf.\par}
 
 \section{Question, approaches and data}
 Disease-associated cells may be rare within a blood sample. Arvaniti and Claassen~\cite{cellcnn}
@@ -145,69 +146,65 @@ description. Ward adds subdivisions with several mixed profiles.
 manual cell-type reference labels are unavailable.
 
 \clearpage
-\section{Donor-level classification benchmark}
-We use the same 100 Monte Carlo splits for all methods, following the paper: each split
-trains on seven donors per CMV group and tests on the remaining four negative and two
-positive donors. The 14 training donors are divided into three fixed inner folds for model
-selection. Cells from a donor never cross a train--validation--test boundary. The saved
-split seeds determine sampling; learned scaling, clustering and feature selection are
-restricted to the relevant training fold.
+\section{Spenderbezogener Klassifikationsvergleich}
+Der Dreiervergleich verwendet die zehn vorab festgelegten Monte-Carlo-Splits 0--9.
+Zusätzlich vergleichen wir CellCNN und SVM über alle 100 vorhandenen Splits.
+Je Split trainieren sieben Spender pro CMV-Gruppe; vier negative und zwei positive
+Spender bilden den Test. Drei gemeinsame innere Folds dienen der Modellauswahl.
+Die Konfigurationsprüfung vergleicht Eingabeprüfsummen einschließlich innerer Folds,
+Modellparameter und Trainingscode. Äußere Testspender sind von allen Fits ausgeschlossen.
 
-\textbf{CellCNN.} Our Python 3.12/PyTorch implementation applies linear filters, ReLU,
-mean pooling of the strongest 1\% of responses per filter, and a two-class softmax output.
-Each inner training donor supplies 200 inputs of 3,000 cells sampled with replacement,
-giving donors equal weight and emphasizing rare high-response cells. A training-only
-scaler uses 20,000 cells per donor. We evaluate 3, 4 and 5 filters in each inner fold
-(nine candidates), with Adam, learning rate 0.01, batch size 128, L2 penalty $10^{-4}$,
-no dropout, and at most 100 epochs. Early stopping uses validation loss with patience 5.
-The candidate with highest donor-level validation accuracy is retained; ties use ROC-AUC,
-then validation loss, then fewer filters and fold order. As in the paper, this selected
-network remains trained on its nine or ten inner training donors; it is not refitted on 14.
+\textbf{CellCNN.} Die PyTorch-Implementierung verwendet lineare Zellfilter, ReLU,
+Mittelung der höchsten 1\% je Filter und eine Softmax-Ausgabe. Je innerem Trainingsspender
+werden 200 Inputs mit 3.000 Zellen mit Zurücklegen erzeugt; der Trainings-Scaler nutzt
+20.000 Zellen je Spender. Je Fold testen wir 3, 4 und 5 Filter: Adam, Lernrate 0,01,
+Batchgröße 128, L2-Strafe $10^{-4}$, kein Dropout, maximal 100 Epochen und Early Stopping
+nach fünf Epochen ohne Verbesserung. Höchste spenderbezogene Validierungsaccuracy gewinnt;
+Gleichstände entscheiden AUC, Verlust, Filterzahl und Fold-Reihenfolge.
+Das gewählte Netz bleibt auf neun oder zehn Spendern trainiert. Die feste Filtersuche
+ersetzt die Zufallssuche des Papers. Validierung und Test mitteln fünf Wahrscheinlichkeiten
+aus jeweils bis zu 20.000 Zellen; das Paper verwendet einen Testinput.
 
-We fix this small filter grid instead of repeating the paper's broader random search.
-For validation and test prediction we average five softmax probabilities, each from a
-random input of up to 20,000 cells sampled without replacement. The paper's NK benchmark
-uses one test input; our averaging reduces sampling variation. Donor-level candidate
-evaluation also differs from evaluation of individual generated inputs in the reference.
+\textbf{Citrus.} Die originale R-Implementierung v0.8 verwendet 10.000 Zellen je
+Trainings- und Testspender ohne Zurücklegen. Zellzahl und zehn Wiederholungen sind
+Rechenkompromisse gegenüber 20.000 Zellen und 100 Wiederholungen im Paper.
+Ward-Clustering verwendet 37 ArcSinh-transformierte Marker ohne zusätzliches Marker-z-Scoring.
+Cluster ab \textbf{0,05\%} der Trainingszellen liefern Häufigkeiten für L1-logistische
+Regression; glmnet standardisiert diese Häufigkeiten innerhalb des jeweiligen Fits.
+\texttt{cv.min} minimiert den inneren Klassifikationsfehler, bei Gleichstand mit stärkerer
+Regularisierung. Das originale Lambda-Raster verwendet alle 14 äußeren Trainingsspender;
+die inneren Bäume und Gewichte werden foldweise gelernt. Das finale Modell nutzt alle
+14 Trainingsspender. Neue Zellen übernehmen die Clusterzugehörigkeiten ihrer nächsten
+Trainingszelle. Die gemeinsamen Folds ändern die originalen Citrus-Verfahren nicht.
 
-\textbf{Citrus.} We use the original R implementation (v0.8; pinned source revisions).
-Each donor supplies 1,000 randomly sampled cells, limiting the cost of hierarchical
-clustering. Clustering uses arcsinh-transformed markers without an additional marker
-z-score. Clusters containing at least 5\% of training events supply donor-level abundance
-features to L1-logistic regression, with feature standardization inside the training fit.
-The regularization parameter minimizes inner classification error; ties favour stronger
-regularization. Clustering and regression are then fitted on all 14 training donors.
-Test cells are mapped through their nearest training cell into the fixed hierarchy.
-We assemble the original fold-clustering functions around our shared donor splits,
-preserving Citrus's clustering, feature calculation and regression.
-
-\textbf{Linear SVM.} We sample 10,000 cells per training donor without replacement,
-standardize using training cells, and attach each donor's label to its cells. An L2-penalized
-linear SVM with squared-hinge loss is selected from $C\in\{0.01,0.1,1\}$ by mean inner
-ROC-AUC (ties favour smaller $C$), then refitted on all 14 donors. Its donor score is the
-mean of the highest 1\% of cell margins, evaluated on all cells of a test donor. This fixed
-aggregation targets rare informative cells. Balanced sampling and donor aggregation are
-our explicit adaptation of the paper's cell-level baseline. The decision threshold maximizes
-sensitivity plus specificity on inner out-of-fold donor scores.
+\textbf{Lineare SVM.} Je Trainingsspender werden 10.000 Zellen ohne Zurücklegen gezogen,
+trainingsbasiert standardisiert und mit dem Spenderlabel beschriftet. Die L2-SVM mit
+Squared-Hinge-Verlust wählt $C\in\{0{,}01;0{,}1;1\}$ nach mittlerer innerer ROC-AUC;
+bei Gleichstand gewinnt das kleinere $C$. Danach wird auf allen 14 Trainingsspendern
+neu gefittet. Der Spenderscore mittelt die höchsten 1\% der Margen über alle Testzellen.
+Diese Aggregation ist eine Projektanpassung. Die Schwelle maximiert Sensitivität plus
+Spezifität auf inneren Out-of-fold-Spenderscores.
 
 \begin{table}[!ht]
 \centering
-\caption{\textbf{Performance on the same 100 donor splits.} Median [first, third
-quartile]; larger values indicate better performance. Quartiles describe split sensitivity,
-not confidence intervals. Each split contains only six test donors.}
+\caption{\textbf{Klassifikation auf gemeinsamen Spendersplits.} Median [Q1, Q3];
+Quartile beschreiben Splitstreuung, keine Konfidenzintervalle. Jede Testmenge umfasst
+sechs Spender. Die beiden Vergleichsumfänge werden getrennt ausgewertet.}
 \label{tab:classification}
 \small
+\textbf{Dreiervergleich: zehn Splits}\par
 \input{tables/classification.tex}
+\par\smallskip
+\textbf{Zusätzlicher Zweiervergleich: 100 Splits}\par
+\input{tables/classification_cellcnn_svm_100.tex}
 \end{table}
 
-ROC-AUC is the primary metric: it measures how often a positive donor ranks above a
-negative one. Average precision (AP) summarizes precision as recall increases;
-balanced accuracy averages sensitivity and specificity at the chosen threshold.
-CellCNN and Citrus use 0.5, whereas the SVM uses its inner-validated threshold.
-CellCNN and SVM both attain median ROC-AUC 0.875; the median paired difference is
-0.000. CellCNN exceeds Citrus by a median paired 0.250 and has higher median balanced
-accuracy than SVM. These results support useful discrimination, but do not establish
-CellCNN superiority over SVM in ranking donors.
+ROC-AUC bewertet Rangtrennung, AP die Präzision bei steigendem Recall und Balanced
+Accuracy beide Klassen an der jeweiligen Schwelle (CellCNN/Citrus: 0,5; SVM: innerlich
+gelernt). Über zehn Splits beträgt die mediane gepaarte AUC-Differenz von CellCNN zu
+Citrus 0,375 und zur SVM 0,125. Über 100 Splits erreichen CellCNN und SVM beide eine
+mediane AUC von 0,875; ihre mediane gepaarte Differenz ist null. Die kleine Kohorte
+und überlappenden Wiederholungen erlauben daraus keinen allgemeinen Überlegenheitsnachweis.
 
 \clearpage
 \section{Which cells support the predictions?}
@@ -265,13 +262,13 @@ centroid groups or their reported selection rates.
 
 \clearpage
 \section{Discussion and limitations}
-The main result is comparable median ranking performance for CellCNN and linear SVM,
-with lower performance for Citrus under the chosen sampling and 5\% cluster-size threshold.
-These choices may affect sensitivity to rare populations. Fifteen Citrus null models remain
-in all summaries. Only 20 donors are independent; the overlapping splits are not independent
-studies. Both CMV groups occur on every measurement day, but batch effects remain possible.
-Different hardware and concurrent execution preclude a fair runtime comparison:
-CellCNN used a GPU, SVM and Citrus CPUs.
+Der Dreiervergleich über zehn Splits zeigt niedrigere Citrus-Leistung unter der
+aktuellen Konfiguration (10.000 Zellen, 0,05\% Mindestclustergröße). Über 100 gemeinsame
+Splits besitzen CellCNN und SVM dieselbe mediane ROC-AUC. Nur 20 Spender sind unabhängig;
+die überlappenden Wiederholungen sind keine unabhängigen Studien. Beide CMV-Gruppen
+kommen an jedem Messtag vor, dennoch bleiben Batch-Effekte möglich. Unterschiedliche
+Hardware verhindert einen fairen Laufzeitvergleich: CellCNN nutzte eine GPU,
+SVM und Citrus die CPU.
 
 Saved interpretation checks reconstruct all 600 SVM and CellCNN donor scores per method;
 Citrus checks relative logits because its intercept was not exported. These arithmetic checks
