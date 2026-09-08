@@ -1,222 +1,172 @@
-**Untersuchung von `02_dimensionality_reduction.ipynb` und Einordnung für Aufgabe 2**
+**Untersuchung von `02_dimensionality_reduction_clean.ipynb` und Einordnung für Aufgabe 2**
 
 Datum: 08.09.2026 · Kontext: Prüfung auf Vollständigkeit, Codefehler und Abgabereife
 
-Untersucht wurden das [Hauptnotebook](../notebooks/02_dimensionality_reduction.ipynb) und Aufgabe 2 auf Seite 1 der [Aufgabenstellung](../Group_projects_ssbi_2026.pdf). Aufbau und Zweck entsprechen dem [Untersuchungsbericht zu Aufgabe 3](2026-09-07_astra-high_untersuchung_gregor_03-clustering.md).
+Untersucht wurden ausschließlich das [bereinigte Notebook](../notebooks/02_dimensionality_reduction_clean.ipynb) und Aufgabe 2 auf Seite 1 der [Aufgabenstellung](../Group_projects_ssbi_2026.pdf). Dieser Bericht ersetzt die vorherige Untersuchung, die irrtümlich auf die Variante ohne `_clean` bezogen war. Die Notebooks und ihre Analyseartefakte wurden nicht verändert.
 
-**Das Notebook enthält wesentliche Bausteine für Aufgabe 2, beantwortet sie aber noch nicht vollständig und ist im aktuellen Zustand nicht durchgehend ausführbar.** Besonders relevant sind drei Ausführungsfehler, eine fehlerhafte Berechnung des paarweisen Nachbarschaftsvergleichs und fehlende Parameteruntersuchungen für t-SNE. Gespeicherte Ausgaben und aktueller Code passen außerdem teilweise nicht zusammen.
+**Die `_clean`-Version deckt die technische Aufgabenstellung weitgehend ab.** PCA, sechs t-SNE-Parameterbeispiele, 16 UMAP-Parameterbeispiele und quantitative Vergleiche aller drei Verfahrenspaare sind vorhanden. Der Procrustes-Vergleich erfüllt bereits die Forderung nach einem paarweisen Maß. Vor der Abgabe müssen jedoch der zusätzliche kNN-Vergleich korrigiert, Widersprüche zwischen Text und tatsächlichem Versuchsaufbau bereinigt und die Ergebnisse abschließend interpretiert werden.
 
-Die Untersuchung umfasst ausschließlich Aufgabe 2. Die zusätzliche Datei `02_dimensionality_reduction_clean.ipynb` wird nicht als Ersatzlösung angerechnet; Aussagen über fehlende Inhalte beziehen sich auf das Hauptnotebook. Die Notebooks und ihre gespeicherten Ergebnisse wurden nicht verändert.
+**Die zuvor berichteten Ausführungsfehler gelten für diese Version nicht:** Die GMM-Funktion ist vor ihrer Verwendung definiert, `labels` wird nicht mit Plotbeschriftungen überschrieben, eine Verwendung des nicht importierten Moduls `warnings` und der problematische t-SNE-Cache kommen hier nicht vor. Auch der frühere Vorwurf fehlender t-SNE-Beispiele und eines 48er-UMAP-Sweeps mit nur 16 Bildern trifft hier nicht zu.
 
-**Zellangaben zählen sämtliche Code- und Markdown-Zellen ab 1**, unabhängig von Jupyters Ausführungsnummern. Das untersuchte Hauptnotebook hat 44 Zellen, darunter 30 Codezellen. Sein SHA-256 lautet `3f573bafd804e81fe4c79f1ee8ff308fb577ad99c14f90f6ea024aa244b6e14d`.
+Zellangaben zählen alle Code- und Markdown-Zellen ab 1, unabhängig von Jupyters Ausführungsnummern. Untersucht wurden **50 Zellen, darunter 29 Codezellen**. SHA-256 des Notebooks: `59b57fa69d587ed04d126f17d86be19e2e995c964a7919ac127fcf977788543b`.
 
 ---
 
 **1. Ist jede Teilanforderung von Aufgabe 2 beantwortet?**
 
-Die Aufgabenstellung verlangt die Visualisierung mit PCA, t-SNE und UMAP, die Erklärung wählbarer Parameter und ihrer Auswirkungen anhand von Beispielen sowie die Auswahl eines quantitativen Maßes und dessen Anwendung auf alle Visualisierungspaare. Die folgenden Teilanforderungen sind sinngemäß aus diesem Wortlaut abgeleitet.
+Die Aufgabenstellung verlangt die Visualisierung mit PCA, t-SNE und UMAP, die Erklärung wählbarer Parameter und ihrer Auswirkungen anhand von Beispielen sowie die Auswahl eines quantitativen Maßes und dessen Anwendung auf alle Visualisierungspaare.
 
 | Teilanforderung | Fundstelle | Bewertung | Begründung |
 |---|---|---|---|
-| Bereitgestellten Datensatz verwenden | Zellen 2, 7, 9 | Erfüllt | Die vorhandenen Exportdateien werden geladen; lokal sind 40.000 ausgewählte NK-Zellen aus 20 Spendern und 37 Analysemarker verfügbar. Der Download muss dafür nicht erneut im Notebook stattfinden. |
-| Mit PCA, t-SNE und UMAP visualisieren | Zellen 16, 21, 25–28 | Teilweise erfüllt | Berechnungen und gespeicherte Darstellungen aller drei Verfahren sind vorhanden. Der aktuelle Durchlauf stoppt jedoch vor der PCA; die gespeicherten Bilder sind kein Nachweis eines erfolgreichen aktuellen Gesamtlaufs. |
-| Wählbare Parameter jedes Verfahrens erklären | Zellen 16, 21, 22, 38 | Teilweise erfüllt | Einstellungen stehen im Code. Eine systematische Erklärung der PCA-, t-SNE- und UMAP-Parameter fehlt. Die ausführliche Diskussion von `gamma` betrifft die zusätzliche Kernel-PCA und ersetzt diese Erklärung nicht. |
-| Auswirkungen der Parameter anhand von Beispielen dokumentieren | Zellen 16, 21–25 | Teilweise erfüllt | UMAP-Beispiele sind vorhanden, aber nicht konsistent zum aktuellen Sweep. Für t-SNE gibt es nur Perplexity 30; für PCA keine gezielte Gegenüberstellung unterschiedlicher Projektionen oder Einstellungen. Die Varianzkurve ist eine nützliche Ergänzung. |
-| Geeignete quantitative Vergleichsmaße erläutern und eines auswählen | Zellen 18–19, 23, 39–43 | Teilweise erfüllt | Trustworthiness und Nachbarschaftsüberlappung werden erläutert. Ihre unterschiedlichen Fragestellungen sind grundsätzlich erkannt, werden im abschließenden Text aber nicht konsequent eingehalten. |
-| Gewähltes Maß für alle Visualisierungspaare berechnen | Zellen 41–42 | Teilweise erfüllt | PCA–t-SNE, PCA–UMAP und t-SNE–UMAP werden alle berücksichtigt. Die verwendete Funktion berechnet jedoch die falschen Nachbarmengen; die Werte müssen neu berechnet werden. |
+| Bereitgestellten Datensatz verwenden | Zellen 4, 8, 10 | Erfüllt | Geladen werden 40.000 spenderbalanciert ausgewählte NK-Zellen und der vollständige NK-Bestand mit 261.593 Zellen. Der Datenimport wurde lokal ausgeführt. |
+| PCA, t-SNE und UMAP visualisieren | Zellen 20–22, 28–39 | Erfüllt im dokumentierten Stand | Berechnungen und gespeicherte Abbildungen aller drei Verfahren sind vorhanden, einschließlich gemeinsamer Darstellung mit CMV-Färbung. Die großen t-SNE-/UMAP-Einbettungen wurden im Audit nicht neu trainiert. |
+| Wählbare Parameter erklären | Zellen 19–21, 27, 31 | Weitgehend erfüllt | PCA-Komponentenzahl, t-SNE-Perplexity und weitere Optimierungseinstellungen sowie UMAP-Nachbarschaftsgröße und Mindestabstand werden erläutert. Einzelne Aussagen sind zu pauschal; siehe Abschnitt 3. |
+| Parameterwirkung anhand von Beispielen dokumentieren | Zellen 20–22, 28–29, 32–33 | Teilweise erfüllt | Varianz-/Rekonstruktionskurve, sechs t-SNE-Beispiele und 16 UMAP-Beispiele sind vorhanden. Die Texte erklären allgemeine Erwartungen, diskutieren die konkret gezeigten Unterschiede aber noch zu wenig. |
+| Geeignete quantitative Maße erläutern und auswählen | Zellen 26, 42, 46 | Erfüllt mit begrifflichen Korrekturen | Lokale Nachbarschaftsmaße, Pearson-Korrelation paarweiser Distanzen, Procrustes und CMV-Silhouette werden unterschieden. Die Bezeichnung „Distance correlation“ ist missverständlich. |
+| Ein Maß für alle Visualisierungspaare berechnen | Zelle 47 | Erfüllt durch Procrustes | PCA–t-SNE, PCA–UMAP und t-SNE–UMAP werden berechnet. Die Procrustes-Werte wurden auf den vorhandenen Exporten reproduziert und unabhängig kontrolliert. Der zusätzlich berichtete kNN-Vergleich ist fehlerhaft. |
+| Ergebnisse als verständliche Antwort zusammenführen | Insbesondere Zelle 48 | Noch nicht abgeschlossen | Die Zusammenfassung enthält Platzhalter und Arbeitsanweisungen. Es fehlt eine konkrete Einordnung der Ergebnisse, besonders der unterschiedlichen Rangfolgen je Vergleichsmaß. |
 
-**Antwort auf „Ist die Aufgabe ausführlich beantwortet?“:** Der Umfang des Notebooks ist bereits beträchtlich. Es fehlt vor allem eine gezielte, korrekte Beantwortung der Pflichtfragen. Zusätzliche biologische Analysen, Leiden und Kernel-PCA gleichen die Lücken bei Parameterwirkung und paarweisem Vergleich nicht aus.
-
----
-
-**2. Bestätigte Codefehler und Inkonsistenzen**
-
-**2.1 Der Durchlauf stoppt in Zelle 15: Funktion vor ihrer Definition verwendet**
-
-Zelle 15 ruft `estimate_positive_threshold(nk_transformed["CD3"])` auf. Die Funktion und der benötigte Import von `GaussianMixture` stehen erst in Zelle 31.
-
-**Nachweis:** Die Codezellen wurden in einem neuen Python-Prozess in Notebook-Reihenfolge mit den vorhandenen Daten ausgeführt. Der erste Fehler lautet:
-
-```text
-FAIL CELL 15 NameError name 'estimate_positive_threshold' is not defined
-```
-
-**Auswirkung:** Ein frischer Durchlauf erreicht die eigentlichen Dimensionsreduktionsanalysen nicht. Die gespeicherte Ausführungsnummer 44 in Zelle 15 passt dazu, dass diese Zelle früher nachträglich ausgeführt wurde; sie behebt den Reihenfolgefehler nicht.
-
-**Korrektur:** Import und Funktionsdefinition vor die erste Verwendung verschieben oder den optionalen CD3-Abschnitt hinter die Definition setzen. Anschließend von einem leeren Kernel aus ausführen.
-
-**2.2 In Zelle 22 fehlt `import warnings`**
-
-Die Zelle verwendet `warnings.filterwarnings("ignore")`; das Modul wird im gesamten Hauptnotebook nicht importiert.
-
-**Nachweis:** Der Beginn der Zelle wurde nach dem vorbereitenden Datenlauf separat ausgeführt und erzeugt `NameError: name 'warnings' is not defined`.
-
-**Auswirkung:** Auch nach Behebung des ersten Fehlers startet der UMAP-Sweep nicht.
-
-**Korrektur:** Die pauschale Warnungsunterdrückung entfernen oder das Modul importieren und nur begründet ausgewählte Warnungen lokal unterdrücken. Konvergenz- und Laufzeitwarnungen sollten bei der Prüfung sichtbar bleiben.
-
-**2.3 Zelle 24 überschreibt die Metadatentabelle `labels`**
-
-Zelle 2 lädt `labels.csv` als DataFrame. Zelle 24 verwendet denselben Namen für eine Liste mit Plotbeschriftungen. Zelle 32 erwartet anschließend wieder den DataFrame und ruft `labels.set_index("sample_id")` auf.
-
-**Nachweis:** Die Zuweisung aus Zelle 24 und der spätere Methodenaufruf wurden isoliert reproduziert:
-
-```text
-AttributeError 'list' object has no attribute 'set_index'
-```
-
-**Auswirkung:** Der Vergleich von Gesamtbestand und Stichprobe bricht ab. Ein vorheriges manuelles Neuladen der Metadaten kann den Fehler in einer interaktiven Sitzung verdecken.
-
-**Korrektur:** Unterschiedliche Namen verwenden, beispielsweise `donor_labels` und `umap_plot_labels`, und die jeweiligen Verwendungen anpassen.
-
-**2.4 Das zentrale kNN-Maß entfernt den nächsten echten Nachbarn**
-
-Die Funktion `knn_preservation()` in Zelle 18 fordert `k + 1` Nachbarn an und entfernt anschließend mit `[:, 1:]` den ersten Eintrag. Bei `kneighbors()` **ohne übergebenes Abfragearray** schließt scikit-learn den eigenen Datenpunkt jedoch bereits aus. Daher vergleicht die Funktion die Nachbarn auf den Rängen 2 bis k+1 statt 1 bis k. Dieses Verhalten ist in der [NearestNeighbors-Dokumentation](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.NearestNeighbors.html#sklearn.neighbors.NearestNeighbors.kneighbors) beschrieben und wurde lokal bestätigt.
-
-**Unabhängiger Nachweis:** Zwei mit Seed 42 erzeugte Arrays mit 20 Punkten und drei beziehungsweise zwei Dimensionen wurden bei k=3 verglichen. Eine Kontrollrechnung ermittelt sämtliche euklidischen Distanzen, setzt die Diagonale auf unendlich und sortiert die verbleibenden Nachbarn.
-
-| Kontrolle | Ergebnis |
-|---|---|
-| Echte drei nächste Nachbarn des ersten Punktes | `[8, 2, 17]` |
-| Im Notebook verwendete Nachbarn | `[2, 17, 19]` |
-| Nachbarschaftsüberlappung laut Notebookfunktion | 0,150000 |
-| Nachbarschaftsüberlappung laut unabhängiger Kontrollrechnung | 0,216667 |
-| API-Aufruf mit genau k Nachbarn, ohne anschließendes Abschneiden | 0,216667 |
-
-**Auswirkung:** Betroffen sind die kNN-Spalte des UMAP-Sweeps und alle drei paarweisen Vergleichswerte. Richtung und Größe der Änderung auf den Originaleinbettungen sind damit noch nicht bestimmt. Die separate Trustworthiness-Berechnung wird durch diesen Fehler nicht verändert.
-
-**Korrektur:** Für beide Räume `NearestNeighbors(n_neighbors=k).fit(X).kneighbors(return_distance=False)` verwenden. Alle darauf beruhenden Tabellen und Abbildungen neu berechnen. Ein Identitätsvergleich allein genügt nicht als Test: Auch die falsche Funktion liefert für zweimal denselben Raum den Wert 1.
-
-**2.5 Gespeicherter UMAP-Plot und aktueller Sweep gehören nicht zum selben Stand**
-
-Zelle 22 definiert 4 Nachbarschaftsgrößen × 4 Mindestabstände × 3 Lernraten, also **48 Konfigurationen**. Die gespeicherte Tabelle enthält diese 48 Zeilen. Zelle 24 zeichnet laut aktuellem Code sämtliche Ergebnisse mit vier Spalten; das ergäbe zwölf Reihen. Gespeichert ist dagegen ein Bild mit **16 Teilplots in vier Reihen**. Das Bild wurde direkt geprüft.
-
-Zusätzlich fehlen die Lernraten in den Plotüberschriften. Bei einem aktuellen Lauf hätten jeweils drei unterschiedliche Konfigurationen dieselbe Beschriftung. Die finale UMAP in Zelle 25 übernimmt `n_neighbors=5` und `min_dist=0`, setzt aber keine Lernrate. Die beste gespeicherte Sweep-Zeile hat `learning_rate=0.5`; die lokale UMAP-Voreinstellung ist 1.0.
-
-**Auswirkung:** Die dokumentierten Beispiele belegen nicht den aktuellen 48er-Sweep. Die Wahl der finalen Einstellungen ist nicht vollständig nachvollziehbar. Eine manuelle Auswahl ist zulässig, muss aber begründet werden.
-
-**Korrektur:** Sweep, Beschriftungen und Ausgabe gemeinsam aktualisieren; alle variierten Parameter nennen. Finale Parameter vollständig aus einer dokumentierten Auswahl übernehmen. Werden nur ausgewählte Beispiele gezeigt, diese Auswahl ausdrücklich kennzeichnen.
-
-**2.6 Der t-SNE-Cache erkennt geänderte Eingaben nicht**
-
-Der Cache in Zelle 3 prüft nur den Dateinamen. Zelle 21 verwendet einen Schlüssel mit der Perplexity, aber ohne Datenidentität, Zellreihenfolge, Marker, Vorverarbeitung, PCA-Konfiguration oder weitere t-SNE-Einstellungen.
-
-**Nachweis:** Mit der unveränderten Cachefunktion wurde in einem temporären Verzeichnis ein Array gespeichert. Ein zweiter Aufruf unter demselben Schlüssel sollte ein anderes Array berechnen, lieferte aber unverändert das alte Ergebnis.
-
-**Auswirkung:** Nach einer Änderung können veraltete Koordinaten weiterverwendet werden. Bei gleicher Zellzahl erkennen reine Formprüfungen auch eine falsche Zellzuordnung nicht. **Es wurde nicht nachgewiesen, dass die aktuell gespeicherte t-SNE-Ausgabe auf diese Weise verfälscht ist**; nachgewiesen ist die fehlende Absicherung.
-
-**Korrektur:** Für den bereinigten Prüflauf frisch rechnen. Dauerhaft einen Schlüssel aus Eingabedaten einschließlich Reihenfolge und sämtlichen wirksamen Parametern verwenden oder die automatische Wiederverwendung entfernen. Der bestehende Hinweis auf manuelles Löschen ist hilfreich, verhindert den Fehler aber nicht.
-
-**2.7 Zusätzlicher Randfall: GMM-Schwelle ohne tatsächlichen Schnittpunkt**
-
-In Zelle 31 wird `np.argmax(posterior_pos > 0.5)` verwendet. Falls die Bedingung auf dem gesamten Suchraster falsch bleibt, ergibt `argmax` trotzdem 0. Die Funktion gibt dann den ersten Rasterwert als vermeintlichen Schnittpunkt zurück.
-
-**Nachweis:** In einem isolierten Test wurde ein Modell mit durchgehend 0,1 posteriorer Wahrscheinlichkeit für die obere Komponente simuliert. Die originale Funktion lieferte trotzdem eine Schwelle von 0,0. Dieser Randfall wurde **nicht für die tatsächlichen Markerdaten nachgewiesen**.
-
-**Korrektur:** Prüfen, ob ein gültiger Übergang im Raster existiert; sonst das Ergebnis als nicht bestimmbar markieren. Das betrifft einen Zusatzabschnitt, nicht die zentrale Pflichtleistung von Aufgabe 2.
+Die letzte Zeile beschreibt die Ausarbeitung der Antwort, keine zusätzliche Rechenanforderung. **Die Aufgabe braucht vor allem Korrekturen und eine fertige Ergebnisdiskussion, nicht weitere Verfahren oder umfangreiche zusätzliche Sweeps.**
 
 ---
 
-**3. Datenfluss, Methodik und Interpretation**
+**2. Bestätigte Fehler und konkrete Auswirkungen**
 
-**Was mit den vorhandenen Daten überprüft wurde**
+**2.1 Die kNN-Preservation vergleicht die falschen Nachbarn**
 
-Die Vorbereitung bis zum ersten Fehler wurde neu ausgeführt; anschließend wurde die PCA-Zelle separat auf dem bis dahin erzeugten Zustand ausgeführt.
+In Zelle 26 fordert `knn_preservation()` jeweils `k + 1` Nachbarn an und entfernt anschließend den ersten Eintrag mit `[:, 1:]`. Bei `kneighbors()` ohne übergebenes Abfragearray schließt scikit-learn den eigenen Punkt bereits aus. Die Funktion verwendet deshalb die Nachbarränge 2 bis k+1 statt 1 bis k. Dieses Verhalten ist in der [NearestNeighbors-Dokumentation](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.NearestNeighbors.html#sklearn.neighbors.NearestNeighbors.kneighbors) beschrieben und wurde mit der lokalen Implementierung bestätigt.
 
-| Prüfung | Ergebnis |
-|---|---|
-| Ausgewählte Zellen | 40.000, exakt 2.000 je Spender |
-| Vollständiger geladener NK-Bestand | 261.593 Zellen |
-| Analysemarker | 37; Reihenfolge in DataFrame und AnnData stimmt überein |
-| Metadatenzuordnung | `sample_id`, `label` und `clinical_group` stimmen zeilenweise zwischen Eingabe und AnnData überein |
-| Vorverarbeitete Werte | Alle Einträge in `X` sind endlich |
-| Varianzfilter bei 0,05 | Kein Marker entfernt; kleinste Varianz etwa 0,070028 |
-| Neu berechnete PCA | 40.000 × 30 Komponenten |
-| Kumulativ erklärte Varianz | PC1–2: 20,29 %; PC1–20: 75,72 %; PC1–30: 92,96 % |
+**Unabhängiger Funktionstest:** Zwei Zufallsarrays mit Seed 42, 20 Punkten und drei beziehungsweise zwei Dimensionen wurden bei k=3 verglichen. Eine unabhängige Kontrollrechnung sortiert die vollständigen euklidischen Distanzmatrizen nach Ausschluss der Diagonale.
 
-**In diesem überprüften Vorverarbeitungsweg wurden keine vertauschten Zellen oder Markerspalten gefunden.** Daraus folgt keine nachträgliche Bestätigung der Herkunft aller gespeicherten t-SNE- und UMAP-Ausgaben.
+| Berechnung | Nachbarschaftsüberlappung |
+|---|---:|
+| Originalfunktion aus Zelle 26 | 0,150000 |
+| Unabhängige Distanzmatrixrechnung | 0,216667 |
+| API-Aufruf mit genau k Nachbarn ohne Abschneiden | 0,216667 |
 
-**Vorverarbeitung und fairer Vergleich**
+**Nachweis auf den tatsächlichen gespeicherten Einbettungen:** Aus `embeddings_full.parquet` wurden die drei zweidimensionalen Koordinatensätze geladen. Die Metadaten stimmen zeilenweise mit den aktuellen 40.000 Eingabezellen überein; die gespeicherten PCA-Koordinaten stimmen exakt mit der neu berechneten PCA überein. Die Originalfunktion reproduziert die im Notebook gespeicherten Paarwerte auf die gezeigte Genauigkeit. Mit der korrigierten Nachbarwahl ergeben sich:
 
-Arcsinh mit Cofaktor 5 und anschließende Standardisierung sind tatsächlich implementiert; der Cofaktor wird anhand von Histogrammen diskutiert. Die Aussagen dazu sollten als beobachtungsbasierte Entscheidung formuliert bleiben. Die Transformation allein beweist keine biologische Trennung.
+| Paar | Originaler kNN-Wert | Korrigierter kNN-Wert | Procrustes-Disparität, unverändert |
+|---|---:|---:|---:|
+| PCA–t-SNE | 0,005585 | **0,005850** | 0,451891 |
+| PCA–UMAP | 0,003975 | **0,004095** | 0,733897 |
+| t-SNE–UMAP | 0,105957 | **0,125318** | 0,723692 |
 
-Das Notebook hält zwei standardisierte Datenwege vor: `X` aus `StandardScaler` und `adata.X` aus Scanpy. Beim aktuellen Stand bleiben in beiden alle 37 Marker erhalten. Die maximale absolute Differenz beträgt im Prüflauf etwa 0,000105; die unterschiedlichen Varianzkonventionen der Skalierung sind hier keine Marker- oder Zellvertauschung. Eine gemeinsame aufbereitete Matrix würde die Nachvollziehbarkeit verbessern.
+Die korrigierten Werte sind Neuberechnungen **auf den vorhandenen Einbettungsexporten**, kein erneutes Training von t-SNE oder UMAP. Der Export hat SHA-256 `e38dcc0e75593564ed8d85750c4c2b36e4dcb7d5c1607e07c3f7d774b69b620a`.
 
-Wird der Varianzfilter später erhöht, verändert er nur AnnData, nicht `X`. Dann ändert sich auch die Bedeutung des Vergleichs mit `X`; außerdem könnte der Matrixplot in Zelle 29 entfernte Marker anfordern. Das sind bedingte Risiken bei geänderten Einstellungen, keine im aktuellen Lauf eingetretenen Fehler.
+**Auswirkung:** Betroffen sind die kNN-Spalten beider Sweeps in Zellen 28 und 32, der Qualitätsvergleich in Zelle 43 sowie Tabelle und Heatmap in Zelle 47. Die finale Parameterauswahl basiert auf Trustworthiness und wird durch diesen kNN-Fehler allein nicht geändert. Auch Procrustes ist unabhängig davon korrekt.
 
-Die UMAP-Suche verwendet 5.000 Zellen und den 30-dimensionalen PCA-Raum als Referenz. Die finale Trustworthiness in Zelle 39 verwendet 40.000 Zellen und `X` mit 37 Markern. **Die Sweep-Werte und die finalen Werte sind deshalb nicht unmittelbar vergleichbar.** Innerhalb der finalen Schleife ist die gemeinsame Referenz für alle drei Verfahren hingegen konsistent vorgesehen. Zelle 25 verarbeitet tatsächlich die gesamten 40.000 ausgewählten Zellen, obwohl ihr Kommentar von derselben kleinen Stichprobe spricht.
+**Korrektur:** Auf beiden Seiten `NearestNeighbors(n_neighbors=k).fit(X).kneighbors(return_distance=False)` verwenden. Alle kNN-Ausgaben anschließend aktualisieren. Neben Identität und Symmetrie unbedingt gegen eine unabhängige Nachbarrechnung testen: Der Identitätstest allein erkennt den aktuellen Fehler nicht.
 
-Die 40.000 Zellen sind eine spenderbalancierte Auswahl, nicht der vollständige NK-Bestand. Der zusätzliche 5.000er-Sweep zieht daraus zufällig ohne erneute Balancevorgabe. Die Unterscheidung sollte in Texten und Bildunterschriften stehen. Für diese deskriptive Aufgabe ist keine Klassifikations-Cross-Validation vorgeschrieben.
+**2.2 Text und Code verwenden unterschiedliche Auswertungsdaten**
 
-**Parameterwirkung: Was für die Pflichtantwort fehlt**
+Zelle 42 behauptet, alle nachfolgenden Nachbarschafts- und Distanzkorrelationsmaße würden dieselben 5.000 Zellen und `X_pca_sweep` wie die Sweeps verwenden. Tatsächlich setzt Zelle 43 `reference_space = X_pca_full` und iteriert über `embeddings_full`.
 
-- **PCA:** Die Rollen der Zahl behaltener Komponenten, der dargestellten Komponentenpaare und der Skalierung erklären. Die 30 Eingabekomponenten für t-SNE/UMAP von der zweidimensionalen PCA-Darstellung unterscheiden. Die neu berechneten 92,96 % Varianz können die konkrete Dimensionswahl stützen. Für Beispiele etwa PC1/PC2 und PC1/PC3 gegenüberstellen. Eine Änderung von 20 auf 30 berechnete Komponenten allein ist kein sinnvoller Nachweis einer veränderten PC1/PC2-Projektion.
-- **t-SNE:** Perplexity ist fest auf 30 gesetzt. Der Kommentar verweist auf `tsne_results_df`, diese Tabelle existiert im Hauptnotebook aber nicht. Wenige tatsächlich berechnete Perplexity-Beispiele auf derselben Stichprobe ergänzen, etwa 5, 30 und 50. Lernrate, Iterationen, Initialisierung und Zufallsstart kurz einordnen; nicht jeder Parameter braucht einen umfassenden Sweep. Die [t-SNE-Dokumentation](https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html) beschreibt die einstellbaren Größen und ihre Einschränkungen.
-- **UMAP:** Die Bedeutung von `n_neighbors`, `min_dist` und der variierten Lernrate erklären und mit den aktualisierten Beispielen verbinden. Im gespeicherten Raster sind bei kleinen Mindestabständen kompaktere Gruppen sichtbar. Das ist ein Visualisierungseffekt, kein Beleg für zusätzliche Zelltypen. Eine Orientierung bietet die [offizielle Erklärung der UMAP-Parameter](https://umap-learn.readthedocs.io/en/latest/parameters.html).
-
-**Vergleichsmaße und tatsächliche Ergebnisse**
-
-Der paarweise Nachbarschaftsvergleich passt grundsätzlich zur Aufgabenfrage und benötigt keine identische Orientierung der Bilder. Nach Behebung des Implementierungsfehlers genügt dieses eine Maß für alle drei Verfahrenspaare. Weitere Metriken sind optional.
-
-Die folgenden Werte sind ausschließlich aus dem Notebook übernommen und **keine neu validierten Endergebnisse**:
-
-| Verfahren / Paar | Gespeicherter Wert | Einordnung |
+| Auswertung | Zellen | Referenz / Koordinaten |
 |---|---:|---|
-| Trustworthiness t-SNE | 0,957562 | Vergleich mit hochdimensionalem `X`; nicht neu berechnet |
-| Trustworthiness UMAP | 0,863134 | Vergleich mit hochdimensionalem `X`; nicht neu berechnet |
-| Trustworthiness PCA | 0,720812 | Vergleich mit hochdimensionalem `X`; nicht neu berechnet |
-| kNN PCA–t-SNE | 0,005307 | Wegen fehlerhafter Nachbarwahl neu zu berechnen |
-| kNN PCA–UMAP | 0,004432 | Wegen fehlerhafter Nachbarwahl neu zu berechnen |
-| kNN t-SNE–UMAP | 0,066808 | Wegen fehlerhafter Nachbarwahl neu zu berechnen |
+| t-SNE- und UMAP-Sweeps | 5.000 | `X_pca_sweep`: 29 PCs |
+| Finale Trustworthiness und kNN gegen Referenz | 40.000 | `X_pca_full`: 30 PCs |
+| Pearson-Korrelation paarweiser Distanzen | 2.000 aus den 40.000 | Auswahl innerhalb der finalen Referenz und Einbettungen |
+| CMV-Silhouette | 40.000 | Finale 2D-Koordinaten und zugehörige CMV-Labels |
+| Paarvergleiche in Zelle 47 | 40.000 | Finale 2D-Koordinaten |
 
-Trustworthiness bewertet lokale Nachbarschaftserhaltung gegenüber einem Referenzraum. Sie ist weder eine direkte Prozentangabe korrekt erhaltener Nachbarn noch ein umfassendes Maß globaler Strukturtreue. Der Aufruf mit `X` als erstem Argument in Zelle 39 ist für diese Fragestellung korrekt angeordnet. Die [Dokumentation zur Trustworthiness](https://scikit-learn.org/stable/modules/generated/sklearn.manifold.trustworthiness.html) beschreibt diese Bedeutung.
+**Auswirkung:** Die Aussage, finale Scores seien direkt mit den Sweep-Tabellen vergleichbar, stimmt nicht. Das ist kein nachgewiesener Zeilenversatz: Innerhalb der jeweiligen finalen Auswertung sind die Eingaben korrekt aufeinander ausgerichtet. Ein 30-PC-Referenzraum ist ebenfalls nicht grundsätzlich unzulässig; er entspricht nur nicht der beschriebenen 29-PC-Sweep-Referenz.
 
-Die Aussage in Zelle 40, genau die Rangfolge t-SNE > UMAP > PCA werde von der Theorie vorhergesagt, ist zu stark. Unterschiedliche Optimierungsziele können die Beobachtung erklären, garantieren aber keine Rangfolge für beliebige Daten und Parameter. Zelle 43 stellt die Referenzraumtreue als zentrale Pflichtleistung dar; ausdrücklich verlangt ist hier jedoch auch der Vergleich der Visualisierungen untereinander.
+Zusätzlich berechnet `trustworthiness()` in der lokalen scikit-learn-Version quadratische Distanz- und Rangmatrizen. Bei 40.000 Punkten hat eine solche Matrix 1,6 Milliarden Einträge, also etwa 12,8 GB bei Float64/Int64. Mehrere dieser Matrizen existieren gleichzeitig. Der Aufwand kann damit viele zehn GB RAM erreichen. Das ist eine aus dem Quellcode abgeleitete Ressourcenanforderung, kein im Audit beobachteter Speicherabsturz.
 
-`continuity()` wird in Zelle 22 berechnet, sein Ergebnis `score_cont` aber weder in die Ergebnistabelle aufgenommen noch ausgegeben. Die ausführliche Erklärung dazu ist daher keine abgeschlossene quantitative Auswertung. Entweder Werte berichten oder den Abschnitt als optionale Erläuterung kennzeichnen.
+**Korrektur:** Den Versuchsaufbau eindeutig festlegen. Naheliegend ist der bereits angekündigte Vergleich auf `embeddings_sweep` mit `X_pca_sweep` und `clinical_group[sweep_idx]`; die großen Einbettungen bleiben für die Übersicht und Markerplots. Wenn stattdessen die 40.000-Zell-Auswertung beibehalten wird, müssen Text, Referenzdimension, Teilstichprobe der Distanzkorrelation und Ressourcenbedarf ausdrücklich dazu passen. Die Tabelle oben beschreibt den aktuellen Code, keine Empfehlung für neue Pflichtanalysen.
 
-Die Zusammenfassungs-Heatmap rundet mit zwei Nachkommastellen den gespeicherten Wert 0,004432 auf 0,00. Für so kleine Überlappungen sind vier Nachkommastellen oder eine Prozentdarstellung lesbarer. Eine fertige Ergebnisdiskussion sollte die konkrete Bedeutung der drei korrigierten Paarwerte erklären; Formulierungen wie „How to interpret and write this up“ sind noch Arbeitsanweisungen.
+**2.3 Das Ergebnisfazit ist noch eine Vorlage**
 
-**Biologische Aussagen und Lesbarkeit**
+Zelle 48 enthält unter anderem `N`, `N_COMPONENTS_SELECTED`, alternative Formulierungen in eckigen Klammern und die Aufforderung, Zahlen später einzutragen. Dabei liegen die Ergebnisse bereits vor.
 
-Die Markerüberlagerungen sind hilfreiche Zusatzinformationen. Ein niedriges PC1-Loading von CD3 oder CD19 belegt aber weder geringe Gesamtexpression noch ein korrektes Gate. Die gespeicherte CD3-Ausgabe meldet 69,52 % oberhalb einer modellbasierten Schwelle. Daraus lässt sich ohne biologische Validierung der Schwelle keine entsprechende Kontaminationsrate ableiten. Ebenso validiert eine stabile Häufigkeit der so definierten NKG2C/CD57-Gruppe im Subsample nicht automatisch deren Zelltypbezeichnung.
+**Auswirkung:** Leser müssen die Antwort aus vielen Ausgaben selbst zusammensuchen. Die zentrale Frage, wie ähnlich sich die drei Visualisierungen sind, wird noch nicht abschließend beantwortet.
 
-Solche Aussagen sollten als vorläufige Interpretation gekennzeichnet werden. Eine Überprüfung der spezifischen Literaturbehauptungen zu Horowitz et al. wurde in diesem auf Aufgabe 2 begrenzten Audit nicht durchgeführt. Für die Pflichtantwort sollten Parameterbeispiele, erklärende Bildunterschriften und der korrigierte Verfahrensvergleich vor diesen Zusatzanalysen stehen. Eine gemeinsame Dreierdarstellung mit identischer Farbvariable wäre dafür hilfreich; sie ist keine zusätzliche Vorgabe der Aufgabenstellung.
+**Korrektur:** Die Vorlage durch ein fertiges Fazit ersetzen. Dazu gehören 37 behaltene Marker, die Auswahl von 29 PCs für mindestens 90 % erklärte Varianz, die dokumentierten finalen Parameter sowie eine Interpretation der Paarvergleiche. Die korrigierten kNN-Werte zeigen t-SNE und UMAP als ähnlichstes Paar hinsichtlich lokaler Nachbarn. Procrustes bewertet dagegen PCA und t-SNE als ähnlichstes Paar hinsichtlich der globalen Punktanordnung nach Ausrichtung. Dieser Unterschied ist ein erklärungsbedürftiges Ergebnis, kein Widerspruch der Berechnungen.
 
-**Laufzeit und Speicherbedarf**
+**2.4 Die t-SNE-Ergebnistabelle wird nicht angezeigt**
 
-Der lokale Quellcode von scikit-learn 1.9.0 zeigt, dass `trustworthiness()` quadratische Distanz- und Rangmatrizen anlegt. Bei 40.000 Punkten hat jede solche Matrix 1,6 Milliarden Einträge; eine Float64- oder Int64-Matrix benötigt allein etwa 12,8 GB. Mehrere dieser Matrizen existieren gleichzeitig. Ein vollständiger Aufruf kann daher viele zehn GB Arbeitsspeicher beanspruchen.
+In Zelle 28 steht `tsne_sweep_df.sort_values(...)` vor der anschließenden Zuweisung von `best_tsne_perplexity`. Ein solcher Zwischenausdruck wird in einer üblichen Notebook-Zelle nicht automatisch angezeigt. Die Zelle enthält tatsächlich keine gespeicherte Ausgabe. Das Raster in Zelle 29 zeigt nur auf drei Nachkommastellen gerundete Scores; mehrere Varianten erscheinen dadurch gleich gut.
 
-Das ist eine aus Code und Dimensionen abgeleitete Ressourcenanforderung, **kein in diesem Audit beobachteter Speicherabsturz**. Für den korrigierten Bericht reicht eine klar dokumentierte gemeinsame Auswertungsstichprobe, beispielsweise die vorhandenen 5.000 Zellen. Dabei unterscheiden, ob auf dieser Stichprobe neu eingebettet wird oder dieselben Zeilen aus größeren Einbettungen ausgewertet werden; beide Auswertungen messen nicht exakt denselben Versuchsaufbau.
+**Korrektur:** Die sortierte Tabelle ausdrücklich mit `display(...)` ausgeben. Damit wird die Auswahl von Perplexity 60 nachvollziehbar. Es fehlen hier weder der Sweep noch die Auswahlberechnung, sondern die genaue Ergebnistabelle für Leser.
 
----
+**2.5 Kleinere numerische beziehungsweise bedingte Fehler**
 
-**4. Welche Änderungen haben Priorität?**
-
-1. **Ausführbarkeit herstellen:** Funktionsdefinition und Import vor die erste Nutzung setzen, fehlenden `warnings`-Import beziehungsweise dessen Verwendung bereinigen, die beiden Bedeutungen von `labels` trennen.
-2. **Pflichtvergleich korrigieren:** kNN-Nachbarwahl berichtigen und gegen eine unabhängige Distanzrechnung testen. Danach sämtliche betroffenen Vergleichswerte und Abbildungen neu erzeugen.
-3. **Ergebnisse konsistent erneuern:** Den alten t-SNE-Cache für den Prüflauf umgehen; Datenbasis und alle finalen Einstellungen dokumentieren. UMAP-Tabelle und Beispielbilder aus demselben Lauf erstellen und die Lernrate in Auswahl und Beschriftung berücksichtigen.
-4. **Fehlende Pflichtantworten ergänzen:** PCA-, t-SNE- und UMAP-Parameter kompakt erläutern; tatsächliche t-SNE- und PCA-Beispiele ergänzen; die beobachtete Wirkung beschreiben. Abschließend alle drei korrigierten Paarwerte ausdrücklich interpretieren.
-5. **Abgabe redaktionell abschließen:** Platzhalter und Arbeitsanweisungen ersetzen, Gesamtbestand und Stichproben korrekt benennen, Rundung verbessern und unbelegte biologische Aussagen abschwächen. Zusatzanalysen kürzen, falls sie die Aufgabe-2-Antwort verdecken.
-
-**Optional** sind weitere Zufallsstarts, zusätzliche globale Vergleichsmaße, eine größere biologische Validierung sowie Kernel-PCA und Leiden. Keine dieser Erweiterungen ist notwendig, um die ausdrücklich gestellten Teilfragen von Aufgabe 2 zu beantworten. Die Fünf-Seiten-Grenze auf Seite 2 gilt für den gemeinsamen Abschlussbericht, nicht für diesen internen Prüfbericht.
+- **PCA-Rekonstruktionsfehler, Zellen 20–21:** `1 - cumulative_var` ist der relative Restvarianzanteil. Als absoluter MSE stimmt er nur bei passender Normierung exakt. Die verwendete Scanpy-Skalierung ergibt für den mit `np.mean` berechneten Fehler hier den zusätzlichen Faktor `(n-1)/n`. Neu berechnet wurden MSE **0,0850197352** und die unbereinigte Formel **0,0850218607**; mit dem mittleren Merkmalvarianzwert bei `ddof=0` als Faktor stimmen beide bis auf Rundung überein. Bei vier Nachkommastellen ist der Unterschied unsichtbar. Die Formel präzisieren oder die Kurve als relativen Rekonstruktionsfehler beschriften; das ist kein wesentlicher Ergebnisfehler.
+- **Nicht erreichte PCA-Varianzschwelle, Zelle 21:** Liegt die gesamte berechnete Kurve unter 0,90, gibt `searchsorted` einen Index hinter dem letzten Eintrag zurück. Die folgende Indizierung erzeugt einen `IndexError`. Mit einer verkürzten Testkurve reproduziert; auf den aktuellen Daten werden dagegen korrekt 29 PCs gewählt. Vor der Auswahl prüfen, ob die Schwelle erreicht wird, und andernfalls mehr zulässige PCs berechnen oder den Fall ausdrücklich melden.
+- **GMM ohne Schwellenübergang, Zelle 16:** Wenn `posterior_pos > 0.5` überall falsch ist, liefert `argmax` dennoch 0 und die Funktion gibt den ersten Rasterwert als vermeintliche Schwelle zurück. Mit einem simulierten Modell reproduziert, nicht für die realen Marker nachgewiesen. Einen tatsächlich vorhandenen Übergang prüfen. Die aktuellen NKG2C-/CD57-Schwellen wurden hingegen erfolgreich reproduziert.
+- **Unvollständiger Subsample-Export, Zellen 49–50:** Angekündigt werden Einbettungen für den Vergleich aller drei Verfahren; die t-SNE-Spalten sind im 5.000-Zell-Export auskommentiert. Die vorhandene Datei bestätigt dies. Der 40.000-Zell-Export enthält alle drei Verfahren. Den kleinen Export vervollständigen oder seine Beschreibung anpassen; das ist keine fehlende Pflichtberechnung innerhalb des Notebooks.
 
 ---
 
-**5. Prüfprotokoll und Grenzen der Aussage**
+**3. Methodische Begründung, Interpretation und Lesbarkeit**
 
-| Prüfung | Vorgehen | Ergebnis / Grenze |
+**Vorverarbeitung und Datenfluss funktionieren im geprüften Abschnitt.** Alle Codezellen bis einschließlich Zelle 26 wurden mit den vorhandenen Daten in einem neuen Python-Prozess ausgeführt. Es gab keinen Ausführungsfehler. AnnData wird beim Plotten teilweise auf kategoriale Metadatentypen umgestellt; ein strikter DataFrame-Typvergleich fällt dadurch unterschiedlich aus. Die Metadatenwerte und ihre Reihenfolge stimmen jedoch vollständig überein.
+
+| Kontrolle mit realen Daten | Ergebnis |
+|---|---|
+| Eingabestichprobe | 40.000 Zellen; 2.000 pro Spender |
+| Vollständiger NK-Bestand | 261.593 Zellen |
+| Marker / Varianzfilter | Alle 37 behalten; kein Marker unter 0,05 |
+| Vorverarbeitete Matrix | 40.000 × 37; alle Werte endlich |
+| PCA | 30 Komponenten berechnet, 29 ausgewählt |
+| Erklärte Varianz | PC1–2: 20,29 %; PC1–29: 91,50 %; PC1–30: 92,96 % |
+| Sweep-Stichprobe | 5.000 × 29; alle 20 Spender vertreten, 220–281 Zellen pro Spender |
+| GMM-Schwellen | NKG2C etwa 0,0858455; CD57 etwa 0,0845767 |
+| Metadaten der großen Einbettungsexporte | Werte und Reihenfolge passen zur Eingabe; PCA-Koordinaten exakt reproduziert |
+
+**Parametererklärungen konkretisieren, ohne weitere große Sweeps zu verlangen.**
+
+- In Zelle 19 ist die Behauptung, die Komponentenzahl sei der einzige echte PCA-Parameter, zu absolut. Solver und gegebenenfalls Whitening sind ebenfalls Einstellungen; die vorliegende Fixierung des Solvers ist zulässig. Komponentenzahl und dargestelltes Achsenpaar unterscheiden. Der erklärte Varianzanteil begründet die 29-dimensionalen Eingaben für t-SNE/UMAP, sagt aber nicht, dass die ersten beiden PCs 90 % der Varianz zeigen. Die [PCA-Dokumentation](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html) beschreibt diese Einstellungen.
+- Die sechs t-SNE-Beispiele sind vorhanden und lesbar. Der gespeicherte Plot zeigt bei Perplexity 5 eine diffusere Darstellung und bei größeren Werten deutlicher abgegrenzte Bereiche. Die pauschale Erwartung „kleine Perplexity erzeugt viele kleine Inseln“ sollte daher durch eine Beschreibung der tatsächlich sichtbaren Resultate ergänzt werden. Lernrate und Iterationszahl können auch das endgültige Layout beeinflussen; „750 Iterationen“ allein ist kein Konvergenznachweis.
+- Der 16er-UMAP-Sweep passt zu Tabelle und Bild. `n_neighbors` und `min_dist` werden systematisch variiert; die Auswahl von 5 und 0,0 wird aus der Tabelle übernommen. Die Aussage, größere `min_dist` mache Distanzen grundsätzlich besser interpretierbar, sollte abgeschwächt werden. UMAP-Abstände sind dadurch nicht automatisch originalgetreu; die [offizielle Parametererklärung](https://umap-learn.readthedocs.io/en/latest/parameters.html) unterscheidet Nachbarschaftsskala und Packung im Embedding.
+
+**Die Vergleichsmaße sind sinnvoll gewählt, brauchen aber präzise Namen und Grenzen.**
+
+`distance_correlation()` in Zelle 43 berechnet Pearson-r zwischen zwei Vektoren paarweiser Distanzen. Der Funktionskörper macht das klar; die Bezeichnung kann aber mit einer anders definierten statistischen Distance Correlation verwechselt werden. „Pearson-Korrelation paarweiser Distanzen“ wäre eindeutig. Die zufälligen 2.000 Indizes werden für beide Räume identisch verwendet; hier wurde kein Zuordnungsfehler gefunden.
+
+Procrustes vergleicht korrespondierende Punkte nach Zentrierung, Skalierung und optimaler Ausrichtung einschließlich möglicher Spiegelung. Die direkte Anwendung auf gleich geordnete 2D-Einbettungen ist korrekt; die Disparität hängt nicht von einer willkürlichen Drehung des Bildes ab. Die drei Exportwerte wurden zusätzlich über eine unabhängige SVD-Formel kontrolliert und stimmen überein. Die [SciPy-Dokumentation zu Procrustes](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.procrustes.html) beschreibt diese Eigenschaften. Eine niedrigere Disparität zeigt Formähnlichkeit, keine bessere biologische Wahrheit.
+
+Die Aussage in Zelle 44, ein perfektes Embedding müsse im Shepard-Diagramm auf der Diagonalen liegen, braucht eine Skalierungsbedingung. Schon eine gleichmäßige Streckung verändert die Steigung, obwohl die Pearson-Korrelation der Distanzen weiterhin 1 sein kann.
+
+Die gespeicherten finalen Trustworthiness-Werte betragen PCA 0,724320, t-SNE 0,959955 und UMAP 0,899225. Die Pearson-Korrelationen betragen entsprechend 0,617264, 0,484853 und 0,394753. Diese Werte wurden **nicht auf allen 40.000 Zellen neu berechnet**. Sie illustrieren im dokumentierten Stand unterschiedliche Rangfolgen für lokale und globale Eigenschaften. Die CMV-Silhouetten von etwa 0,0016 bis 0,0178 sollten als schwache Trennung nach diesen Labels diskutiert werden; sie sind kein allgemeines Gütemaß einer Dimensionsreduktion und keine spenderübergreifende Klassifikationsleistung.
+
+**Biologische Zusatzprüfungen nicht überinterpretieren.**
+
+Die Repräsentativitätsprüfung einer über GMM-Schwellen definierten NKG2C/CD57-Gruppe ist eine hilfreiche Zusatzkontrolle. Die daraus geschätzten Anteile im Gesamtbestand liegen je Spender zwischen etwa 7,67 % und 41,55 %; in der Stichprobe werden mindestens 145 solche Zellen je Spender gefunden. Diese konkrete Definition sollte daher nicht ohne weitere Einordnung als Nachweis einer seltenen biologischen Population behandelt werden. Ein gutes Ergebnis für diese eine Gruppe validiert zudem nicht automatisch alle für die Dimensionsreduktion relevanten Strukturen, wie Zelle 18 nahelegt.
+
+Auch die Begründung des Cofaktors in Zelle 7 sollte korrigiert werden: Bei festem positivem Rohwert vergrößert ein kleinerer Cofaktor den Wert von `arcsinh(x/c)`. Die Aussage, kleinere Cofaktoren drückten den positiven Peak an die Achse, passt weder dazu noch zu den gespeicherten Histogrammen. Cofaktor 5 kann als begründete Wahl bestehen bleiben; die begleitende Erklärung muss den sichtbaren Effekt richtig beschreiben.
+
+„Full data“ bezeichnet bei den Einbettungen 40.000 ausgewählte Zellen, nicht alle 261.593 NK-Zellen. Das sollte in Abschnittsüberschriften, Markerplot-Titeln und Exportbeschreibung einheitlich benannt werden. Zudem zeichnet Zelle 39 sämtliche CMV+-Punkte nach den CMV−-Punkten; bei starker Überlagerung kann dies die sichtbare Farbdominanz beeinflussen. Eine gemeinsame zufällige Zeichenreihenfolge oder getrennte Panels wären eine optionale Verbesserung.
+
+---
+
+**4. Priorisierte Änderungen vor der Abgabe**
+
+1. **kNN-Funktion korrigieren und betroffene Ausgaben aktualisieren.** Die drei Paarwerte sind auf den vorhandenen Exporten bereits unabhängig überprüfbar; Procrustes beibehalten.
+2. **Versuchsaufbau und Beschreibung in Einklang bringen.** Insbesondere 5.000 versus 40.000 Zellen, 29 versus 30 Referenz-PCs sowie 2.000 Zellen für die Distanzkorrelation eindeutig festhalten. Die Auswahl auf dem Sweep ist eine explorative Optimierung, keine unabhängige Validierung.
+3. **Die Ergebniszusammenfassung tatsächlich schreiben.** Konkrete Zahlen einsetzen, Parameterbeispiele auswerten und die unterschiedliche Aussage von kNN, Procrustes und Referenzraumtreue erklären.
+4. **Präzision und Nachvollziehbarkeit verbessern.** t-SNE-Tabelle explizit anzeigen; Cofaktor-Erklärung, Metriknamen, PCA-MSE-Normierung und „full data“-Bezeichnungen korrigieren. Randfälle der PCA-Auswahl und GMM-Schwelle absichern; den Export zur Beschreibung passend machen.
+5. **Abschließenden konsistenten Notebooklauf durchführen.** In einem frischen Kernel mit dem festgelegten Auswertungsumfang ausführen und sämtliche Ausgaben gemeinsam speichern. Die derzeitigen großen Einbettungen wurden für diesen Audit nicht neu berechnet.
+
+Zusätzliche Methoden, umfangreiche weitere Parameterstudien oder Klassifikationsanalysen sind für Aufgabe 2 nicht erforderlich. Mehrere Seeds wären eine optionale Robustheitsprüfung. Die Fünf-Seiten-Vorgabe auf Seite 2 der Aufgabenstellung gilt für den gemeinsamen Abschlussbericht, nicht für diese interne Untersuchung.
+
+---
+
+**5. Prüfprotokoll und Aussagegrenzen**
+
+| Prüfung | Tatsächlich durchgeführt | Ergebnis / Grenze |
 |---|---|---|
-| Aufgabenabgleich | Original-PDF ausgelesen, Aufgabe 2 in Teilanforderungen zerlegt | Alle ausdrücklichen Anforderungen in Abschnitt 1 zugeordnet |
-| Statische Prüfung | Alle 44 Zellen gelesen; 30 Codezellen kompiliert | Keine Syntaxfehler; das beweist keine Ausführbarkeit |
-| Frischer Teildurchlauf | Neuer Python-Prozess, Codezellen in Originalreihenfolge, reale Parquet-Dateien | Erster Abbruch in Zelle 15 reproduziert |
-| Datenfluss / PCA | Zeilen und Marker geprüft, PCA-Zelle nach dem Abbruch separat ausgeführt | Ergebnisse in Abschnitt 3; kein vollständiger Notebooklauf |
-| Weitere Ausführungsfehler | Betroffene Ausdrücke separat in kontrolliertem Zustand ausgeführt | Fehlender Import und `labels`-Kollision reproduziert |
-| kNN-Implementierung | Originalfunktion gegen unabhängige Distanzmatrixrechnung getestet | Unterschied 0,150000 gegenüber 0,216667 im Testfall |
-| Cache | Originalfunktion mit wechselnden Testberechnungen und gleichem Schlüssel | Veraltete Rückgabe reproduziert; kein Beweis für tatsächlich veraltete Originaldaten |
-| GMM-Randfall | Originalfunktion mit simuliertem Modell ohne Schwellenübergang | Falscher Rückgabewert reproduziert; kein Nachweis dieses Randfalls im Datensatz |
-| Gespeicherte Darstellungen | Unter anderem UMAP-Raster, PCA-Loadings und Vergleichs-Heatmap direkt angesehen | 16 statt 48 UMAP-Beispiele sowie problematische Rundung bestätigt |
+| Aufgabenabgleich | Wortlaut aus Original-PDF mit der `_clean`-Version abgeglichen | Teilanforderungen in Abschnitt 1 zugeordnet |
+| Statische Prüfung | Alle 50 Zellen gelesen, alle 29 Codezellen kompiliert | Keine Syntaxfehler; kein Beweis eines vollständigen erfolgreichen Laufs |
+| Frischer Daten-/PCA-Lauf | Sämtliche Codezellen bis einschließlich Zelle 26 mit realen Exportdateien ausgeführt | Erfolgreich, einschließlich GMM, PCA-Auswahl und Stichprobenbildung |
+| Datenzuordnung | Eingaben, AnnData-Metadaten und große Einbettungsexporte geprüft | Werte und Reihenfolge stimmen; AnnData ändert teilweise nur die Metadatentypen |
+| Paarvergleich | Originalzelle 47 auf vorhandenen 40.000-Zell-Einbettungsexporten ausgeführt | Gespeicherte kNN- und Procrustes-Werte reproduziert |
+| Unabhängige Metrikprüfung | kNN gegen Distanzmatrixrechnung, Procrustes gegen SVD-Formel geprüft | kNN-Fehler bestätigt; Procrustes korrekt; korrigierte Paarwerte berechnet |
+| Qualitätszelle 43 | Auf 200 über den Bestand verteilten, passend zugeordneten Exportzeilen ausgeführt | Alle vier Metriken laufen; kein vollständiger 40.000-Zell-Score-Neulauf |
+| Randfälle | Nicht erreichte PCA-Schwelle und GMM ohne Übergang simuliert | Bedingte Fehler reproduziert; aktuelle Daten erreichen die PCA-Schwelle |
+| Abbildungen | Unter anderem Cofaktor-Raster, sechs t-SNE-Beispiele, 16 UMAP-Beispiele und gemeinsame Dreierdarstellung direkt angesehen | Beispielvisualisierungen vorhanden; konkrete Interpretationshinweise oben |
 
-Verwendete Analyseumgebung: Projekt-`.venv` mit NumPy 2.5.2, pandas 2.3.3, SciPy 1.18.0, scikit-learn 1.9.0, Scanpy 1.12.4, UMAP 0.5.12 und AnnData 0.13.3.post0. Für den Prüflauf wurden Diagramme ohne interaktives Fenster erzeugt, `display()` unterdrückt und Cache-Schreibzugriffe nach `/tmp` umgeleitet. Diese Anpassungen verändern die geprüften numerischen Ausdrücke nicht.
+Verwendet wurde die Projekt-`.venv` mit NumPy 2.5.2, pandas 2.3.3, SciPy 1.18.0, scikit-learn 1.9.0, Scanpy 1.12.4, UMAP 0.5.12 und AnnData 0.13.3.post0. Diagramme wurden ohne interaktives Fenster erzeugt und `display()` im Prüflauf unterdrückt; die numerischen Ausdrücke blieben unverändert. Temporäre Prüfdateien liegen außerhalb der versionierten Analyse unter `/tmp`.
 
-**Nicht durchgeführt:** vollständige Neuberechnung der 48 UMAP-Konfigurationen, der großen t-SNE-/UMAP-Einbettungen und ihrer finalen Scores; Herkunftsvalidierung vorhandener Einbettungsexporte; erneute FCS-Extraktion; vollständiges Audit der `_clean`-Variante. Die Fehlerbelege und die offenen Pflichtanforderungen sind davon unabhängig. Eine belastbare neue Rangfolge oder korrigierte Paarwerttabelle kann erst nach dem bereinigten Gesamtlauf angegeben werden.
+**Nicht durchgeführt:** erneutes Training aller sechs t-SNE- und 16 UMAP-Sweep-Modelle, erneutes Training der großen Einbettungen, vollständige 40.000-Zell-Neuberechnung von Trustworthiness und Silhouette sowie erneute FCS-Extraktion. Die Originaleinbettungen sind durch Metadatenabgleich, exakte PCA-Reproduktion und passende Paarwerte plausibilisiert; daraus folgt keine vollständige Reproduktion der Trainingsläufe. Es gibt in diesem Audit keinen belegten aktuellen Durchlaufabbruch der `_clean`-Version. Die verbleibenden Hauptprobleme sind der bestätigte kNN-Fehler, die widersprüchliche Dokumentation des Vergleichsaufbaus und die unfertige Ergebnisdiskussion.
