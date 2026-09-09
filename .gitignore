@@ -22,5 +22,11 @@ results/tables/*
 !results/figures/.gitkeep
 !results/tables/.gitkeep
 
+# Published tables for the first bonus variant (100 splits)
+!results/tables/bonus_100/
+results/tables/bonus_100/*
+!results/tables/bonus_100/*.csv
+!results/tables/bonus_100/run_config.json
+
 # Report build products (selected report assets are versioned)
 report/build/

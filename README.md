@@ -199,6 +199,19 @@ die drei vollständigen Methodenläufe ausgeführt werden. Erst anschließend ka
 Repository gespeicherten Notebook-Ausgaben bleiben auch ohne diese lokalen
 CSV-Dateien sichtbar.
 
+### Ergebnisse der ersten Bonuslösung teilen
+
+Der vollständige Lauf der ersten Bonusvariante (`06b`, diagonale Prototypfilter
+mit ReLU-Radius und Mittelwert-Pooling) wird nach erfolgreichem Abschluss in
+`notebooks/06b_ergebnisse_100_splits.ipynb` zusammengefasst. Dieses separate
+Ergebnisnotebook zeigt alle 100 Splits und verwendet ausschließlich die kleinen,
+versionierbaren Ergebnistabellen unter `results/tables/bonus_100/`. Es benötigt
+zum erneuten Auswerten weder FCS-Daten noch Modell-Checkpoints oder eine GPU.
+Notebook und Tabellen müssen gemeinsam committet und gepusht werden;
+gespeicherte Notebook-Ausgaben sind dann direkt nach dem Pull sichtbar.
+Die Veröffentlichung erfolgt erst nach Prüfung aller 100 Splits. Die übrigen
+lokalen Analyseartefakte bleiben von Git ausgeschlossen.
+
 ### Aufgabe 5 ausführen
 
 `05_interpretation.ipynb` interpretiert die gespeicherten Modelle der **30 gemeinsamen
