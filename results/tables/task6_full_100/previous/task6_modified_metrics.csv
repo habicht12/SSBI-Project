@@ -1,0 +1,4 @@
+split_id,network_auc,frequency_auc,frequency_effect,phenotype_status
+0,0.375,0.375,-0.012474998598918319,berechnet
+1,1.0,0.875,0.1150750070810318,berechnet
+2,0.25,0.5,-0.010399998631328344,berechnet

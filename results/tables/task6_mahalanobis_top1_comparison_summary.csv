@@ -1,0 +1,5 @@
+Metrik,Baseline,Mahalanobis Top1
+Mittlere Network-ROC-AUC,1.0,0.7083333333333334
+Mediane Network-ROC-AUC,1.0,0.75
+Mittlere Häufigkeits-ROC-AUC,1.0,0.6041666666666666
+Mittlere Häufigkeitsdifferenz CMV+ minus CMV−,0.02253749910505573,0.006808333411754575

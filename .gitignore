@@ -30,3 +30,34 @@ results/tables/bonus_100/*
 
 # Report build products (selected report assets are versioned)
 report/build/
+
+# Published result artefacts requested for collaborator handoff (2026-09-09).
+# Original data, caches, process files and logs remain excluded.
+!results/figures/*.png
+!results/tables/*.csv
+!results/tables/*.json
+!results/tables/*.pt
+!results/tables/*.rds
+!results/tables/archive_citrus_1000cells_5percent_20260908/
+results/tables/archive_citrus_1000cells_5percent_20260908/*
+!results/tables/archive_citrus_1000cells_5percent_20260908/*.csv
+!results/tables/archive_citrus_1000cells_5percent_20260908/*.png
+!results/tables/archive_citrus_1000cells_5percent_20260908/*.rds
+!results/tables/bonus_100/
+results/tables/bonus_100/*
+!results/tables/bonus_100/*.csv
+!results/tables/bonus_100/*.json
+!results/tables/citrus_10_split_backup/
+results/tables/citrus_10_split_backup/*
+!results/tables/citrus_10_split_backup/*.csv
+!results/tables/citrus_10_split_backup/*.rds
+!results/tables/task6_full_100/
+results/tables/task6_full_100/*
+!results/tables/task6_full_100/*.ipynb
+!results/tables/task6_full_100/previous/
+results/tables/task6_full_100/previous/*
+!results/tables/task6_full_100/previous/*.csv
+!results/tables/task6_full_100/previous/*.json
+
+# Transient execution metadata
+results/tables/**/status.json

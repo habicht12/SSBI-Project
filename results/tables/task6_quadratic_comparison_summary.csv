@@ -1,0 +1,5 @@
+Metrik,Baseline,Quadratisches CellCNN
+Mittlere Network-ROC-AUC,0.875,0.9375
+Mediane Network-ROC-AUC,1.0,1.0
+Mittlere Häufigkeits-ROC-AUC,0.90625,0.8375
+Mittlere Häufigkeitsdifferenz CMV+ minus CMV−,0.010734999664964561,0.005537499821639358

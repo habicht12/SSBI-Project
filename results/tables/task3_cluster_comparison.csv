@@ -1,0 +1,10 @@
+variant,method,parameters,n_clusters,min_cluster_size,singleton_clusters,evaluation_cells,silhouette,invalid_reason,selected
+kmeans_k6,K-Means,"{""max_iter"": 300, ""n_clusters"": 6, ""n_init"": 20, ""random_state"": 42}",6,262,0,2000,0.07932197727718063,,True
+kmeans_k10,K-Means,"{""max_iter"": 300, ""n_clusters"": 10, ""n_init"": 20, ""random_state"": 42}",10,244,0,2000,0.0728911035493888,,False
+kmeans_k14,K-Means,"{""max_iter"": 300, ""n_clusters"": 14, ""n_init"": 20, ""random_state"": 42}",14,177,0,2000,0.06635322447265393,,False
+ward_k6,Ward,"{""linkage"": ""ward"", ""metric"": ""euclidean"", ""n_clusters"": 6}",6,247,0,2000,0.04665738608716225,,False
+ward_k10,Ward,"{""linkage"": ""ward"", ""metric"": ""euclidean"", ""n_clusters"": 10}",10,216,0,2000,0.03748259404024705,,False
+ward_k14,Ward,"{""linkage"": ""ward"", ""metric"": ""euclidean"", ""n_clusters"": 14}",14,216,0,2000,0.04885850187265322,,True
+leiden_r0.5,Leiden,"{""graph"": ""unweighted undirected kNN union"", ""n_iterations"": -1, ""neighbors"": 15, ""partition"": ""RBConfigurationVertexPartition"", ""resolution"": 0.5, ""seed"": 42}",7,244,0,2000,0.06649840668999292,,False
+leiden_r1.0,Leiden,"{""graph"": ""unweighted undirected kNN union"", ""n_iterations"": -1, ""neighbors"": 15, ""partition"": ""RBConfigurationVertexPartition"", ""resolution"": 1.0, ""seed"": 42}",11,152,0,2000,0.0671266361404514,,True
+leiden_r1.5,Leiden,"{""graph"": ""unweighted undirected kNN union"", ""n_iterations"": -1, ""neighbors"": 15, ""partition"": ""RBConfigurationVertexPartition"", ""resolution"": 1.5, ""seed"": 42}",18,115,0,2000,0.022928341204218442,,False

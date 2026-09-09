@@ -1,0 +1,4 @@
+method,variant,reference_jaccard,reason
+PCA,pca,0.010208784307479958,Höchster 37D-Nachbarschaftserhalt im untersuchten Raster.
+t-SNE,tsne_p30,0.18236554638605973,Höchster 37D-Nachbarschaftserhalt im untersuchten Raster.
+UMAP,umap_n15_d0.1,0.09171241287019002,Höchster 37D-Nachbarschaftserhalt im untersuchten Raster.

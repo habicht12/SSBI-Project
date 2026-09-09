@@ -1,0 +1,7 @@
+method,direction,selected_cells,supported_donors,mean_selection_fraction,minimum_donor_cells,maximum_donor_cells
+SVM,positive,219,20,0.0026452325050401607,1,21
+SVM,negative,434,20,0.0069195858580749945,6,34
+CellCNN,positive,1313,20,0.010908641718338625,14,175
+CellCNN,negative,2739,20,0.01718198084421384,59,264
+Citrus,positive,7678,20,0.15701964551252584,252,461
+Citrus,negative,7893,20,0.11325936059577604,269,475

@@ -1,0 +1,13 @@
+split_id,gate,run_mode,device,implementation_version,inner_fold,filter_count,candidate_seed,validation_accuracy,validation_roc_auc,best_validation_loss,epochs_run,selected
+0,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3,3003105992,0.6,0.6666666666666666,0.6354305148124695,10,False
+0,gated_NK,smoke,cuda,pytorch_materialized_v1,0,5,3003106192,0.6,0.6666666666666666,0.6437443315982818,7,False
+0,gated_NK,smoke,cuda,pytorch_materialized_v1,1,3,3003115992,0.6,1.0,0.4732185959815979,12,False
+0,gated_NK,smoke,cuda,pytorch_materialized_v1,1,5,3003116192,0.8,0.8333333333333334,0.5405265137553215,12,True
+0,gated_NK,smoke,cuda,pytorch_materialized_v1,2,3,3003125992,0.75,1.0,0.4186824709177017,12,False
+0,gated_NK,smoke,cuda,pytorch_materialized_v1,2,5,3003126192,0.75,1.0,0.30628110468387604,12,False
+1,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3,976401080,0.6,0.5,0.6836349606513977,4,False
+1,gated_NK,smoke,cuda,pytorch_materialized_v1,0,5,976401280,0.8,0.8333333333333333,0.49054814130067825,12,False
+1,gated_NK,smoke,cuda,pytorch_materialized_v1,1,3,976411080,0.6,0.5,0.6768848180770874,5,False
+1,gated_NK,smoke,cuda,pytorch_materialized_v1,1,5,976411280,0.6,0.6666666666666667,0.6970094799995422,10,False
+1,gated_NK,smoke,cuda,pytorch_materialized_v1,2,3,976421080,0.5,0.75,0.67006516456604,7,False
+1,gated_NK,smoke,cuda,pytorch_materialized_v1,2,5,976421280,1.0,1.0,0.3077443689107895,12,True

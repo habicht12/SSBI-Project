@@ -1,0 +1,5 @@
+Metrik,Baseline,Modified
+Mittlere Network-ROC-AUC,1.0,0.5416666666666666
+Mediane Network-ROC-AUC,1.0,0.375
+Mittlere Häufigkeits-ROC-AUC,1.0,0.5833333333333334
+Mittlere Häufigkeitsdifferenz CMV+ minus CMV−,0.02253749910505573,0.03073333661692838

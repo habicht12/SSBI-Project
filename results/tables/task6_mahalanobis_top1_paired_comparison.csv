@@ -1,0 +1,4 @@
+split_id,network_auc_baseline,frequency_auc_baseline,frequency_effect_baseline,phenotype_status_baseline,network_auc_modified,frequency_auc_modified,frequency_effect_modified,phenotype_status_modified,network_auc_mean,network_auc_delta,network_auc_delta_vs_mean
+0,1.0,1.0,0.0073499997060935,berechnet,0.375,0.3125,-0.0012749999805237167,berechnet,0.375,-0.625,0.0
+1,1.0,1.0,0.0338249988853931,berechnet,1.0,0.625,0.010262500029057264,berechnet,1.0,0.0,0.0
+2,1.0,1.0,0.0264374987236806,berechnet,0.75,0.875,0.011437500186730176,berechnet,0.25,-0.25,0.5

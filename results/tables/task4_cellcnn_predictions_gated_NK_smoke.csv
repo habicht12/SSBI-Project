@@ -1,0 +1,13 @@
+method,gate,run_mode,device,implementation_version,split_id,split_seed,donor_id,y_true,score,decision_threshold,y_pred,filter_count,selected_inner_fold,training_cells_per_input,training_inputs_per_donor,prediction_cells_per_input,prediction_inputs_per_donor,top_fraction
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3003105692,a_002,1,0.5678302407264709,0.5,1,5,1,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3003105692,a_004,0,0.12340156883001327,0.5,0,5,1,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3003105692,a_006,0,0.4718570411205292,0.5,0,5,1,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3003105692,a_1a,0,0.4413061380386353,0.5,0,5,1,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3003105692,a_2a,0,0.3300917327404022,0.5,0,5,1,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,0,3003105692,a_4a,1,0.8418739199638366,0.5,1,5,1,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,1,976400780,a_002,1,0.730623435974121,0.5,1,5,2,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,1,976400780,a_003,0,0.8274566411972046,0.5,1,5,2,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,1,976400780,a_004,0,0.2775159329175949,0.5,0,5,2,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,1,976400780,a_006,0,0.5537303328514099,0.5,1,5,2,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,1,976400780,a_3b,0,0.10493512004613877,0.5,0,5,2,1000,8,3000,5,0.01
+cellcnn,gated_NK,smoke,cuda,pytorch_materialized_v1,1,976400780,a_5a,1,0.9100309610366821,0.5,1,5,2,1000,8,3000,5,0.01

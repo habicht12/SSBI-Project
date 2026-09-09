@@ -1,0 +1,4 @@
+method,variant,parameters,n_clusters,silhouette
+K-Means,kmeans_k6,"{""max_iter"": 300, ""n_clusters"": 6, ""n_init"": 20, ""random_state"": 42}",6,0.07932197727718063
+Ward,ward_k14,"{""linkage"": ""ward"", ""metric"": ""euclidean"", ""n_clusters"": 14}",14,0.04885850187265322
+Leiden,leiden_r1.0,"{""graph"": ""unweighted undirected kNN union"", ""n_iterations"": -1, ""neighbors"": 15, ""partition"": ""RBConfigurationVertexPartition"", ""resolution"": 1.0, ""seed"": 42}",11,0.0671266361404514

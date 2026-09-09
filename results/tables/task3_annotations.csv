@@ -1,0 +1,32 @@
+variant,cluster,annotation,evidence
+kmeans_k6,0,"B-kompatibel, breit",CD19/HLA-DR relativ erhöht; CD3 niedriger als in T-Profilen; mögliche Mischung.
+kmeans_k6,1,CD4-T-kompatibel,CD3/CD4/CD127 erhöht; CD19 und NK-Marker niedrig.
+kmeans_k6,2,NK-kompatibel,CD56/CD16/CD94/NKp46 erhöht; CD3 niedriger als in T-Profilen.
+kmeans_k6,3,CD8-T-kompatibel,CD3/CD8 erhöht; CD56/CD16 niedrig; NKG2D/CD57 teilweise erhöht.
+kmeans_k6,4,"NK-kompatibel, KIR-reich","CD56/CD16 sowie 3DL1 und 3DL1-S1 stark erhöht; CD3 intermediär, Mischung nicht ausgeschlossen."
+kmeans_k6,5,"Myeloid-kompatibel, breit",CD33/HLA-DR/ILT2-CD85j erhöht; CD19 niedrig; keine feinere Linienzuordnung.
+ward_k14,0,"Gemischt/unklar, CD25-reich","CD25/HLA-DR erhöht, CD19 und CD33 zugleich messbar; kein eindeutiges Linienprofil."
+ward_k14,1,Myeloid-kompatibel,CD33/HLA-DR/ILT2-CD85j erhöht; CD19 niedrig.
+ward_k14,2,CD4-T-kompatibel,CD3/CD4/CD127 erhöht; CD19 und NK-Marker niedrig.
+ward_k14,3,B-kompatibel,CD19/HLA-DR erhöht; CD3 niedriger als in T-Profilen.
+ward_k14,4,"Gemischt/unklar, NKp44-reich","NKp44 erhöht, jedoch kein klares gemeinsames CD56/CD16/NKp46-Profil."
+ward_k14,5,CD8-T-kompatibel,CD3/CD8 erhöht; CD19/CD56/CD16 niedrig.
+ward_k14,6,"Gemischt, CD4-T-kompatibler Anteil","CD3/CD4/CD127 erhöht, zugleich CD19/CD33/HLA-DR messbar; keine reine T-Gruppe behauptet."
+ward_k14,7,"Myeloid-kompatibel, CD117-reich",CD33/HLA-DR/ILT2-CD85j und CD117 erhöht; keine Stammzellzuordnung aus CD117 allein.
+ward_k14,8,Gemischt/unklar,"CD3 intermediär, CD57/NKp30 erhöht; keine klare T-/NK-Abgrenzung."
+ward_k14,9,T-kompatibel mit NK-Rezeptoren,CD3/CD8 sowie CD94/NKG2A erhöht; CD16 niedrig; keine NKT-Identität ableitbar.
+ward_k14,10,"NK-kompatibel, NKG2A-reich",CD56/CD16/NKp46/CD94/NKG2A erhöht; CD3 relativ niedrig.
+ward_k14,11,"NK-kompatibel, KIR-reich","CD56/CD16 sowie 3DL1 und 3DL1-S1 erhöht; CD3 intermediär, Mischung nicht ausgeschlossen."
+ward_k14,12,"Gemischt/unklar, TRAIL-reich","TRAIL stark erhöht, übrige Linienmarker ohne eindeutige Kombination."
+ward_k14,13,"NK-kompatibel, CD57-reich","CD56/CD16/NKp46 und CD57 erhöht, NKG2A niedriger als Cluster 10; keine CMV-Zuordnung."
+leiden_r1.0,0,Myeloid-kompatibel,CD33/HLA-DR/ILT2-CD85j erhöht; CD19 niedrig.
+leiden_r1.0,1,CD4-T-kompatibel,CD3/CD4/CD127 erhöht; CD19 und NK-Marker niedrig.
+leiden_r1.0,2,CD8-T-kompatibel,CD3/CD8 erhöht; CD56/CD16 niedrig.
+leiden_r1.0,3,B-kompatibel,CD19/HLA-DR deutlicher erhöht als im breiten K-Means-Cluster 0; CD3 relativ niedrig.
+leiden_r1.0,4,NK-kompatibel,CD56/CD16/CD94/NKp46 erhöht; CD3 niedriger als in T-Profilen.
+leiden_r1.0,5,"Unklar, schwaches Linienprofil",CD3/CD19/CD56/CD16 niedrig; kein eindeutiger Zelltyp aus diesen Markern ableitbar.
+leiden_r1.0,6,T-kompatibel mit NK-Rezeptoren,CD3/CD8/CD57 sowie CD94/NKG2A erhöht; CD16 niedrig; keine NKT-Identität ableitbar.
+leiden_r1.0,7,"Myeloid-kompatibel, CD117-reich",CD33/HLA-DR/ILT2-CD85j und CD117 erhöht; keine feinere Linienzuordnung.
+leiden_r1.0,8,"Gemischt/unklar, CD25-reich","CD25/HLA-DR erhöht, CD3/CD19/CD33 intermediär; keine eindeutige Linie."
+leiden_r1.0,9,"NK-kompatibel, KIR-reich","CD56/CD16 sowie 3DL1 und 3DL1-S1 erhöht; CD3 intermediär, Mischung nicht ausgeschlossen."
+leiden_r1.0,10,"Gemischt/unklar, TRAIL-reich","TRAIL stark erhöht, CD3 messbar, übrige Linienmarker ohne eindeutige Kombination."
