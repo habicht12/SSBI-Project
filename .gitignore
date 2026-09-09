@@ -22,5 +22,31 @@ results/tables/*
 !results/figures/.gitkeep
 !results/tables/.gitkeep
 
+# Reviewed CellCNN learnable-pooling benchmark shared with collaborators
+!results/tables/task6_learnable_pooling_100/
+results/tables/task6_learnable_pooling_100/*
+!results/tables/task6_learnable_pooling_100/README.md
+!results/tables/task6_learnable_pooling_100/run_scope.json
+!results/tables/task6_learnable_pooling_100/task4_cellcnn_filters_gated_alive_full.csv
+!results/tables/task6_learnable_pooling_100/task4_cellcnn_predictions_gated_alive_full.config.json
+!results/tables/task6_learnable_pooling_100/task4_cellcnn_predictions_gated_alive_full.csv
+!results/tables/task6_learnable_pooling_100/task4_cellcnn_selection_gated_alive_full.csv
+!results/tables/task6_learnable_pooling_100/task4_donor_splits.csv
+!results/tables/task6_learnable_pooling_100/task6_baseline_evaluation.config.json
+!results/tables/task6_learnable_pooling_100/task6_baseline_frequencies.csv
+!results/tables/task6_learnable_pooling_100/task6_baseline_metrics.csv
+!results/tables/task6_learnable_pooling_100/task6_baseline_prediction_checks.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_100_executed.ipynb
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_alphas.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_comparison_summary.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_metrics.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_paired_comparison.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_pooled_responses.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_predictions.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_selection.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_timing.csv
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_split_[0-9].pt
+!results/tables/task6_learnable_pooling_100/task6_learnable_pooling_split_[0-9][0-9].pt
+
 # Report build products (selected report assets are versioned)
 report/build/
