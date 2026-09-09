@@ -1,0 +1,26 @@
+% Integrable report section: no document class, preamble or page break.
+\begingroup
+\providecommand{\TaskTwoRoot}{.}
+\providecommand{\best}[1]{\textbf{#1}}
+\providecommand{\worst}[1]{#1}
+\providecommand{\figcaption}[1]{{\footnotesize #1\par}}
+\section*{Dimensionality reduction}
+We compared PCA, t-SNE and UMAP on the provided NK-cell mass-cytometry data from Horowitz et al. (2013). The exploratory sample contains 40,000 cells, equally sampled at 2,000 cells from each of 20 donors. All 37 analysis markers passed the variance threshold of 0.05 after $\operatorname{asinh}(x/5)$ transformation; marker-wise z-scoring then equalised their scales. A donor-wise comparison with all 261,593 available gated NK cells showed close agreement for the GMM-defined NKG2C$^+$/CD57$^+$ fraction. This supports the particular sampling check, not representativeness for all rare populations.
+
+PCA retained 29 components to exceed 90\% explained variance (91.50\%); PC1 and PC2 alone explain 20.29\%. On a fixed 5,000-cell subsample of this 29-dimensional representation, we compared six t-SNE perplexities and 16 UMAP settings. Perplexity controls an effective neighbourhood size; UMAP's n\_neighbors controls graph neighbourhood size, whereas min\_dist affects packing in the map. We selected t-SNE perplexity 60 and UMAP n\_neighbors=5, min\_dist=0.0 by the highest saved Trustworthiness. The t-SNE advantage over perplexity 50 is only 0.000073; this is a within-run choice, not evidence of a robust optimum. Other optimisation settings were held fixed rather than shown to be unimportant.
+
+\begin{center}
+\includegraphics[width=.91\linewidth,height=39mm,keepaspectratio]{\TaskTwoRoot/figures/embeddings_cmv.pdf}
+\end{center}
+\figcaption{Figure 1. The same 40,000 cells in three maps, coloured by donor CMV status. Final t-SNE/UMAP inputs are the 29 selected PCs. Coordinates are saved notebook results; no embedding model was retrained for this report.}
+
+We chose \textbf{Procrustes disparity} to compare all pairs of visualizations. It measures residual global mismatch after translation, rotation/reflection and scaling; smaller values indicate more similar aligned shapes. Corrected kNN overlap ($k=15$) additionally compares local neighbour identities. The two perspectives yield different rankings:
+\begin{center}
+\input{\TaskTwoRoot/data/pairwise}
+\end{center}
+\figcaption{Table 1. Same cells and row order for all pairs. $R(15)$ is the mean shared-neighbour fraction; $M^2$ is Procrustes disparity. Green/red mark the best/worst numerical value within a column. Both measures were checked from the committed coordinates.}
+
+PCA and t-SNE are the closest pair by Procrustes, whereas t-SNE and UMAP share the most local neighbours. Against the 29-PC reference, t-SNE has the highest saved Trustworthiness (0.9612), while PCA has the highest Pearson correlation of pairwise distances (0.6204, evaluated on 2,000 fixed cells). CMV silhouettes are small (0.0016--0.0178), providing little evidence of global CMV separation in these maps. Marker overlays can generate biological hypotheses, but neither visible islands nor these scores establish valid cell types or donor-level predictive performance. Those questions belong to the subsequent clustering, classification and interpretation tasks.
+
+{\scriptsize Sources: Horowitz et al., Sci. Transl. Med. 5:208ra145 (2013); van der Maaten \& Hinton, JMLR 9:2579--2605 (2008); McInnes et al., arXiv:1802.03426; notebook 02\_dimensionality\_reduction\_clean, source commit 252415a. Final kNN values corrected; saved Trustworthiness and silhouette not independently recomputed. Parameter examples and marker overlays are supplied in a separate supplementary appendix.}
+\endgroup

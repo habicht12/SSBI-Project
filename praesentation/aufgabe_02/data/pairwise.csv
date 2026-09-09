@@ -1,0 +1,4 @@
+pair,knn_preservation,procrustes_disparity
+PCA vs t-SNE,0.005850000,0.451890928
+PCA vs UMAP,0.004095000,0.733896505
+t-SNE vs UMAP,0.125318333,0.723691626

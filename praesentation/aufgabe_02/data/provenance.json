@@ -1,0 +1,70 @@
+{
+  "source_commit": "252415a64ec23cc66772a86f636ba01f4d0f3e4b",
+  "notebook_sha256": "69e81282d26d0dc8db5e70dd5a0be07c1e11a17b38521c409c5f2b8e5759335b",
+  "input_sha256": {
+    "embeddings_full.parquet": "e38dcc0e75593564ed8d85750c4c2b36e4dcb7d5c1607e07c3f7d774b69b620a",
+    "X_pca_full.npy": "fc805760a669d79c42183b5bbbc4ac843bb55916c07b1cc560cc2cf93ced05ee",
+    "nk_balanced_raw.parquet": "adf9b793f8186f83b5cafb5a41b0e64cb3125cc66550d88713d6bdff95feb94d",
+    "channel_table.parquet": "0c89ca4c90601047edf5f6fc71c51ab492b226a29fcf5b2a7a1c55d5c7341929"
+  },
+  "n_cells": 40000,
+  "n_donors": 20,
+  "cells_per_donor": 2000,
+  "reference_pcs": 29,
+  "k": 15,
+  "seed": 42,
+  "distance_sample_cells": 2000,
+  "software": {
+    "python": "3.12.14",
+    "numpy": "2.5.2",
+    "pandas": "2.3.3",
+    "scipy": "1.18.0",
+    "scikit-learn": "1.9.0",
+    "matplotlib": "3.11.1",
+    "pillow": "12.3.0"
+  },
+  "saved_image_sources": {
+    "subsample.png": {
+      "source_anchor": "comparison = pd.concat",
+      "cell_ordinal": 17
+    },
+    "tsne_sweep.png": {
+      "source_anchor": "tsne_sweep_labels =",
+      "cell_ordinal": 29
+    },
+    "umap_sweep.png": {
+      "source_anchor": "umap_sweep_labels =",
+      "cell_ordinal": 33
+    },
+    "umap_markers.png": {
+      "source_anchor": "diagnostic_markers_for_overlay =",
+      "cell_ordinal": 41
+    },
+    "tsne_markers.png": {
+      "source_anchor": "diagnostic_markers_for_overlay =",
+      "cell_ordinal": 41
+    },
+    "shepard.png": {
+      "source_anchor": "SHEPARD_N_SAMPLE =",
+      "cell_ordinal": 45
+    }
+  },
+  "recalculated": [
+    "kNN quality",
+    "pairwise kNN",
+    "Procrustes",
+    "Pearson distance correlation",
+    "PCA variance spectrum"
+  ],
+  "retained_without_retraining": [
+    "t-SNE/UMAP coordinates and sweep plots",
+    "Trustworthiness",
+    "CMV silhouette",
+    "GMM subsampling plot"
+  ],
+  "pca_variance": {
+    "PC1": 0.1260055892573286,
+    "PC2": 0.07690505570277167,
+    "PC29_cumulative": 0.9149781392705951
+  }
+}

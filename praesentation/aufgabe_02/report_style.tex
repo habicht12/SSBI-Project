@@ -1,0 +1,19 @@
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=20mm]{geometry}
+\usepackage{graphicx,booktabs,array,amsmath,amssymb,xcolor}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=teal,urlcolor=teal,citecolor=teal]{hyperref}
+\definecolor{Ink}{HTML}{172B43}
+\definecolor{Best}{HTML}{157553}
+\definecolor{Rust}{HTML}{AF4D35}
+\newcommand{\best}[1]{\textcolor{Best}{\textbf{#1}}}
+\newcommand{\worst}[1]{\textcolor{Rust}{#1}}
+\graphicspath{{figures/}}
+\input{data/numbers}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\newcommand{\figcaption}[1]{{\footnotesize #1\par}}
+\newcommand{\topic}[1]{\par\medskip\textbf{#1}\par}
