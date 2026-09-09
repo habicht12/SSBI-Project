@@ -132,23 +132,24 @@ TASK4_RUN_MODE=full TASK4_RUN_TRAINING=1 jupyter nbconvert --to notebook --execu
 ```
 
 Citrus verwendet im Full-Modus 10.000 Zellen je Trainings- und Testspender,
-zehn äußere Splits (IDs 0–9) und drei innere Folds. Zellzahl und Wiederholungen
+30 äußere Splits (IDs 0–29) und drei innere Folds. Zellzahl und Wiederholungen
 sind gegenüber den 20.000 Zellen und 100 Splits im Paper als Rechenkompromiss
 reduziert; die Mindestclustergröße bleibt
 papernah bei 0,05 % (Anteil `0.0005`).
 Der frühere Lauf mit 1.000 Zellen und 5 % wird vom Comparison zurückgewiesen.
 Vor dem vollständigen Neulauf zunächst mit `TASK4_SPLIT_LIMIT=1` Laufzeit
 und Speicherbedarf prüfen; das hierarchische Clustering ist deutlich aufwendiger.
-Nach allen zehn Citrus-Splits `04e_comparison.ipynb` erneut ausführen; dieses
-verwendet für den Dreiervergleich dieselben zehn Splits aller Methoden.
+Nach allen 30 Citrus-Splits `04e_comparison.ipynb` erneut ausführen; dieses
+verwendet für den Dreiervergleich dieselben 30 Splits aller Methoden.
 Zusätzlich wertet es CellCNN und SVM über alle 100 vorhandenen Splits aus
 (`task4_cellcnn_svm_100_*`); die Vorhersagedateien dieser Methoden bleiben unverändert.
 Vor dem Comparison werden die Konfigurationsnachweise aller drei Methoden,
 Eingabeprüfsummen und Trainingscode geprüft. Für die Citrus-RDS-Datei wird die
 vorhandene Conda-Umgebung `ssbi-citrus` benötigt. Rclusterpp verwendet eigene
 OpenMP-Threads; `mc.cores = 1` begrenzt nur die R-Prozessparallelität.
-Bisherige Citrus-Interpretationen und Berichtsabbildungen aus Aufgabe 5
-gehören zur alten Konfiguration und müssen vor Wiederverwendung aktualisiert werden.
+Die aktuelle Interpretation in Aufgabe 5 und die Kurzberichtsabbildung verwenden
+`task5_paper_*` auf denselben 30 Splits. Frühere `task5_*`-Dateien und der Detailbericht
+bleiben historische Ergebnisse der alten Citrus-Konfiguration.
 Nur die Aufgabe-4-Berichtstabellen lassen sich mit
 `python -m src.report_assets --classification-only` aktualisieren.
 
@@ -219,8 +220,9 @@ Splits 0–29** auf `gated_alive`. Es benötigt die vollständigen Aufgabe-4-Art
 sowie Zell-IDs, t-SNE-Koordinaten und Provenienz aus Aufgabe 2. Solange Citrus
 noch nicht alle 30 Splits exportiert hat, stoppt die Hauptauswertung mit einer
 Meldung über die fehlenden Splits; es gibt keine automatische Teil-Auswertung.
-Nach Abschluss des Citrus-Laufs das Notebook mit frischem Python-Kernel von
-oben nach unten ausführen. R/`ssbi-citrus` wird ausschließlich für die bestehende
+Der vollständige Lauf über 30 Splits wurde am 9. September 2026 geprüft und ausgeführt.
+Für eine Neuberechnung das Notebook mit frischem Python-Kernel von oben nach unten
+ausführen. R/`ssbi-citrus` wird ausschließlich für die bestehende
 Konfigurationsprüfung benötigt; es werden keine Citrus-Bäume rekonstruiert.
 
 CellCNN verwendet pro Filter die Halbmaximum-Auswahl auf der ursprünglichen
@@ -244,8 +246,10 @@ unterschiedliche Größen und keine vergleichbaren Effektstärken.
 
 Der neue Lauf exportiert ausschließlich `task5_paper_*`: Zentroiden mit Gruppen,
 Gruppenzusammenfassung, SVM-Zellhäufigkeiten, CellCNN-Repräsentantenauswahl,
-Provenienz und zwei Abbildungen. **Die bisherigen `task5_*`-Ergebnisse und
-Berichtsexporter gehören zur früheren Auswertung** und bleiben unverändert.
+Provenienz und zwei Abbildungen. Die bisherigen `task5_*`-Ergebnisse bleiben
+unverändert als historischer Stand. Der Kurzberichtsexporter liest ausschließlich
+die aktuellen `task5_paper_*`-Ergebnisse und prüft ihre Quellen- und Ausgabeprüfsummen;
+der Detailbericht bleibt historisch.
 Es werden keine Klassifikatoren trainiert und keine Leistungsmetriken geändert.
 
 Die Notebooks sind in dieser Reihenfolge vorgesehen:

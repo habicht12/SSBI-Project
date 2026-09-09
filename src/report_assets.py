@@ -148,59 +148,70 @@ def clustering_figure(tables, output):
     save_figure(fig, output / "clusters.pdf")
 
 
+def validate_interpretation(tables):
+    """Nur aktuelle 30-Split-Ergebnisse mit unveränderten Quellen exportieren."""
+    provenance = json.loads((tables / "task5_paper_provenance.json").read_text())
+    if provenance["gate"] != "gated_alive" or provenance["split_ids"] != list(range(30)):
+        raise ValueError("Aufgabe 5 benötigt den gemeinsamen Vergleich über 30 Splits.")
+    for key in ("artifact_sha256", "output_sha256"):
+        for name, expected in provenance[key].items():
+            with (tables / name).open("rb") as handle:
+                actual = hashlib.file_digest(handle, "sha256").hexdigest()
+            if actual != expected:
+                raise ValueError(f"Aufgabe-5-Quelle oder Ergebnis verändert: {name}.")
+    implementation = Path(__file__).with_name("task5_interpretation.py")
+    if hashlib.sha256(implementation.read_bytes()).hexdigest() != provenance["implementation_sha256"]:
+        raise ValueError("Aufgabe-5-Code wurde seit dem Interpretationslauf verändert.")
+    return provenance
+
+
 def interpretation_figure(tables, cells, output):
-    scores = pd.read_csv(tables / "task5_cell_scores.csv")
+    centroids = pd.read_csv(tables / "task5_paper_centroids.csv")
+    groups = pd.read_csv(tables / "task5_paper_groups.csv")
+    scores = align_cells(pd.read_csv(tables / "task5_paper_svm_cells.csv"), cells)
     embeddings = pd.read_csv(tables / "task2_embeddings.csv")
     reference = align_cells(embeddings.loc[embeddings.variant.eq("tsne_p30")], cells)
-    profiles = pd.read_csv(tables / "task5_report_marker_table.csv").set_index("method")
-    fig = plt.figure(figsize=(WIDTH, 3.15))
-    grid = fig.add_gridspec(2, 3, left=.018, right=.915, top=.90, bottom=.03,
-                           height_ratios=[2, 1.04], wspace=.11, hspace=.15)
-    for letter, column, method in zip("ABC", range(3), METHODS):
-        ax = fig.add_subplot(grid[0, column])
-        frame = align_cells(scores.loc[scores.method.eq(method)], cells)
-        if not np.allclose(frame[["component_1", "component_2"]],
-                           reference[["component_1", "component_2"]], rtol=0, atol=1e-12):
-            raise ValueError("Interpretation coordinates differ from the saved t-SNE map.")
-        if not frame.positive_frequency.between(0, 1).all() or not frame.n_test_models.gt(0).all():
-            raise ValueError("Invalid held-out selection frequencies.")
-        if not np.allclose(frame.positive_frequency, frame.positive_count / frame.n_test_models):
-            raise ValueError("Selection frequency does not match its denominator.")
-        ax.scatter(frame.component_1, frame.component_2, s=1, c="#dddddd", linewidths=0, rasterized=True)
-        chosen = frame.loc[frame.positive_frequency.gt(0)].sort_values("positive_frequency")
-        points = ax.scatter(chosen.component_1, chosen.component_2, c=chosen.positive_frequency,
-                            cmap="viridis", vmin=0, vmax=1, s=2, linewidths=0, rasterized=True)
-        ax.set_title(f"{letter}  {LABELS[method]}", loc="left", color=COLOURS[method], fontsize=9.5, pad=7)
-        ax.set(aspect="equal", xticks=[], yticks=[])
-        for spine in ax.spines.values():
-            spine.set_color("#cccccc")
-            spine.set_linewidth(.5)
-    cax = fig.add_axes([.938, .42, .017, .45])
-    fig.colorbar(points, cax=cax, ticks=[0, .5, 1])
-    cax.set_title("f⁺", fontsize=9)
-    ax = fig.add_subplot(grid[1, :])
-    ax.axis("off")
-    rows = []
-    for method in [*METHODS, "Kartenreferenz"]:
-        rows.append([LABELS.get(method, "Map reference"),
-                     *[f"{profiles.loc[method, marker]:.2f}" for marker in ["CD3", "CD56", "NKG2C", "CD57"]]])
-    table = ax.table(cellText=rows, colLabels=["Positive selection", "CD3", "CD56", "NKG2C", "CD57"],
-                     colWidths=[.32, .17, .17, .17, .17], cellLoc="center", bbox=[.075, 0, .86, .93])
-    table.auto_set_font_size(False)
-    table.set_fontsize(8)
-    for (row, col), cell in table.get_celld().items():
-        cell.set_linewidth(0)
-        if row == 0:
-            cell.set_facecolor("#f0f2f4")
-            cell.set_text_props(weight="bold")
-        elif col == 0:
-            cell.set_text_props(color=COLOURS[METHODS[row - 1]] if row <= 3 else "#777777")
+    if not np.allclose(scores[["component_1", "component_2"]],
+                       reference[["component_1", "component_2"]], rtol=0, atol=1e-12):
+        raise ValueError("SVM-Koordinaten passen nicht zur gespeicherten Karte.")
+    mapped = reference.set_index("cell_id").loc[centroids.map_cell_id]
+    if not np.allclose(centroids[["component_1", "component_2"]],
+                       mapped[["component_1", "component_2"]], rtol=0, atol=1e-12):
+        raise ValueError("Zentroidprojektion passt nicht zu den zugeordneten Karten-Zellen.")
+    fig, axes = plt.subplots(1, 3, figsize=(WIDTH, 2.75), layout="constrained")
+    for ax, title in zip(axes, ["A  CellCNN-Zentroiden", "B  Citrus-Zentroiden", "C  SVM: positive Auswahl"]):
+        ax.scatter(reference.component_1, reference.component_2, s=1, c="#dddddd",
+                   linewidths=0, rasterized=True)
+        ax.set(title=title, aspect="equal", xticks=[], yticks=[])
+        ax.title.set_fontsize(8)
+    for ax, method in zip(axes[:2], ["CellCNN", "Citrus"]):
+        retained = groups.loc[groups.method.eq(method) & groups.retained]
+        for group in retained.itertuples():
+            frame = centroids.loc[centroids.method.eq(method) & centroids.group_id.eq(group.group_id)]
+            color = plt.get_cmap("tab10")((group.group_id - 1) % 10)
+            ax.scatter(frame.component_1, frame.component_2, s=12, color=color,
+                       edgecolors="white", linewidths=.3, label=f"G{group.group_id}: {group.occurrences}/30")
+            point = frame.loc[frame.split_id.eq(group.representative_split_id) &
+                              frame.subset_id.eq(group.representative_subset_id)].iloc[0]
+            ax.scatter(point.component_1, point.component_2, s=45, marker="*", color=color,
+                       edgecolors="black", linewidths=.4)
+        if retained.empty:
+            ax.text(.5, .5, "Keine Gruppe ab 6/30", transform=ax.transAxes, ha="center", fontsize=8)
+        else:
+            ax.legend(fontsize=8, loc="upper left", handletextpad=.2, borderpad=.3, labelspacing=.2)
+    if not scores.n_test_models.gt(0).all() or not np.allclose(
+            scores.positive_frequency, scores.positive_count / scores.n_test_models):
+        raise ValueError("Ungültiger Nenner der SVM-Auswahlhäufigkeit.")
+    chosen = scores.loc[scores.positive_frequency.gt(0)].sort_values("positive_frequency")
+    points = axes[2].scatter(chosen.component_1, chosen.component_2, c=chosen.positive_frequency,
+                            cmap="viridis", vmin=0, vmax=1, s=3, linewidths=0, rasterized=True)
+    fig.colorbar(points, ax=axes[2], ticks=[0, .5, 1], shrink=.6, label="SVM: OOF-Häufigkeit")
     save_figure(fig, output / "interpretation.pdf")
 
 
 def metric_table(tables, *, pairwise=False):
     prefix = "task4_cellcnn_svm_100" if pairwise else "task4"
-    split_count = 100 if pairwise else 10
+    split_count = 100 if pairwise else 30
     methods = ("CellCNN", "SVM") if pairwise else METHODS
     summary = pd.read_csv(tables / f"{prefix}_metric_summary.csv")
     split_metrics = pd.read_csv(tables / f"{prefix}_split_metrics.csv")
@@ -238,12 +249,12 @@ def main():
         table_dir.mkdir(parents=True, exist_ok=True)
         for filename, pairwise in [("classification.tex", False), ("classification_cellcnn_svm_100.tex", True)]:
             (table_dir / filename).write_text(metric_table(tables, pairwise=pairwise))
-        print("Aufgabe-4-Tabellen für zehn bzw. 100 gemeinsame Splits aktualisiert.")
+        print("Aufgabe-4-Tabellen für 30 bzw. 100 gemeinsame Splits aktualisiert.")
         return
     cells = pd.read_csv(tables / "task2_cells.csv")
     provenance = json.loads((tables / "task2_provenance.json").read_text())
     profile_provenance = json.loads((tables / "task3_provenance.json").read_text())
-    interpretation_provenance = json.loads((tables / "task5_provenance.json").read_text())
+    interpretation_provenance = validate_interpretation(tables)
     if len({p["selected_data_sha256"] for p in [provenance, profile_provenance, interpretation_provenance]}) != 1:
         raise ValueError("Exploration, clustering and interpretation use different cells.")
     align_cells(cells, cells)

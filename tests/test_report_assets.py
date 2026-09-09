@@ -1,11 +1,13 @@
 """Small checks against silent cell misalignment in report exports."""
 import unittest
+import hashlib
+import json
 from pathlib import Path
 import tempfile
 
 import pandas as pd
 
-from src.report_assets import align_cells, metric_table
+from src.report_assets import ROOT, align_cells, metric_table, validate_interpretation
 
 
 class ReportCellAlignmentTests(unittest.TestCase):
@@ -31,7 +33,7 @@ class ReportCellAlignmentTests(unittest.TestCase):
 
 class ClassificationTableTests(unittest.TestCase):
     def write_tables(self, directory, pairwise=False, count=None):
-        count = count if count is not None else (100 if pairwise else 10)
+        count = count if count is not None else (100 if pairwise else 30)
         methods = ["CellCNN", "Lineare Single-Cell-SVM"]
         if not pairwise:
             methods.append("Citrus")
@@ -51,7 +53,7 @@ class ClassificationTableTests(unittest.TestCase):
             self.write_tables(directory, pairwise=True)
             three_way = metric_table(directory)
             pair = metric_table(directory, pairwise=True)
-            self.assertIn("10 gemeinsame Splits", three_way)
+            self.assertIn("30 gemeinsame Splits", three_way)
             self.assertIn("Citrus", three_way)
             self.assertIn("100 gemeinsame Splits", pair)
             self.assertNotIn("Citrus", pair)
@@ -60,9 +62,10 @@ class ClassificationTableTests(unittest.TestCase):
     def test_rejects_wrong_scope_or_stale_summary(self):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
-            self.write_tables(directory, count=100)
-            with self.assertRaisesRegex(ValueError, "10 common"):
-                metric_table(directory)
+            for count in (10, 100):
+                self.write_tables(directory, count=count)
+                with self.assertRaisesRegex(ValueError, "30 common"):
+                    metric_table(directory)
             self.write_tables(directory)
             path = directory / "task4_metric_summary.csv"
             summary = pd.read_csv(path)
@@ -70,6 +73,32 @@ class ClassificationTableTests(unittest.TestCase):
             summary.to_csv(path, index=False)
             with self.assertRaisesRegex(ValueError, "disagrees"):
                 metric_table(directory)
+
+
+class InterpretationProvenanceTests(unittest.TestCase):
+    def test_rejects_old_scope_changed_models_and_changed_outputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            files = {"model.csv": "original model", "cells.csv": "original interpretation"}
+            for name, text in files.items():
+                (directory / name).write_text(text)
+            hashes = {name: hashlib.sha256(text.encode()).hexdigest() for name, text in files.items()}
+            provenance = dict(gate="gated_alive", split_ids=list(range(30)),
+                              artifact_sha256={"model.csv": hashes["model.csv"]},
+                              output_sha256={"cells.csv": hashes["cells.csv"]},
+                              implementation_sha256=hashlib.sha256(
+                                  (ROOT / "src/task5_interpretation.py").read_bytes()).hexdigest())
+            path = directory / "task5_paper_provenance.json"
+            path.write_text(json.dumps(provenance))
+            self.assertEqual(validate_interpretation(directory), provenance)
+            for name in files:
+                (directory / name).write_text("changed")
+                with self.assertRaisesRegex(ValueError, "verändert"):
+                    validate_interpretation(directory)
+                (directory / name).write_text(files[name])
+            path.write_text(json.dumps(provenance | {"split_ids": list(range(10))}))
+            with self.assertRaisesRegex(ValueError, "30 Splits"):
+                validate_interpretation(directory)
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@
 {\large Comparing CellCNN, Citrus and Linear SVM\par}
 \vspace{4pt}
 {\small SSBI Group Project \enspace\textcolor{muted}{|}\enspace \textbf{Authors: [add group members]}\par}
-{\footnotesize\color{muted} Aufgabe 4: aktualisierter Vergleich; Aufgabe 5: historischer Stand vor dem Citrus-Neulauf.\par}
+{\footnotesize\color{muted} Aufgaben 4 und 5: gemeinsamer Stand über 30 Splits (9. September 2026).\par}
 
 \section{Question, approaches and data}
 Disease-associated cells may be rare within a blood sample. Arvaniti and Claassen~\cite{cellcnn}
@@ -147,7 +147,7 @@ manual cell-type reference labels are unavailable.
 
 \clearpage
 \section{Spenderbezogener Klassifikationsvergleich}
-Der Dreiervergleich verwendet die zehn vorab festgelegten Monte-Carlo-Splits 0--9.
+Der Dreiervergleich verwendet die 30 vorab festgelegten Monte-Carlo-Splits 0--29.
 Zusätzlich vergleichen wir CellCNN und SVM über alle 100 vorhandenen Splits.
 Je Split trainieren sieben Spender pro CMV-Gruppe; vier negative und zwei positive
 Spender bilden den Test. Drei gemeinsame innere Folds dienen der Modellauswahl.
@@ -166,7 +166,7 @@ ersetzt die Zufallssuche des Papers. Validierung und Test mitteln fünf Wahrsche
 aus jeweils bis zu 20.000 Zellen; das Paper verwendet einen Testinput.
 
 \textbf{Citrus.} Die originale R-Implementierung v0.8 verwendet 10.000 Zellen je
-Trainings- und Testspender ohne Zurücklegen. Zellzahl und zehn Wiederholungen sind
+Trainings- und Testspender ohne Zurücklegen. Zellzahl und 30 Wiederholungen sind
 Rechenkompromisse gegenüber 20.000 Zellen und 100 Wiederholungen im Paper.
 Ward-Clustering verwendet 37 ArcSinh-transformierte Marker ohne zusätzliches Marker-z-Scoring.
 Cluster ab \textbf{0,05\%} der Trainingszellen liefern Häufigkeiten für L1-logistische
@@ -192,7 +192,7 @@ Quartile beschreiben Splitstreuung, keine Konfidenzintervalle. Jede Testmenge um
 sechs Spender. Die beiden Vergleichsumfänge werden getrennt ausgewertet.}
 \label{tab:classification}
 \small
-\textbf{Dreiervergleich: zehn Splits}\par
+\textbf{Dreiervergleich: 30 Splits}\par
 \input{tables/classification.tex}
 \par\smallskip
 \textbf{Zusätzlicher Zweiervergleich: 100 Splits}\par
@@ -201,79 +201,80 @@ sechs Spender. Die beiden Vergleichsumfänge werden getrennt ausgewertet.}
 
 ROC-AUC bewertet Rangtrennung, AP die Präzision bei steigendem Recall und Balanced
 Accuracy beide Klassen an der jeweiligen Schwelle (CellCNN/Citrus: 0,5; SVM: innerlich
-gelernt). Über zehn Splits beträgt die mediane gepaarte AUC-Differenz von CellCNN zu
-Citrus 0,375 und zur SVM 0,125. Über 100 Splits erreichen CellCNN und SVM beide eine
+gelernt). Über 30 Splits beträgt die mediane gepaarte AUC-Differenz von CellCNN zu
+Citrus 0,1875 und zur SVM null. Über 100 Splits erreichen CellCNN und SVM beide eine
 mediane AUC von 0,875; ihre mediane gepaarte Differenz ist null. Die kleine Kohorte
 und überlappenden Wiederholungen erlauben daraus keinen allgemeinen Überlegenheitsnachweis.
 
 \clearpage
-\section{Which cells support the predictions?}
-We reuse the saved models and the t-SNE map with perplexity 30. A cell is scored only
-by models for which its donor was an \textbf{outer test donor}, using the original training
-scaler. For cell $i$ from donor $d$, let $S_d$ be the set of those test splits. Its positive
-selection frequency is
-\[
- f_i^+=\frac{1}{|S_d|}\sum_{s\in S_d}
- \mathbf{1}\{i\text{ is positively selected by model }s\}.
-\]
-The indicator is 1 when selected and 0 otherwise. The denominator includes all eligible
-models, including null models, and varies between donors. Negative selection is defined
-analogously; Fig.~\ref{fig:interpretation} focuses on positive selection.
+\section{Welche Zellsubsets wählen die Modelle aus?}
+Wir interpretieren dieselben 30 gespeicherten Modelle je Methode wie im Dreiervergleich
+auf der bestehenden t-SNE-Karte mit 500 Zellen je Spender, ohne erneutes Modelltraining.
 
-For \textbf{CellCNN}, a cell is selected if a filter response exceeds half that filter's
-maximum over all cells of its inner training donors. Selection is positive when the
-filter's output weight for CMV-positive exceeds its weight for CMV-negative.
-This paper-inspired phenotype rule differs from membership in the top-1\% pooling
-subset; a cell can be selected in both directions by different filters.
-For \textbf{Citrus}, we sum the regression coefficients of all hierarchical clusters to
-which the cell maps. A positive sum above $10^{-10}$ defines positive selection;
-coefficients below that absolute tolerance are treated as zero. For \textbf{SVM}, we select
-exactly the highest $\lceil0.01N_d\rceil$ margins among all $N_d$ cells of the test donor,
-breaking ties by event index. Selected cells above the learned donor threshold count as
-positive; those below it count as negative.
+\textbf{CellCNN.} Der Score $r_{if}/\max_{j\in T_s}r_{jf}$ normiert die ReLU-Antwort
+von Zelle $i$ auf Filter $f$. Werte größer als 0,5 wählen ein Subset aus.
+$T_s$ ist die ursprüngliche Scaler-Stichprobe mit 20.000 Zellen je tatsächlichem
+inneren Trainingsspender. Gespeicherter Scaler und Kandidatenseed bleiben erhalten.
+Der Subset-Zentroid mittelt die ausgewählten ArcSinh-Markerprofile.
+Filter ohne Antwort oder ohne Ausgangskontrast werden ausgeschlossen.
+\textbf{Citrus} liefert bereits Trainingszentroiden der Cluster mit wirksamen
+Regressionskoeffizienten $|\beta_j|>10^{-10}$; deren Vorzeichen gibt die Richtung an.
+
+Wie im Paper gruppieren wir Subset-Zentroiden je Methode und zählen ihre Wiederkehr:
+\[
+ F_G=\frac{\#\{s:\text{mindestens ein Zentroid der Gruppe }G\text{ in Split }s\}}{30}.
+\]
+Mehrere Mitglieder im selben Split zählen einmal; die drei Citrus-Nullmodelle bleiben
+im Nenner. Die 20-\%-Schwelle des Papers entspricht hier mindestens sechs Splits.
+Wir verwenden die gespeicherte explorative z-Skalierung, Average-Linkage,
+Kosinusdistanz und Distanzschnitt 0,4. Diese feste Gruppierungsregel stammt aus der
+Filtergruppierung des Originalcodes; ihre Übertragung auf NK-Subset-Zentroiden ist
+unsere dokumentierte Anpassung. Sie ist nicht die belegte Parametrisierung des Papers.
+
+\textbf{SVM.} Je vollständigem Testspender wählen wir die höchsten
+$\lceil0{,}01N_d\rceil$ Margen aus; Gleichstände werden nach Ereignisindex aufgelöst.
+Innerhalb dieses Subsets gilt $m_i>\tau_s$ als positive Auswahl, $m_i<\tau_s$ als negative.
+Die Zellhäufigkeit $f_i^\pm$ teilt die Zahl entsprechender Auswahlen durch alle
+äußeren Testauftritte des Spenders. Jeder Spender hat vier bis 16 solche Auftritte.
+$F_G$ und $f_i^\pm$ beschreiben unterschiedliche Größen und keine vergleichbaren Effektstärken.
 
 \begin{figure}[!ht]
 \centering
 \includegraphics[width=\linewidth]{interpretation.pdf}
-\caption{\textbf{Held-out cell selection and marker profiles.} A--C: identical t-SNE
-coordinates for 500 cells per donor. Grey means never positively selected; colour denotes
-$f_i^+$ on the same 0--1 scale. Frequencies use only models that excluded the cell's donor
-from training. Different selection rules prevent interpreting equal frequencies as equal
-effect sizes. Below: frequency-weighted marker medians within donors, then medians
-across supported donors, in arcsinh units. The reference uses unweighted donor medians
-on the same map. These marginal profiles do not demonstrate marker co-expression.}
+\caption{\textbf{Modellassoziierte Subsets auf derselben t-SNE-Karte.}
+A--B: Zentroiden der Gruppen mit mindestens sechs Vorkommen; Gruppenfarben und IDs
+sind methodenspezifisch. Zentroiden werden über die nächste Karten-Zelle im gespeicherten
+z-Markerraum projiziert. Sterne markieren Repräsentanten mit minimaler summierter
+Kosinusdistanz. Die Legenden zählen unterschiedliche Splits.
+C: positive SVM-Zellhäufigkeit über äußere Testmodelle des jeweiligen Spenders;
+grau bedeutet keine positive Auswahl. A--B zeigen Trainingssubset-Zentroiden,
+C zeigt spenderweise OOF-Zellselektion.}
 \label{fig:interpretation}
 \end{figure}
 
-At least one eligible model positively selects 1,313 map cells for CellCNN, 7,678 for
-Citrus and 219 for SVM. The SVM selects a small subset with elevated CD56, NKG2C and
-CD57 relative to the map reference; CellCNN shows the same marker trends less strongly
-for NKG2C/CD57. Both profiles retain high CD3. They therefore support NK-associated
-receptor patterns with T-compatible or heterogeneous contributions, not an isolated
-CD3-negative NK population. The positive Citrus profile is CD3/CD8-rich, with low CD56
-and NKG2C. Its broad coverage and mostly low frequencies do not define a narrow,
-consistently selected population.
+Aus 130 CellCNN- und 123 Citrus-Zentroiden entstehen vier beziehungsweise fünf
+Gruppen oberhalb der Wiederkehrschwelle. Die häufigste CellCNN-Gruppe tritt in
+30/30 Splits auf, die häufigste Citrus-Gruppe in 18/30; beide haben ausschließlich
+positive Mitglieder. Der CellCNN-Repräsentant (Split 9, Filter 2) wählt bei explorativer
+Anwendung auf alle Spender 87 Karten-Zellen aus. Die SVM wählt 93 Karten-Zellen
+mindestens einmal positiv und 286 mindestens einmal negativ aus.
 
-These summaries describe the 10,000 map cells. For SVM, a donor's positive profile may
-rest on just one mapped cell. Stronger marker enrichment consequently does not establish
-better biological recovery. The paper groups filter-subset centroids across runs; our
-cell-wise held-out frequencies provide a different view and do not reproduce its
-centroid groups or their reported selection rates.
+Wiederkehr liefert keinen unabhängigen Zelltypnachweis. Die beschränkte Referenz
+kann seltene Ereignisse übersehen. Die CellCNN-Repräsentantenauswahl ist explorativ,
+keine OOF-Auswertung oder exakte Zerlegung der gepoolten Testvorhersagen.
 
 \clearpage
 \section{Discussion and limitations}
-Der Dreiervergleich über zehn Splits zeigt niedrigere Citrus-Leistung unter der
-aktuellen Konfiguration (10.000 Zellen, 0,05\% Mindestclustergröße). Über 100 gemeinsame
-Splits besitzen CellCNN und SVM dieselbe mediane ROC-AUC. Nur 20 Spender sind unabhängig;
-die überlappenden Wiederholungen sind keine unabhängigen Studien. Beide CMV-Gruppen
-kommen an jedem Messtag vor, dennoch bleiben Batch-Effekte möglich. Unterschiedliche
-Hardware verhindert einen fairen Laufzeitvergleich: CellCNN nutzte eine GPU,
-SVM und Citrus die CPU.
+Nur 20 Spender sind unabhängig; die überlappenden Wiederholungen sind keine
+unabhängigen Studien. Beide CMV-Gruppen kommen an jedem Messtag vor, dennoch bleiben
+Batch-Effekte möglich. Unterschiedliche Hardware verhindert einen fairen Laufzeitvergleich:
+CellCNN nutzte eine GPU, SVM und Citrus die CPU.
 
-Saved interpretation checks reconstruct all 600 SVM and CellCNN donor scores per method;
-Citrus checks relative logits because its intercept was not exported. These arithmetic checks
-support consistency, not biological validation. Full settings, seeds, provenance and
-supplementary plots remain in the accompanying notebooks and local analysis exports.
+Geprüft wurden Spendersplits, Modellnachweise und alle 1.160 Metrikwerte.
+Aufgabe 5 reproduziert 180 SVM-Scores; ein CellCNN-Test auf Split 0 reproduziert Scaler
+und sechs Testvorhersagen (Fehler maximal $5{,}4\cdot10^{-8}$). Diese Prüfungen belegen
+rechnerische Konsistenz, keine biologische Validität. Notebooks dokumentieren Seeds,
+Einstellungen und Provenienz.
 
 % Reserved half-page: replace this entire minipage with the Task 6 experiment.
 \noindent\begin{minipage}[t][0.5\textheight][t]{\linewidth}

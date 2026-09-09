@@ -5,9 +5,9 @@
 **Historischer Stand:** Der Detailbericht und seine Assets dokumentieren den
 Lauf vom 6. September 2026 (einschließlich der alten Citrus-Konfiguration und
 Aufgabe 5). Der aktuelle Aufgabe-4-Vergleich steht im Kurzbericht `main.tex`
-und im Comparison-Notebook. Den Detailexport erst nach Aktualisierung von
-Aufgabe 5 erneut ausführen; seine bisherigen Zahlen sind nicht die neuen
-Klassifikationsergebnisse.
+und im Comparison-Notebook. Der Detailexport unterstützt das neue
+`task5_paper_*`-Format noch nicht und muss vor einer erneuten Ausführung angepasst
+werden; seine bisherigen Zahlen sind nicht die aktuellen Ergebnisse.
 
 `detailbericht_de.tex` erklärt die Aufgaben 1–5 einschließlich der einzelnen
 Schritte von CellCNN, Citrus und SVM, der Zellinterpretation und der Grenzen der
@@ -79,11 +79,11 @@ Für eine gezielte Aktualisierung ausschließlich der Aufgabe-4-Tabellen:
 python -m src.report_assets --classification-only
 ```
 
-Dies erzeugt `tables/classification.tex` für den Dreiervergleich über zehn
+Dies erzeugt `tables/classification.tex` für den Dreiervergleich über 30
 gemeinsame Splits sowie `tables/classification_cellcnn_svm_100.tex` für den
 zusätzlichen CellCNN–SVM-Vergleich über 100 Splits. Aufgabe-5-Dateien und
 Abbildungen werden dabei nicht gelesen oder verändert. Der Interpretationsteil
-des Kurzberichts bleibt bis zur gesonderten Bearbeitung von Aufgabe 5 historisch.
+des Kurzberichts verwendet die aktuelle Zentroidanalyse über dieselben 30 Splits.
 
 - Edit prose and captions in `main.tex`, and references in `references.bib`.
 - Replace the author placeholder before submission.
@@ -110,10 +110,14 @@ separately; normal LaTeX builds never run analyses or regenerate figures.
 
 Figure sources: `task2_embeddings`, `task2_pairwise_jaccard` and `task2_cells`
 (Figure 1); `task3_marker_profiles`, `task3_recommendations` and saved exploratory
-scaling (Figure 2); `task5_cell_scores` and `task5_report_marker_table` (Figure 3).
+scaling (Figure 2). Abbildung 3 verwendet `task5_paper_centroids`,
+`task5_paper_groups` und `task5_paper_svm_cells`: CellCNN-/Citrus-Zentroidgruppen
+mit mindestens sechs Vorkommen und positive SVM-Zellhäufigkeiten. Die
+`task5_paper_provenance.json` muss dieselben 30 Splits ausweisen; Quellen,
+Ausgaben und Interpretationscode werden vor dem Export über Prüfsummen geprüft.
 The classification table uses `task4_metric_summary`, checked against
 `task4_split_metrics`. All these inputs are CSV/JSON exports in `results/tables/`.
-The first report draft uses the complete `gated_alive` runs from 5 September 2026.
+Die Aufgaben 4 und 5 im Kurzbericht dokumentieren den geprüften Stand vom 9. September 2026.
 
 Generated assets do not automatically rewrite claims in the prose: check numbers
 and conclusions in the text whenever the underlying analyses change. Build files
