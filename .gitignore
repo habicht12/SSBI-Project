@@ -50,3 +50,29 @@ results/tables/task6_learnable_pooling_100/*
 
 # Report build products (selected report assets are versioned)
 report/build/
+
+# Published result artefacts requested for collaborator handoff (2026-09-09).
+# Original data, caches, process files and logs remain excluded.
+!results/tables/*.csv
+!results/tables/*.ipynb
+!results/tables/*.json
+!results/tables/*.pt
+!results/tables/task6_learnable_pooling_100/
+results/tables/task6_learnable_pooling_100/*
+!results/tables/task6_learnable_pooling_100/*.csv
+!results/tables/task6_learnable_pooling_100/*.ipynb
+!results/tables/task6_learnable_pooling_100/*.json
+!results/tables/task6_learnable_pooling_100/*.pt
+!results/tables/task6_learnable_pooling_geometry_50/
+results/tables/task6_learnable_pooling_geometry_50/*
+!results/tables/task6_learnable_pooling_geometry_50/*.csv
+!results/tables/task6_learnable_pooling_geometry_50/*.ipynb
+!results/tables/task6_learnable_pooling_geometry_50/*.json
+!results/tables/task6_learnable_pooling_geometry_50/*.pt
+!results/tables/task6_learnable_pooling_geometry_50/README.md
+
+# Transient execution metadata and preparation-only notebooks
+results/tables/**/status.json
+results/tables/**/preflight_executed.ipynb
+results/tables/**/task6_learnable_pooling_100.ipynb
+results/tables/**/task6_learnable_pooling_geometry_50.ipynb

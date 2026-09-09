@@ -1,6 +1,6 @@
 # CellCNN: geprüfter Ergebnisstand über 100 Splits
 
-Dieser Ordner enthält den am 09.09.2026 abgeschlossenen GPU-Benchmark der Variante mit lernbarem Pooling. Die Implementierung steht in [06b](../../../notebooks/06b_cellcnn_mahalanobis_learnable_pooling.ipynb); Quellstand und Laufüberschreibungen sind in [run_scope.json](run_scope.json) dokumentiert. Splits 0–2 verwenden die bereits vorhandenen Checkpoints, Splits 3–99 wurden neu trainiert.
+Dieser Ordner enthält den am 09.09.2026 abgeschlossenen GPU-Benchmark der Variante mit lernbarem Pooling. Die historische Implementierung ohne Geometriestrafe steht in [06b bei Commit 544192d](https://github.com/habicht12/SSBI-Project/blob/544192d0a4a8bd010c67043ce2d2e3ccf2c65b26/notebooks/06b_cellcnn_mahalanobis_learnable_pooling.ipynb); Quellstand und Laufüberschreibungen sind in [run_scope.json](run_scope.json) dokumentiert. Splits 0–2 verwenden die bereits vorhandenen Checkpoints, Splits 3–99 wurden neu trainiert.
 
 Zum Ansehen der Ergebnisse sind weder Originaldaten noch eine GPU nötig:
 
@@ -24,3 +24,5 @@ checkpoint = torch.load(
 Die mittlere ROC-AUC beträgt 0,80750 für die Baseline und 0,71875 für die neue Variante. Die mittlere gepaarte Differenz ist −0,08875. Die 100 Splits überlappen und verwenden dieselben 20 unabhängigen Spender; 600 Testvorhersagen sind daher keine 600 unabhängigen Beobachtungen.
 
 Die Rohdaten sind nicht enthalten. Eine erneute Berechnung von Zellantworten oder Vorhersagen benötigt die Original-FCS-Dateien, Marker-/Labeldateien und die passende Umgebung. Der reguläre Code in 06b startet weiterhin mit drei Splits; die gespeicherten Notebook-Ausgaben und `run_scope.json` dokumentieren den zusätzlich angeforderten Lauf über 100 Splits. Logs, Prozessdateien, Startskript und temporäre Vorprüfungen bleiben lokal.
+
+Der spätere Lauf mit Geometriestrafe ist separat unter [task6_learnable_pooling_geometry_50](../task6_learnable_pooling_geometry_50/README.md) dokumentiert.

@@ -1,0 +1,4 @@
+split_id,network_auc,pooled_response_auc,pooled_response_effect,phenotype_status
+0,1.0,0.75,0.12040314078330994,berechnet
+1,1.0,1.0,2.8124359250068665,berechnet
+2,0.75,0.75,1.0973598957061768,berechnet

@@ -1,0 +1,3 @@
+Metrik,Baseline,Learnable Pooling
+Mittlere Klassifikations-ROC-AUC,1.0,0.9166666666666666
+Mediane Klassifikations-ROC-AUC,1.0,1.0
