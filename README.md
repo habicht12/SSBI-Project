@@ -201,27 +201,39 @@ CSV-Dateien sichtbar.
 
 ### Aufgabe 5 ausführen
 
-`05_interpretation.ipynb` benötigt die vollständigen Aufgabe-4-Artefakte mit
-Modellparametern sowie die Zell-IDs, t-SNE-Koordinaten und Provenienz aus Aufgabe 2.
-Ein frischer Python-Kernel führt die Interpretation von oben nach unten aus.
-Der R-Helfer wird über die vorhandene Umgebung `ssbi-citrus` gestartet;
-`conda` muss dafür aus dem Notebook erreichbar sein.
+`05_interpretation.ipynb` interpretiert die gespeicherten Modelle der **30 gemeinsamen
+Splits 0–29** auf `gated_alive`. Es benötigt die vollständigen Aufgabe-4-Artefakte
+sowie Zell-IDs, t-SNE-Koordinaten und Provenienz aus Aufgabe 2. Solange Citrus
+noch nicht alle 30 Splits exportiert hat, stoppt die Hauptauswertung mit einer
+Meldung über die fehlenden Splits; es gibt keine automatische Teil-Auswertung.
+Nach Abschluss des Citrus-Laufs das Notebook mit frischem Python-Kernel von
+oben nach unten ausführen. R/`ssbi-citrus` wird ausschließlich für die bestehende
+Konfigurationsprüfung benötigt; es werden keine Citrus-Bäume rekonstruiert.
 
-Pro Karten-Zelle werden ausschließlich Modelle berücksichtigt, bei denen ihr
-Spender äußerer Testspender war. Modell-Scaler und Parameter bleiben unverändert.
-Die vorhandene t-SNE-Karte mit Perplexität 30 wird über Zell-IDs zugeordnet;
-es wird keine neue Projektion berechnet. Für Citrus werden nur die fehlenden
-finalen Trainingsbäume aus den ursprünglichen Stichproben rekonstruiert und
-gegen die gespeicherten Zentroiden geprüft. Eine erneute innere CV, Lambda-Suche
-oder ein neues Klassifikatortraining findet nicht statt.
+CellCNN verwendet pro Filter die Halbmaximum-Auswahl auf der ursprünglichen
+Scaler-Stichprobe: 20.000 Zellen je tatsächlichem inneren Trainingsspender,
+mit ursprünglichem Kandidatenseed und gespeichertem Modell-Scaler. Citrus
+verwendet die bereits exportierten Zentroiden der Cluster mit wirksamen
+Regressionskoeffizienten. Die Zentroiden werden je Methode im gemeinsamen
+explorativen z-Markerraum aus Aufgabe 2 hierarchisch gruppiert: Average-Linkage,
+Kosinusdistanz, Schnitt 0,4. Diese Regel ist eine **dokumentierte Übertragung der
+Filtergruppierung des Originalcodes**, keine belegte Originalparametrisierung
+der NK-Zentroidanalyse. Es wird kein neuer Scaler gefittet.
 
-Positive und negative Auswahlhäufigkeiten beschreiben methodenspezifische
-Zellpopulationen, keine Erkrankungswahrscheinlichkeiten oder vergleichbaren
-Effektstärken. Bei CellCNN ist der papernahe Halbmaximum-Phänotyp von den
-tatsächlich gepoolten Testzellen zu unterscheiden. Die ursprünglichen
-Spendervorhersagen aller drei Methoden werden zusätzlich rechnerisch kontrolliert.
-Aufgabe-5-Tabellen und Abbildungen werden unter `results/` mit Präfix `task5_`
-gespeichert; die vorhandenen Ergebnisse der Aufgaben 1–4 werden nicht überschrieben.
+Die Wiederkehr zählt unterschiedliche Splits mit mindestens einem Gruppenmitglied,
+geteilt durch 30 einschließlich Nullmodellen. Gruppen ab sechs Vorkommen werden
+auf der bestehenden t-SNE-Karte gezeigt. Repräsentanten minimieren die summierten
+Kosinusdistanzen innerhalb ihrer Gruppe. Ein repräsentativer CellCNN-Filter wird
+zusätzlich explorativ auf alle Karten-Zellen angewandt. Die SVM behält die bisherigen
+höchsten 1 % der vollständigen Testspender und ihre gerichteten OOF-Zellhäufigkeiten,
+beschränkt auf die 30 gemeinsamen Splits. Gruppen- und Zellhäufigkeiten sind
+unterschiedliche Größen und keine vergleichbaren Effektstärken.
+
+Der neue Lauf exportiert ausschließlich `task5_paper_*`: Zentroiden mit Gruppen,
+Gruppenzusammenfassung, SVM-Zellhäufigkeiten, CellCNN-Repräsentantenauswahl,
+Provenienz und zwei Abbildungen. **Die bisherigen `task5_*`-Ergebnisse und
+Berichtsexporter gehören zur früheren Auswertung** und bleiben unverändert.
+Es werden keine Klassifikatoren trainiert und keine Leistungsmetriken geändert.
 
 Die Notebooks sind in dieser Reihenfolge vorgesehen:
 
@@ -255,18 +267,18 @@ python -m unittest discover -s tests -p 'test_task23_analysis.py' -v
 python -m unittest discover -s tests -p 'test_task4_artifacts.py' -v
 conda run -n ssbi-citrus Rscript tests/test_task4_artifacts.R
 python -m unittest discover -s tests -p 'test_task5_interpretation.py' -v
-conda run -n ssbi-citrus Rscript tests/test_task5_citrus.R
 ```
 
 Die Aufgabe-2/3-Tests prüfen Sampling, Nachbarschaftsvergleich, Parameterwahl,
 Clusterverfahren, Silhouetten und Markerprofile mit kleinen deterministischen
 Daten. Die Aufgabe-4-Tests prüfen Konfigurationskonflikte, fehlende Modellparameter,
 Spenderzuordnungen und die numerische Citrus-Nulltoleranz ohne Benchmarktraining.
-Die Aufgabe-5-Tests prüfen Zellzuordnung, gespeicherte Scaler, Pooling,
-gerichtete Auswahl, spenderweise Häufigkeiten, gewichtete Profile und das native
-Citrus-Mapping. Der vollständige Interpretationslauf prüft zusätzlich sämtliche
-gespeicherten Spendervorhersagen; bei Citrus sind dies relative Logitprüfungen,
-da der ursprüngliche Intercept nicht gespeichert wurde.
+Die Aufgabe-5-Tests prüfen Trainingsspender und Referenzsampling, gespeicherte
+Scaler, Halbmaximum und Zentroiden, einmalige Splitzählung einschließlich
+Nullmodellen, Clustering und Repräsentanten, Projektionszuordnung und die
+SVM-Auswahl. Kleine technische Läufe verwenden explizit einzelne fertige Splits
+über die exportfreien Helfer; `run_interpretation` und das Notebook verlangen
+immer alle 30 Splits.
 
 ## Datenquelle und Referenzen
 

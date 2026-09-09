@@ -1,9 +1,7 @@
-"""OOF-Interpretation vorhandener Aufgabe-4-Modelle, ohne erneuten Modellfit."""
+"""Papernahe Subset-Zentroiden und SVM-OOF-Auswahl aus gespeicherten Modellen."""
 
 import hashlib
 import json
-import subprocess
-import tempfile
 import warnings
 from importlib.metadata import version
 from pathlib import Path
@@ -12,14 +10,25 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
+from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.spatial.distance import pdist, squareform, cdist
+
+from src.task4_artifacts import (
+    validate_comparison_configs, validate_prediction_splits, validate_parameter_table,
+)
 
 from src.task23_analysis import sample_event_indices
 
 
 COEFFICIENT_TOLERANCE = 1e-10
 METHODS = ("SVM", "CellCNN", "Citrus")
-PROFILE_MARKERS = ["CD3", "CD4", "CD8", "CD19", "CD33", "CD11b", "CD56", "CD16",
-                   "CD94", "NKG2A", "NKG2C", "CD57"]
+SPLIT_IDS = tuple(range(30))
+REFERENCE_CELLS_PER_DONOR = 20000
+CENTROID_COLUMNS = ["method", "split_id", "subset_id", "coefficient", "response_threshold",
+                    "selected_cells", "reference_cells", "candidate_seed", "training_donors"]
+GROUP_COLUMNS = ["method", "group_id", "n_centroids", "n_splits", "occurrences", "frequency",
+                 "positive_splits", "negative_splits", "representative_split_id",
+                 "representative_subset_id", "retained"]
 
 
 def file_hash(path):
@@ -121,7 +130,8 @@ def load_inputs(root):
             raise ValueError("Ungültiger äußerer Spendersplit.")
     return dict(root=root, tables=tables, cells=projection, markers=marker_names,
                 profiles=np.arcsinh(raw_sample / 5.0), data=full_data, splits=splits,
-                input_hashes=input_hashes, selected_data_sha256=digest.hexdigest())
+                input_hashes=input_hashes, selected_data_sha256=digest.hexdigest(),
+                exploration=provenance)
 
 
 def restore_scaler(parameters):
@@ -131,7 +141,7 @@ def restore_scaler(parameters):
     scaler.scale_ = parameters.scaler_scale.to_numpy(np.float64)
     scaler.var_ = scaler.scale_ ** 2
     scaler.n_features_in_ = len(parameters)
-    if not np.isfinite(scaler.mean_).all() or not np.all(scaler.scale_ > 0):
+    if not np.isfinite(scaler.mean_).all() or not np.isfinite(scaler.scale_).all() or not np.all(scaler.scale_ > 0):
         raise ValueError("Ungültiger gespeicherter Scaler.")
     return scaler
 
@@ -157,281 +167,315 @@ def svm_cell_selection(scores, threshold):
     return selected & (centered > 0), selected & (centered < 0), indices
 
 
-def cellcnn_masks(responses, training_maxima, contrasts):
-    """Papernahe Halbmaximum-Auswahl; gegensätzliche Filter können dieselbe Zelle wählen."""
-    selected = (responses > 0.5 * training_maxima) & (training_maxima > 0)
-    return (selected & (contrasts > 0)).any(axis=1), (selected & (contrasts < 0)).any(axis=1)
+def load_artifacts(root, split_ids=SPLIT_IDS):
+    """Explizite Splits prüfen; Teilmengen dienen nur exportfreien technischen Tests."""
+    root = Path(root)
+    split_ids = tuple(split_ids)
+    if not split_ids or len(set(split_ids)) != len(split_ids) or not set(split_ids) <= set(SPLIT_IDS):
+        raise ValueError("Erwartet werden eindeutige Split-IDs aus 0–29.")
+    tables = root / "results/tables"
+    splits = csv_read(tables / "task4_donor_splits.csv")
+    splits = splits.loc[splits.split_id.isin(split_ids)]
+    markers = pd.read_csv(root / "NK_cell_dataset/NK_cell_dataset/NK_markers.csv",
+                          header=None).iloc[0].dropna().tolist()
+    artifacts = dict(split_ids=split_ids, splits=splits)
+    paths = [tables / "task4_donor_splits.csv"]
+    for method in ("svm", "cellcnn", "citrus"):
+        for kind in ("predictions", "selection", {"svm": "models", "cellcnn": "filters", "citrus": "clusters"}[method]):
+            path = tables / f"task4_{method}_{kind}_gated_alive_full.csv"
+            frame = csv_read(path)
+            if kind != "clusters":
+                missing = sorted(set(split_ids) - set(frame.split_id))
+                if missing:
+                    raise ValueError(f"{method}/{kind}: Splits {missing} fehlen. "
+                                     "Aufgabe 5 benötigt vollständig gespeicherte Splits 0–29; "
+                                     "den laufenden Citrus-Lauf zuerst fertigrechnen lassen.")
+            artifacts[f"{method}_{kind}"] = frame.loc[frame.split_id.isin(split_ids)].copy()
+            paths.append(path)
+        extension = "rds" if method == "citrus" else "json"
+        paths.append(tables / f"task4_{method}_predictions_gated_alive_full.config.{extension}")
+        validate_prediction_splits(artifacts[f"{method}_predictions"], splits)
+    validate_comparison_configs(root)
+    for method, kind, groups in [("svm", "models", ["split_id"]),
+                                  ("cellcnn", "filters", ["split_id", "filter_id"])]:
+        parameters = artifacts[f"{method}_{kind}"]
+        validate_parameter_table(parameters, artifacts[f"{method}_predictions"], markers, groups)
+        if (not parameters.gate.eq("gated_alive").all() or not parameters.run_mode.eq("full").all()
+                or not parameters.cofactor.eq(5).all() or not parameters.top_fraction.eq(.01).all()):
+            raise ValueError(f"{method}: falsche Transformation oder Modellkonfiguration.")
+    selected = artifacts["cellcnn_selection"].loc[artifacts["cellcnn_selection"].selected]
+    if selected.split_id.duplicated().any() or set(selected.split_id) != set(split_ids):
+        raise ValueError("Genau ein ausgewähltes CellCNN-Modell je Split erforderlich.")
+    artifacts["cellcnn_selection"] = selected
+    artifacts["source_hashes"] = {p.name: file_hash(p) for p in paths}
+    return artifacts
 
 
-class SavedCellCNN(torch.nn.Module):
-    """Nur Inferenz der gespeicherten Linear/ReLU/Top-Pooling/Linear-Architektur."""
-
-    def __init__(self, filters, marker_names):
-        super().__init__()
-        filter_ids = sorted(filters.filter_id.unique())
-        rows = [filters.loc[filters.filter_id.eq(i)].set_index("marker").loc[marker_names]
-                for i in filter_ids]
-        for row in rows:
-            if len(row) != len(marker_names):
-                raise ValueError("Unvollständiger CellCNN-Filter.")
-        self.cell_filters = torch.nn.Linear(len(marker_names), len(rows))
-        self.output_layer = torch.nn.Linear(len(rows), 2)
-        with torch.no_grad():
-            self.cell_filters.weight.copy_(torch.tensor(np.array([r.filter_weight for r in rows]), dtype=torch.float32))
-            self.cell_filters.bias.copy_(torch.tensor([r.filter_bias.iloc[0] for r in rows], dtype=torch.float32))
-            self.output_layer.weight.copy_(torch.tensor([
-                [r.output_weight_0.iloc[0] for r in rows],
-                [r.output_weight_1.iloc[0] for r in rows]], dtype=torch.float32))
-            self.output_layer.bias.copy_(torch.tensor([
-                rows[0].output_bias_0.iloc[0], rows[0].output_bias_1.iloc[0]], dtype=torch.float32))
-        self.scaler = restore_scaler(rows[0])
-        self.filter_ids = filter_ids
-        self.eval()
-
-    def forward(self, values):
-        responses = torch.relu(self.cell_filters(values))
-        count = max(1, int(0.01 * values.shape[0]))
-        pooled = torch.topk(responses, k=count, dim=0).values.mean(dim=0)
-        return self.output_layer(pooled), pooled
+def training_reference(data, split, selection):
+    """Dieselbe spenderbalancierte Ziehung wie fit_balanced_scaler in Aufgabe 4."""
+    train_ids = sorted(split.loc[split.outer_partition.eq("train") &
+                                split.inner_fold.ne(selection.inner_fold), "donor_id"])
+    expected_seed = int(split.split_seed.iloc[0]) + 10000 * int(selection.inner_fold) + 100 * int(selection.filter_count)
+    if (len(train_ids) not in (9, 10) or selection.candidate_seed != expected_seed
+            or set(train_ids) & set(split.loc[split.outer_partition.eq("test"), "donor_id"])):
+        raise ValueError("CellCNN: Trainingsspender oder Kandidatenseed stimmen nicht.")
+    rng = np.random.default_rng(int(selection.candidate_seed))
+    parts = []
+    for donor in train_ids:
+        values = data[donor]
+        if len(values) < REFERENCE_CELLS_PER_DONOR:
+            raise ValueError(f"Zu wenige Trainingszellen: {donor}.")
+        indices = rng.choice(len(values), size=REFERENCE_CELLS_PER_DONOR, replace=False)
+        parts.append(values[indices])
+    return np.concatenate(parts), train_ids
 
 
-def validate_models(inputs, name, parameters, prediction_rows):
-    """Split-Zuordnung und vollständige Markerparameter vor jeder Auswertung sichern."""
-    expected = inputs["splits"].loc[inputs["splits"].outer_partition.eq("test")]
-    keys = ["split_id", "donor_id"]
-    if prediction_rows.duplicated(keys).any() or set(map(tuple, prediction_rows[keys].values)) != set(map(tuple, expected[keys].values)):
-        raise ValueError(f"{name}: Vorhersagen passen nicht zu allen äußeren Testspendern.")
-    joined = prediction_rows.merge(expected, on=keys, suffixes=("", "_split"), validate="one_to_one")
-    if not joined.y_true.eq(joined.label).all() or not joined.split_seed.eq(joined.split_seed_split).all():
-        raise ValueError(f"{name}: falsche Spenderlabels oder Splitseeds.")
-    groups = ["split_id", "filter_id"] if name == "CellCNN" else ["split_id"]
-    if parameters.duplicated(groups + ["marker"]).any() or set(parameters.split_id) != set(range(100)):
-        raise ValueError(f"{name}: doppelte oder fehlende Modellparameter.")
-    for _, group in parameters.groupby(groups):
-        if set(group.marker) != set(inputs["markers"]):
-            raise ValueError(f"{name}: Marker fehlen oder wurden ersetzt.")
-    if (not parameters.gate.eq("gated_alive").all() or not parameters.run_mode.eq("full").all()
-            or not parameters.cofactor.eq(5).all() or not parameters.top_fraction.eq(0.01).all()):
-        raise ValueError(f"{name}: unpassende Modellkonfiguration.")
+def filter_responses(values, filters, markers):
+    """Gespeicherte Filter auf der CPU auswerten; float32 wie beim Modelltraining."""
+    rows = [group.set_index("marker").loc[markers]
+            for _, group in filters.groupby("filter_id", sort=True)]
+    scaler = restore_scaler(rows[0])
+    weights = torch.tensor(np.array([r.filter_weight for r in rows]), dtype=torch.float32)
+    biases = torch.tensor([r.filter_bias.iloc[0] for r in rows], dtype=torch.float32)
+    with torch.no_grad():
+        values = torch.from_numpy(scaler.transform(values))
+        return torch.relu(torch.nn.functional.linear(values, weights, biases)).numpy()
 
 
-def run_python_methods(inputs, split_ids=range(100)):
-    """Native SVM-/CellCNN-Vorhersagen prüfen, OOF-Selektion auf Projektionszellen exportieren."""
-    torch.set_num_threads(1)
-    torch.use_deterministic_algorithms(True)
-    tables, cells, markers = inputs["tables"], inputs["cells"], inputs["markers"]
-    svm = csv_read(tables / "task4_svm_models_gated_alive_full.csv")
-    cnn = csv_read(tables / "task4_cellcnn_filters_gated_alive_full.csv")
-    predictions = {method: csv_read(tables / f"task4_{name}_predictions_gated_alive_full.csv")
-                   for method, name in [("SVM", "svm"), ("CellCNN", "cellcnn")]}
-    validate_models(inputs, "SVM", svm, predictions["SVM"])
-    validate_models(inputs, "CellCNN", cnn, predictions["CellCNN"])
-    records, checks, thresholds = [], [], []
-    for split_id in split_ids:
-        split = inputs["splits"].loc[inputs["splits"].split_id.eq(split_id)]
-        seed = int(split.split_seed.iloc[0])
-        test_ids = sorted(split.loc[split.outer_partition.eq("test"), "donor_id"])
-        svm_parameters = svm.loc[svm.split_id.eq(split_id)].set_index("marker").loc[markers]
-        scaler = restore_scaler(svm_parameters)
-        weights = svm_parameters.weight.to_numpy()
-        intercept = float(svm_parameters.intercept.iloc[0])
-        threshold = float(svm_parameters.decision_threshold.iloc[0])
-        filters = cnn.loc[cnn.split_id.eq(split_id)]
-        if filters.inner_fold.nunique() != 1:
-            raise ValueError("Mehrere ausgewählte innere CellCNN-Folds.")
-        train_ids = sorted(split.loc[split.outer_partition.eq("train") &
-                                    split.inner_fold.ne(int(filters.inner_fold.iloc[0])), "donor_id"])
-        if len(train_ids) not in (9, 10) or set(train_ids) & set(test_ids):
-            raise ValueError("Falsche Trainingsspender für CellCNN-Referenzmaxima.")
-        model = SavedCellCNN(filters, markers)
-        device = torch.device("cuda" if torch.cuda.is_available() and filters.device.iloc[0] == "cuda" else "cpu")
-        model.to(device)
-        contrasts = (model.output_layer.weight[1] - model.output_layer.weight[0]).detach().cpu().numpy()
-        maxima = np.zeros(len(model.filter_ids), dtype=np.float32)
-        with torch.no_grad():
-            for donor in train_ids:
-                values = inputs["data"][donor]
-                for start in range(0, len(values), 50000):
-                    scaled = model.scaler.transform(values[start:start + 50000])
-                    response = torch.relu(model.cell_filters(torch.from_numpy(scaled).to(device)))
-                    maxima = np.maximum(maxima, response.max(dim=0).values.cpu().numpy())
-        for fid, maximum, contrast in zip(model.filter_ids, maxima, contrasts):
-            thresholds.append(dict(split_id=split_id, filter_id=fid, training_maximum=float(maximum),
-                                   response_threshold=float(maximum / 2), contrast=float(contrast),
-                                   training_donors=";".join(train_ids)))
-        for donor_index, donor in enumerate(test_ids):
-            subset = cells.loc[cells.sample_id.eq(donor)]
-            indices = subset.event_index.to_numpy()
-            values = inputs["data"][donor]
-            margins = scaler.transform(values) @ weights + intercept
-            pos, neg, top = svm_cell_selection(margins, threshold)
-            score = float(margins[top].mean())
-            expected = predictions["SVM"].loc[predictions["SVM"].split_id.eq(split_id) & predictions["SVM"].donor_id.eq(donor)].iloc[0]
-            error = abs(score - expected.score)
-            if error > 1e-10 or threshold != expected.decision_threshold or len(top) != expected.top_cell_count:
-                raise ValueError(f"SVM-Rekonstruktion fehlgeschlagen: {split_id}/{donor}, Fehler {error}.")
-            checks.append(dict(method="SVM", split_id=split_id, donor_id=donor,
-                               saved_score=expected.score, reconstructed_score=score, score_error=error,
-                               arithmetic_error=abs((score - threshold) - (margins[top] - threshold).mean()),
-                               decision_matches=int(score >= threshold) == expected.y_pred))
-            records.append(pd.DataFrame(dict(method="SVM", split_id=split_id, cell_id=subset.cell_id,
-                                             positive=pos[indices], negative=neg[indices], ambiguous=False,
-                                             exposed=True)))
-            with torch.no_grad():
-                responses = torch.relu(model.cell_filters(torch.from_numpy(model.scaler.transform(values[indices])).to(device)))
-                pos, neg = cellcnn_masks(responses.cpu().numpy(), maxima, contrasts)
-                rng = np.random.default_rng(seed + 900000 + donor_index)
-                probabilities, arithmetic_errors = [], []
-                exposed = np.zeros(len(indices), dtype=bool)
-                for _ in range(5):
-                    bag_indices = rng.choice(len(values), min(20000, len(values)), replace=False)
-                    exposed |= np.isin(indices, bag_indices)
-                    bag = torch.from_numpy(model.scaler.transform(values[bag_indices])).to(device)
-                    logits, pooled = model(bag)
-                    contrast_sum = ((model.output_layer.weight[1] - model.output_layer.weight[0]) * pooled).sum()
-                    contrast_sum += model.output_layer.bias[1] - model.output_layer.bias[0]
-                    arithmetic_errors.append(abs(float(logits[1] - logits[0] - contrast_sum)))
-                    probabilities.append(float(torch.softmax(logits, dim=0)[1]))
-                score = float(np.mean(probabilities))
-            expected = predictions["CellCNN"].loc[predictions["CellCNN"].split_id.eq(split_id) & predictions["CellCNN"].donor_id.eq(donor)].iloc[0]
-            error, arithmetic_error = abs(score - expected.score), max(arithmetic_errors)
-            if (error > 1e-6 or arithmetic_error > 1e-5 or expected.prediction_inputs_per_donor != 5
-                    or expected.prediction_cells_per_input != min(20000, len(values))):
-                raise ValueError(f"CellCNN-Rekonstruktion fehlgeschlagen: {split_id}/{donor}, Fehler {error}/{arithmetic_error}.")
-            checks.append(dict(method="CellCNN", split_id=split_id, donor_id=donor,
-                               saved_score=expected.score, reconstructed_score=score, score_error=error,
-                               arithmetic_error=arithmetic_error, decision_matches=int(score >= 0.5) == expected.y_pred))
-            records.append(pd.DataFrame(dict(method="CellCNN", split_id=split_id, cell_id=subset.cell_id,
-                                             positive=pos, negative=neg, ambiguous=pos & neg, exposed=exposed)))
-        print(f"SVM/CellCNN: Split {split_id} rekonstruiert und geprüft.", flush=True)
-    return pd.concat(records, ignore_index=True), pd.DataFrame(checks), pd.DataFrame(thresholds)
+def halfmax_centroids(values, responses, contrasts):
+    """Ungewichteter Subset-Mittelwert nach spenderbalancierter Referenzziehung."""
+    if (len(values) != len(responses) or responses.shape[1] != len(contrasts)
+            or not all(np.isfinite(x).all() for x in (values, responses, contrasts))):
+        raise ValueError("Ungültige Referenzwerte oder Filterantworten.")
+    maxima = responses.max(axis=0)
+    result = []
+    for index, contrast in enumerate(contrasts):
+        if maxima[index] <= 0 or contrast == 0:
+            continue
+        selected = responses[:, index] > .5 * maxima[index]
+        result.append((index, .5 * float(maxima[index]), int(selected.sum()),
+                       values[selected].mean(axis=0, dtype=np.float64)))
+    return result
 
 
-def run_citrus(inputs, split_ids=range(100)):
-    """Nur finalen Trainingsbaum und Mapping im bestehenden R-Environment rekonstruieren."""
-    with tempfile.TemporaryDirectory(prefix="task5_citrus_") as directory:
-        command = ["conda", "run", "--no-capture-output", "-n", "ssbi-citrus", "Rscript",
-                   str(inputs["root"] / "src/task5_citrus.R"), str(inputs["root"]), directory,
-                   ",".join(map(str, split_ids))]
-        subprocess.run(command, check=True)
-        raw = csv_read(Path(directory) / "cells.csv")
-        checks = csv_read(Path(directory) / "checks.csv")
-        audit = csv_read(Path(directory) / "clusters.csv")
-    raw["method"] = "Citrus"
-    raw["positive"] = raw.raw_score > COEFFICIENT_TOLERANCE
-    raw["negative"] = raw.raw_score < -COEFFICIENT_TOLERANCE
-    raw["ambiguous"] = False
-    raw["exposed"] = True  # Phänotypmapping ist für jede Projektionszelle definiert.
-    return raw, checks, audit
+def cellcnn_centroids(inputs, artifacts):
+    """Ein Zentroid je wirksamem Filter; keine Vereinigung verschiedener Filter."""
+    records = []
+    for selected in artifacts["cellcnn_selection"].sort_values("split_id").itertuples():
+        split = artifacts["splits"].loc[artifacts["splits"].split_id.eq(selected.split_id)]
+        filters = artifacts["cellcnn_filters"].loc[artifacts["cellcnn_filters"].split_id.eq(selected.split_id)]
+        meta = filters.groupby("filter_id", sort=True).first()
+        if len(meta) != selected.filter_count or not filters.inner_fold.eq(selected.inner_fold).all():
+            raise ValueError("CellCNN-Filter passen nicht zum ausgewählten Kandidaten.")
+        reference, donors = training_reference(inputs["data"], split, selected)
+        responses = filter_responses(reference, filters, inputs["markers"])
+        contrasts = (meta.output_weight_1.to_numpy(np.float32) - meta.output_weight_0.to_numpy(np.float32))
+        for index, threshold, count, centroid in halfmax_centroids(reference, responses, contrasts):
+            records.append(dict(method="CellCNN", split_id=selected.split_id,
+                                subset_id=int(meta.index[index]), coefficient=float(contrasts[index]),
+                                response_threshold=threshold, selected_cells=count,
+                                reference_cells=len(reference), candidate_seed=int(selected.candidate_seed),
+                                training_donors=";".join(donors), **dict(zip(inputs["markers"], centroid))))
+    return pd.DataFrame(records, columns=CENTROID_COLUMNS + inputs["markers"])
 
 
-def aggregate_frequencies(records, cells, splits):
-    """Pro Zelle durch sämtliche zulässigen Testmodelle ihres Spenders teilen."""
-    columns = ["method", "split_id", "cell_id"]
-    if records.duplicated(columns).any():
+def citrus_centroids(artifacts, markers):
+    """Vorhandene Trainingszentroiden lesen; numerische Nullmodelle nicht verlieren."""
+    profiles, selection = artifacts["citrus_clusters"], artifacts["citrus_selection"]
+    if selection.split_id.duplicated().any() or set(selection.split_id) != set(artifacts["split_ids"]):
+        raise ValueError("Citrus: unvollständige oder doppelte Modellauswahl.")
+    if (not selection.file_sample_size.eq(10000).all()
+            or not selection.minimum_cluster_size_fraction.eq(.0005).all()
+            or profiles.duplicated(["split_id", "cluster_id", "marker"]).any()
+            or not profiles.gate.eq("gated_alive").all()
+            or not profiles.transform_cofactor.eq(5).all()
+            or not profiles.minimum_cluster_size_fraction.eq(.0005).all()):
+        raise ValueError("Citrus: alte Konfiguration oder doppelte Clusterparameter.")
+    if not np.isfinite(profiles[["coefficient", "centroid"]]).all().all():
+        raise ValueError("Citrus: nicht endliche Clusterparameter.")
+    records = []
+    for (split_id, cluster_id), group in profiles.groupby(["split_id", "cluster_id"], sort=True):
+        if set(group.marker) != set(markers) or len(group) != len(markers) or group.coefficient.nunique() != 1:
+            raise ValueError("Citrus: unvollständiger oder widersprüchlicher Zentroid.")
+        coefficient = float(group.coefficient.iloc[0])
+        if abs(coefficient) > COEFFICIENT_TOLERANCE:
+            records.append(dict(method="Citrus", split_id=split_id, subset_id=cluster_id,
+                                coefficient=coefficient,
+                                **group.set_index("marker").centroid.loc[markers].to_dict()))
+    result = pd.DataFrame(records, columns=CENTROID_COLUMNS + markers)
+    counts = result.groupby("split_id").size()
+    if not selection.selected_cluster_count.eq(selection.split_id.map(counts).fillna(0)).all():
+        raise ValueError("Citrus: Clusterzahl passt nicht zur gespeicherten Auswahl.")
+    return result
+
+
+def exploratory_values(values, exploration):
+    """Gemeinsamer gespeicherter Darstellungsraum; kein neuer Scalerfit."""
+    mean = np.asarray(exploration["scaler_mean"])
+    scale = np.asarray(exploration["scaler_scale"])
+    if not np.isfinite(mean).all() or not np.isfinite(scale).all() or not (scale > 0).all():
+        raise ValueError("Ungültige explorative Skalierung.")
+    return (np.asarray(values, dtype=np.float64) - mean) / scale
+
+
+def group_centroids(centroids, markers, exploration, split_ids):
+    """Average/Kosinus/0,4; Wiederkehr zählt Splits, nicht Filter oder Cluster."""
+    result = centroids.sort_values(["method", "split_id", "subset_id"]).reset_index(drop=True).copy()
+    if result.duplicated(["method", "split_id", "subset_id"]).any() or not set(result.split_id) <= set(split_ids):
+        raise ValueError("Doppelte Zentroiden oder unzulässige Splits.")
+    result["group_id"] = pd.Series(index=result.index, dtype="int64")
+    summaries = []
+    for method, frame in result.groupby("method", sort=True):
+        values = exploratory_values(frame[markers], exploration)
+        if not np.isfinite(values).all() or (np.linalg.norm(values, axis=1) == 0).any():
+            raise ValueError("Kosinusdistanz für nicht endliche oder Null-Zentroiden undefiniert.")
+        distances = np.clip(pdist(values, metric="cosine"), 0, 2)
+        labels = fcluster(linkage(distances, method="average"), .4, criterion="distance") if len(frame) > 1 else np.ones(1, dtype=int)
+        groups = []
+        for label in np.unique(labels):
+            members = frame.loc[labels == label]
+            local = values[labels == label]
+            totals = squareform(np.clip(pdist(local, metric="cosine"), 0, 2)).sum(axis=1)
+            representative = members.iloc[np.flatnonzero(np.isclose(totals, totals.min(), rtol=0, atol=1e-12))[0]]
+            occurrences = members.split_id.nunique()
+            groups.append((members.index, dict(
+                method=method, n_centroids=len(members), n_splits=len(split_ids),
+                occurrences=occurrences, frequency=occurrences / len(split_ids),
+                positive_splits=members.loc[members.coefficient.gt(0), "split_id"].nunique(),
+                negative_splits=members.loc[members.coefficient.lt(0), "split_id"].nunique(),
+                representative_split_id=int(representative.split_id),
+                representative_subset_id=int(representative.subset_id), retained=occurrences >= 6)))
+        groups.sort(key=lambda item: (-item[1]["occurrences"], item[1]["representative_split_id"], item[1]["representative_subset_id"]))
+        for group_id, (indices, summary) in enumerate(groups, start=1):
+            result.loc[indices, "group_id"] = group_id
+            summaries.append(dict(group_id=group_id, **summary))
+    result["group_id"] = result.group_id.astype(int)
+    return result, pd.DataFrame(summaries, columns=GROUP_COLUMNS)
+
+
+def project_centroids(centroids, cells, profiles, markers, exploration):
+    """Nächste echte Karten-Zelle im euklidischen z-Raum; Gleichstand nach Kartenreihenfolge."""
+    result = centroids.copy()
+    values = exploratory_values(result[markers], exploration)
+    reference = exploratory_values(profiles, exploration)
+    if not np.isfinite(values).all() or not np.isfinite(reference).all():
+        raise ValueError("Nicht endliche Werte bei der Zentroidprojektion.")
+    distances = cdist(values, reference, metric="euclidean")
+    nearest = distances.argmin(axis=1)
+    result["map_cell_id"] = cells.iloc[nearest].cell_id.to_numpy()
+    result[["component_1", "component_2"]] = cells.iloc[nearest][["component_1", "component_2"]].to_numpy()
+    return result
+
+
+def aggregate_svm_frequencies(records, cells, splits):
+    """Alle Testmodelle je Spender zählen; ohne Testauftritt bleibt die Häufigkeit NaN."""
+    if records.duplicated(["split_id", "cell_id"]).any():
         raise ValueError("Doppelte OOF-Zellbewertung.")
     joined = records.merge(cells[["cell_id", "sample_id"]], on="cell_id", how="left", validate="many_to_one")
     allowed = splits.loc[splits.outer_partition.eq("test"), ["split_id", "donor_id"]]
     validation = joined.merge(allowed, left_on=["split_id", "sample_id"], right_on=["split_id", "donor_id"],
                               how="left", validate="many_to_one")
     if validation.donor_id.isna().any():
-        raise ValueError("Eine Zellbewertung verwendet einen Nicht-Testspender.")
-    denominators = allowed.groupby("donor_id").size()
-    expected_count = len(cells) * 3
-    counts = joined.groupby(["method", "cell_id", "sample_id"], sort=False).agg(
-        n_test_models=("split_id", "size"), positive_count=("positive", "sum"),
-        negative_count=("negative", "sum"), ambiguous_count=("ambiguous", "sum"),
-        exposed_models=("exposed", "sum")).reset_index()
-    if len(counts) != expected_count or set(counts.method) != set(METHODS):
-        raise ValueError("Nicht alle Methoden und Projektionszellen wurden bewertet.")
-    if not counts.n_test_models.eq(counts.sample_id.map(denominators)).all():
-        raise ValueError("OOF-Modelle fehlen; fehlende Daten sind keine Nullmodelle.")
-    for kind in ("positive", "negative", "ambiguous"):
-        counts[f"{kind}_frequency"] = counts[f"{kind}_count"] / counts.n_test_models
-    return counts.merge(cells, on=["cell_id", "sample_id"], validate="many_to_one")
+        raise ValueError("Eine Zellbewertung verwendet einen Nicht-Testspender oder eine unbekannte Zelle.")
+    counts = joined.groupby("cell_id").agg(n_test_models=("split_id", "size"),
+                                           positive_count=("positive", "sum"), negative_count=("negative", "sum"))
+    result = cells.merge(counts, on="cell_id", how="left", validate="one_to_one")
+    for column in counts.columns:
+        result[column] = result[column].fillna(0).astype(int)
+    denominators = result.sample_id.map(allowed.groupby("donor_id").size()).fillna(0)
+    if not result.n_test_models.eq(denominators).all():
+        raise ValueError("OOF-Modelle fehlen; fehlende Ergebnisse sind keine Nullmodelle.")
+    for direction in ("positive", "negative"):
+        result[f"{direction}_frequency"] = result[f"{direction}_count"] / result.n_test_models.replace(0, np.nan)
+    return result
 
 
-def weighted_median(values, weights):
-    """Kleinster Wert mit kumuliertem positivem Gewicht >= der Hälfte; leer ergibt NaN."""
-    values, weights = np.asarray(values), np.asarray(weights)
-    if values.shape != weights.shape or not np.isfinite(values).all() or not np.isfinite(weights).all() or (weights < 0).any():
-        raise ValueError("Ungültige Daten/Gewichte für den gewichteten Median.")
-    valid = weights > 0
-    if not valid.any():
-        return np.nan
-    order = np.argsort(values[valid], kind="stable")
-    values, weights = values[valid][order], weights[valid][order]
-    index = np.searchsorted(np.cumsum(weights), weights.sum() / 2, side="left")
-    return float(values[index])
+def svm_frequencies(inputs, artifacts):
+    """Unveränderte SVM-Auswahl auf vollständigen Testspendern; Ausgabe nur für Karten-Zellen."""
+    records = []
+    for split_id in artifacts["split_ids"]:
+        split = artifacts["splits"].loc[artifacts["splits"].split_id.eq(split_id)]
+        parameters = artifacts["svm_models"].loc[artifacts["svm_models"].split_id.eq(split_id)].set_index("marker").loc[inputs["markers"]]
+        scaler = restore_scaler(parameters)
+        threshold = float(parameters.decision_threshold.iloc[0])
+        for donor in sorted(split.loc[split.outer_partition.eq("test"), "donor_id"]):
+            margins = scaler.transform(inputs["data"][donor]) @ parameters.weight.to_numpy() + parameters.intercept.iloc[0]
+            positive, negative, top = svm_cell_selection(margins, threshold)
+            saved = artifacts["svm_predictions"].loc[artifacts["svm_predictions"].split_id.eq(split_id) & artifacts["svm_predictions"].donor_id.eq(donor)].iloc[0]
+            if abs(margins[top].mean() - saved.score) > 1e-10 or threshold != saved.decision_threshold or len(top) != saved.top_cell_count:
+                raise ValueError("SVM: gepoolte Margins passen nicht zur gespeicherten Vorhersage.")
+            cells = inputs["cells"].loc[inputs["cells"].sample_id.eq(donor)]
+            indices = cells.event_index.to_numpy()
+            records.append(pd.DataFrame(dict(split_id=split_id, cell_id=cells.cell_id,
+                                             positive=positive[indices], negative=negative[indices])))
+    return aggregate_svm_frequencies(pd.concat(records, ignore_index=True), inputs["cells"], artifacts["splits"])
 
 
-def summarize_profiles(frequencies, cells, values, markers):
-    """Profile der Kartenstichprobe: frequenzgewichtete Spender-, dann Spendermediane."""
-    value_frame = pd.DataFrame(values, index=cells.cell_id, columns=markers)
-    donor_profiles, donor_counts = [], []
-    for method in METHODS:
-        frame = frequencies.loc[frequencies.method.eq(method)]
-        for direction in ("positive", "negative"):
-            for donor, subset in frame.groupby("sample_id"):
-                weights = subset[f"{direction}_frequency"].to_numpy()
-                donor_values = value_frame.loc[subset.cell_id].to_numpy()
-                donor_counts.append(dict(method=method, direction=direction, donor_id=donor,
-                                         selected_cells=int((weights > 0).sum()), weight_sum=float(weights.sum()),
-                                         selection_fraction=float(weights.mean())))
-                for marker_index, marker in enumerate(markers):
-                    donor_profiles.append(dict(method=method, direction=direction, donor_id=donor,
-                                               marker=marker, value=weighted_median(donor_values[:, marker_index], weights)))
-    for donor, subset in cells.groupby("sample_id"):
-        donor_values = value_frame.loc[subset.cell_id].to_numpy()
-        for index, marker in enumerate(markers):
-            donor_profiles.append(dict(method="Kartenreferenz", direction="all", donor_id=donor,
-                                       marker=marker, value=float(np.median(donor_values[:, index]))))
-    donor_profiles, donor_counts = pd.DataFrame(donor_profiles), pd.DataFrame(donor_counts)
-    profiles = donor_profiles.groupby(["method", "direction", "marker"], sort=False).agg(
-        value=("value", "median"), supported_donors=("value", "count")).reset_index()
-    counts = donor_counts.groupby(["method", "direction"], sort=False).agg(
-        selected_cells=("selected_cells", "sum"), supported_donors=("weight_sum", lambda x: int((x > 0).sum())),
-        mean_selection_fraction=("selection_fraction", "mean"),
-        minimum_donor_cells=("selected_cells", "min"), maximum_donor_cells=("selected_cells", "max")).reset_index()
-    return profiles, counts, donor_profiles, donor_counts
+def representative_cells(inputs, artifacts, centroids, groups):
+    """Häufigste wiederkehrende CellCNN-Gruppe explorativ auf allen Karten-Zellen zeigen."""
+    candidates = groups.loc[groups.method.eq("CellCNN") & groups.retained].sort_values("group_id")
+    columns = list(inputs["cells"].columns) + ["group_id", "split_id", "subset_id", "response", "selected"]
+    if candidates.empty:
+        return pd.DataFrame(columns=columns)
+    group = candidates.iloc[0]
+    centroid = centroids.loc[centroids.method.eq("CellCNN") &
+                             centroids.split_id.eq(group.representative_split_id) &
+                             centroids.subset_id.eq(group.representative_subset_id)].iloc[0]
+    filters = artifacts["cellcnn_filters"].loc[artifacts["cellcnn_filters"].split_id.eq(centroid.split_id)]
+    # Alle Filter gemeinsam auswerten wie bei der Referenz; danach denselben Filter auswählen.
+    values = np.stack([inputs["data"][r.sample_id][r.event_index] for r in inputs["cells"].itertuples()])
+    index = sorted(filters.filter_id.unique()).index(centroid.subset_id)
+    responses = filter_responses(values, filters, inputs["markers"])[:, index]
+    return inputs["cells"].assign(group_id=int(group.group_id), split_id=int(centroid.split_id),
+                                  subset_id=int(centroid.subset_id), response=responses,
+                                  selected=responses > centroid.response_threshold)
+
+
+def interpret_models(inputs, artifacts):
+    """Gemeinsame exportfreie Pipeline; explizite Teilmengen nur für technische Tests."""
+    torch.set_num_threads(1)
+    cnn = cellcnn_centroids(inputs, artifacts)
+    citrus = citrus_centroids(artifacts, inputs["markers"])
+    # Einheitliche Spalten auch für vollständig leere Methoden.
+    parts = [frame for frame in (cnn, citrus) if not frame.empty]
+    centroids = pd.concat(parts, ignore_index=True) if parts else cnn.copy()
+    centroids, groups = group_centroids(centroids, inputs["markers"], inputs["exploration"], artifacts["split_ids"])
+    centroids = project_centroids(centroids, inputs["cells"], inputs["profiles"], inputs["markers"], inputs["exploration"])
+    return dict(centroids=centroids, groups=groups, svm_cells=svm_frequencies(inputs, artifacts),
+                representative_cells=representative_cells(inputs, artifacts, centroids, groups))
 
 
 def run_interpretation(root):
-    """Vollständiger Interpretationslauf; Aufgabe-4-Dateien werden ausschließlich gelesen."""
+    """Nur vollständige 30-Split-Auswertung unter task5_paper_* exportieren."""
+    artifacts = load_artifacts(root)  # Fehlende Splits vor dem teuren Lesen der FCS-Dateien melden.
     inputs = load_inputs(root)
-    python_records, python_checks, thresholds = run_python_methods(inputs)
-    citrus_records, citrus_checks, citrus_audit = run_citrus(inputs)
-    records = pd.concat([python_records, citrus_records], ignore_index=True)
-    frequencies = aggregate_frequencies(records, inputs["cells"], inputs["splits"])
-    checks = pd.concat([python_checks, citrus_checks], ignore_index=True)
-    if len(checks) != 1800 or not checks.decision_matches.all():
-        raise ValueError("Nicht alle 1.800 Modell-/Spendervorhersagen erfolgreich geprüft.")
-    profiles, counts, donor_profiles, donor_counts = summarize_profiles(
-        frequencies, inputs["cells"], inputs["profiles"], inputs["markers"])
-    outputs = dict(cell_scores=frequencies, prediction_checks=checks, filter_thresholds=thresholds,
-                   citrus_cluster_checks=citrus_audit, marker_profiles=profiles, selection_summary=counts,
-                   donor_marker_profiles=donor_profiles, donor_selection_summary=donor_counts)
-    for name, table in outputs.items():
-        table.to_csv(inputs["tables"] / f"task5_{name}.csv", index=False)
-    source_inputs = list(inputs["tables"].glob("task4_*gated_alive_full*"))
-    source_inputs += [inputs["tables"] / f"task2_{name}" for name in ("cells.csv", "embeddings.csv", "provenance.json")]
+    outputs = interpret_models(inputs, artifacts)
+    tables = inputs["tables"]
+    # Ergebnisse erst nach vollständig erfolgreicher Auswertung schreiben.
+    for name, frame in outputs.items():
+        frame.to_csv(tables / f"task5_paper_{name}.csv", index=False)
+    source_hashes = dict(artifacts["source_hashes"])
+    for name in ("cells.csv", "embeddings.csv", "provenance.json"):
+        path = tables / f"task2_{name}"
+        source_hashes[path.name] = file_hash(path)
     provenance = dict(
-        gate="gated_alive", interpretation="outer-test-only selection frequencies; no classifier fitting; Citrus final training trees reconstructed",
-        markers=inputs["markers"], selected_data_sha256=inputs["selected_data_sha256"],
-        input_sha256=inputs["input_hashes"], artifact_sha256={p.name: file_hash(p) for p in source_inputs},
-        implementation_sha256={name: file_hash(inputs["root"] / "src" / name)
-                               for name in ("task5_interpretation.py", "task5_citrus.R")},
-        package_versions={name: version(name) for name in ("numpy", "pandas", "scikit-learn", "torch", "flowkit")},
-        projection="existing task2 tsne_p30, exact cell-ID join, no refit",
-        score_data="float32 raw -> arcsinh(x/5) float32 -> original training StandardScaler",
-        profile_data="float64 raw -> arcsinh(x/5), frequency-weighted within donor; median across supported donors",
-        cutoff=dict(svm="exact top ceil(1% all donor cells), then sign(margin - donor threshold); ties event index",
-                    cellcnn="response > 0.5 * max across all actual inner-training donor events; output contrast sign",
-                    citrus="sum beta*overlapping membership; beta and net direction tolerance 1e-10"),
-        reference_seed=42, oof_denominator="all outer test models for this donor, including null models",
-        prediction_check_tolerance=dict(svm=1e-10, cellcnn_probability=1e-6,
-                                        cellcnn_logit_identity=1e-5, citrus_centered_logit=1e-8),
-        output_sha256={f"task5_{name}.csv": file_hash(inputs["tables"] / f"task5_{name}.csv") for name in outputs},
+        gate="gated_alive", split_ids=list(SPLIT_IDS), markers=inputs["markers"],
+        selected_data_sha256=inputs["selected_data_sha256"], input_sha256=inputs["input_hashes"],
+        artifact_sha256=source_hashes, implementation_sha256=file_hash(Path(__file__)),
+        package_versions={name: version(name) for name in ("numpy", "pandas", "scipy", "scikit-learn", "torch", "flowkit")},
+        cellcnn_reference="original fit_balanced_scaler draw; 20000 cells per actual inner-training donor; original candidate seed",
+        cellcnn_selection="ReLU response > 0.5 * reference maximum; nonzero output contrast",
+        centroid_space="arcsinh(x/5); CellCNN model input float32, means accumulated in float64; Citrus saved centroids",
+        exploratory_scaling="stored task2 mean/scale; only retrospective grouping and projection, never classifier input",
+        clustering=dict(linkage="average", metric="cosine", distance_cutoff=.4,
+                        source_commit="0413a9f49fe0831c8fe3280957fb341f9e028d2d",
+                        adaptation="filter-grouping rule transferred to subset centroids; not specified for NK centroids in paper"),
+        stability="unique split count / 30, including null models; retain >= 6 splits",
+        representative="minimum summed cosine distance; ties within 1e-12 by split/subset ID; all map cells exploratory",
+        projection="existing tsne_p30; nearest map cell by Euclidean distance in exploratory z-space",
+        svm_selection="exact top ceil(1% full test donor); sign(margin - saved donor threshold); ties event index",
+        svm_denominator="all outer test appearances of donor in splits 0–29",
+        output_sha256={f"task5_paper_{name}.csv": file_hash(tables / f"task5_paper_{name}.csv") for name in outputs},
     )
-    (inputs["tables"] / "task5_provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
+    (tables / "task5_paper_provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     return outputs
