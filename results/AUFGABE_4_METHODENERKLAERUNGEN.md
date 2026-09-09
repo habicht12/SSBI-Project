@@ -2,7 +2,7 @@
 
 Diese Datei führt die drei Erklärungen aus dem Gespräch zusammen: von den FCS-Daten bis zu den gespeicherten Spendervorhersagen, einschließlich Formeln, Entscheidungsbegründungen und Vergleich mit dem CellCNN-Paper.
 
-**Dokumentationsstand: 9. September 2026.** Die Angaben beziehen sich jeweils auf den Full-Modus. CellCNN und SVM liegen mit 100 äußeren Splits vor. Die aktuelle Citrus-Konfiguration verwendet 10.000 Zellen je Spender, 0,05 % Mindestclustergröße und zehn äußere Splits, IDs 0–9. Der aktuelle Dreiervergleich muss deshalb dieselben zehn Splits aller Methoden verwenden. Die CellCNN- und SVM-Zusammenfassungen über 100 Splits sind separat gekennzeichnet.
+**Dokumentationsstand: 9. September 2026.** Die Angaben beziehen sich jeweils auf den Full-Modus. CellCNN und SVM liegen mit 100 äußeren Splits vor. Die aktuelle Citrus-Konfiguration verwendet 10.000 Zellen je Spender, 0,05 % Mindestclustergröße und 30 äußere Splits, IDs 0–29. Der aktuelle Dreiervergleich verwendet dieselben 30 Splits aller Methoden. Die CellCNN- und SVM-Zusammenfassungen über 100 Splits sind separat gekennzeichnet.
 
 Die Erklärungen begründen die tatsächlich gewählten Einstellungen. Eine plausible Begründung ist kein experimenteller Nachweis, dass die Wahl gegenüber Alternativen besser ist. Für diese Dokumentation wurden keine Modelle neu trainiert.
 
@@ -141,7 +141,7 @@ Die Zufallszahlen basieren auf dem Master-Seed `12345`. Daraus wird für jede Wi
 - **Spenderweise Aufteilung:** Zellen desselben Spenders ähneln sich. Eine Aufteilung seiner Zellen auf Training und Test würde die Leistung für neue Spender nicht sauber messen.
 - **Sieben Trainingsspender pro Klasse:** Das äußere Training ist damit ausgeglichen.
 - **100 Wiederholungen:** Bei nur 20 Spendern hängt das Ergebnis stark von der konkreten Testmenge ab. Die Wiederholungen zeigen diese Schwankung.
-- **Identische Splits für alle Methoden:** Leistungsunterschiede sollen nicht dadurch entstehen, dass eine Methode einfachere Testspender bekommt. Der aktuelle Dreiervergleich verwendet die zehn auch für Citrus vorliegenden Splits.
+- **Identische Splits für alle Methoden:** Leistungsunterschiede sollen nicht dadurch entstehen, dass eine Methode einfachere Testspender bekommt. Der aktuelle Dreiervergleich verwendet die 30 auch für Citrus vorliegenden Splits.
 
 Das ist **Monte-Carlo-Cross-Validation**, keine gewöhnliche 100-fache Aufteilung in disjunkte Folds. Ein Spender kann über verschiedene Wiederholungen mehrfach im Test erscheinen.
 
@@ -758,7 +758,7 @@ Die Splits stammen aus dem vorgeschalteten Daten-Notebook. Der Master-Seed ist `
 
 - Zellen desselben Spenders bleiben vollständig zusammen.
 - Die äußeren Trainingsgruppen sind klassenbalanciert.
-- Alle Methoden erhalten dieselben Trainings- und Testspender; der aktuelle Dreiervergleich nutzt die zehn auch für Citrus vorliegenden Splits.
+- Alle Methoden erhalten dieselben Trainings- und Testspender; der aktuelle Dreiervergleich nutzt die 30 auch für Citrus vorliegenden Splits.
 - Die 100 Wiederholungen zeigen, wie empfindlich die Leistung gegenüber der Auswahl der Spender ist.
 
 Ein Spender darf in verschiedenen Wiederholungen unterschiedliche Rollen haben. Innerhalb eines Splits darf er aber nicht gleichzeitig im Training und Test vorkommen.
@@ -1215,6 +1215,8 @@ Dabei gelten drei Grenzen:
 
 **Papervergleich:** Die Single-Cell-Baseline übernimmt ebenfalls Probenlabels für Zellen. Die Interpretation unserer Top-1-%-Auswahl muss zusätzlich im Kontext unserer eigenen Aggregationsregel erfolgen.
 
+Das ergänzte [SVM-Markerprofil aus Aufgabe 5](AUFGABE_5_METHODENERKLAERUNGEN.md#57-wie-entsteht-das-spendergleich-gewichtete-svm-markerprofil) beschreibt positiv ausgewählte Zellen der vollständigen äußeren Testspender in Splits 0–29. Es mittelt zunächst Zellen pro Testauftritt, anschließend nichtleere Auftritte je Spender und schließlich alle vertretenen Spender gleichgewichtet. Dies ergänzt die Interpretation; Training, Auswahlregeln und Leistungskennzahlen bleiben unverändert.
+
 Die SVM-Pipeline selbst und die Kennzahlen wurden anhand des Codes und der gespeicherten Tabellen geprüft. Für diese Erklärung wurden keine neuen SVMs trainiert und die historischen OOF-Schwellen nicht neu berechnet.
 
 ---
@@ -1232,7 +1234,7 @@ Anders als CellCNN lernt Citrus die Zellgruppen und den Klassifikator in getrenn
 | Datenstufe | `gated_alive` |
 | Zellen pro Trainings- und Testspender | 10.000 |
 | Mindestclustergröße | 0,05 % |
-| Äußere Splits | 10, IDs 0–9 |
+| Äußere Splits | 30, IDs 0–29 |
 | Innere Folds | 3 |
 
 Der frühere Lauf mit 1.000 Zellen, 5 % Mindestclustergröße und 100 Splits ist archiviert. Einige Berichtsteile beziehen sich noch darauf. **Die folgende Erklärung beschreibt die aktuelle Umsetzung und die aktuellen Ergebnisse.**
@@ -1302,7 +1304,7 @@ Die Spenderlabels und Aufteilungen kommen aus der gemeinsamen Split-Tabelle.
 
 **Im Paper:** Die Analyse verwendet ebenfalls PBMCs nach Entfernung toter Zellen und Doubletten. Wir verwenden die 37 bereitgestellten Marker; die bereits besprochene Differenz zur Angabe von 36 Markern im Paper bleibt bestehen.
 
-## 3.4 Wir verwenden zehn der gemeinsamen äußeren Spendersplits
+## 3.4 Wir verwenden 30 gemeinsame äußere Spendersplits
 
 Pro äußerem Split gilt:
 
@@ -1312,18 +1314,18 @@ Pro äußerem Split gilt:
 | CMV+ | 7 | 2 |
 | Insgesamt | 14 | 6 |
 
-Citrus verwendet aktuell die bereits festgelegten Split-IDs **0 bis 9**.
+Citrus verwendet aktuell die bereits festgelegten Split-IDs **0 bis 29**.
 
 **Warum so?**
 
 - Die spenderweise Trennung verhindert, dass Zellen desselben Spenders gleichzeitig im Training und Test liegen.
 - Sieben Trainingsspender pro Klasse ergeben ein ausgeglichenes äußeres Training.
 - Die gemeinsamen Splits ermöglichen einen direkten Methodenvergleich.
-- Die Begrenzung auf zehn Wiederholungen reduziert den Aufwand des hierarchischen Clusterings.
+- Die Begrenzung auf 30 Wiederholungen reduziert den Aufwand des hierarchischen Clusterings.
 
-**Im Paper:** Dort wurden **100** gemeinsame Monte-Carlo-Splits für CellCNN und Citrus verwendet. Unsere Reduktion auf zehn Splits ist ein ausdrücklich dokumentierter Rechenkompromiss.
+**Im Paper:** Dort wurden **100** gemeinsame Monte-Carlo-Splits für CellCNN und Citrus verwendet. Unsere Reduktion auf 30 Splits ist ein ausdrücklich dokumentierter Rechenkompromiss.
 
-Für den aktuellen Dreiervergleich müssen deshalb auch CellCNN und SVM auf genau diesen zehn Splits betrachtet werden. Ihre zusätzlichen 90 Splits können separat ausgewertet werden.
+Für den aktuellen Dreiervergleich müssen deshalb auch CellCNN und SVM auf genau diesen 30 Splits betrachtet werden. Der zusätzliche Zweiervergleich verwendet alle 100 gemeinsamen CellCNN-/SVM-Splits und wird separat ausgewiesen.
 
 ## 3.5 Pro Spender ziehen wir 10.000 Zellen
 
@@ -1693,7 +1695,7 @@ Es ist möglich, dass die Regularisierung alle Clusterkoeffizienten auf null set
 
 Das wäre eine gültige Modellauswahl, keine automatisch fehlgeschlagene Berechnung.
 
-**Im aktuellen Lauf tritt kein solcher Fall auf:** Pro Split werden zwischen **einem und zwölf** wirksame Cluster ausgewählt.
+**Im aktuellen Lauf treten drei Nullmodelle auf:** In den Splits 19, 24 und 26 ist kein Cluster wirksam. Pro Split werden zwischen **null und zwölf** wirksame Cluster ausgewählt. Diese Splits bleiben in der Leistungsbewertung und im Nenner der Aufgabe-5-Wiederkehr enthalten.
 
 **Papervergleich:** Die Auswahl von Clustern über Nichtnull-Koeffizienten entspricht der L1-Idee. Unsere konkrete numerische Toleranz ist ein Implementierungsdetail.
 
@@ -1728,14 +1730,14 @@ Die ROC-AUC dieses Splits beträgt ebenfalls 0,5. Das folgt hier aus der Rangfol
 
 ## 3.20 Wie gut ist Citrus im aktuellen Lauf?
 
-Die Kennzahlen wurden aus den **60 vorhandenen Testvorhersagen über zehn Splits** neu berechnet:
+Die Kennzahlen wurden aus den **180 vorhandenen Testvorhersagen über 30 Splits** neu berechnet:
 
 | Kennzahl | Mittelwert | Median |
 |---|---:|---:|
-| **ROC-AUC** | **0,4875** | **0,5625** |
-| Average Precision | 0,5017 | 0,4750 |
-| Trapezoidale PR-AUC | 0,4046 | 0,3104 |
-| Balanced Accuracy | 0,4375 | 0,5000 |
+| **ROC-AUC** | **0,60625** | **0,6250** |
+| Average Precision | 0,5783 | 0,5417 |
+| Trapezoidale PR-AUC | 0,5331 | 0,6646 |
+| Balanced Accuracy | 0,5292 | 0,5000 |
 
 Die Bedeutungen sind:
 
@@ -1748,17 +1750,17 @@ Precision ist der Anteil tatsächlich positiver Spender unter den positiv einges
 
 Das Citrus-Notebook selbst berechnet ROC-AUC und Balanced Accuracy. Die zusätzlichen PR-Kennzahlen werden im gemeinsamen Vergleich einheitlich bestimmt.
 
-**Einordnung:** Die mittlere ROC-AUC liegt in diesen zehn Splits ungefähr beim Niveau fehlender Rangtrennung. Das belegt keine grundsätzliche Untauglichkeit von Citrus, sondern beschreibt die aktuelle Konfiguration auf dieser kleinen Kohorte.
+**Einordnung:** Die mittlere ROC-AUC von 0,60625 liegt über 0,5, bei deutlicher Streuung zwischen den Splits. Dieses deskriptive Ergebnis beschreibt die aktuelle Konfiguration auf einer kleinen Kohorte; es ist kein allgemeiner Leistungsnachweis.
 
-Für einen fairen Vergleich ergeben sich auf **denselben zehn Splits**:
+Für einen fairen Vergleich ergeben sich auf **denselben 30 Splits**:
 
 | Methode | Mittlere ROC-AUC | Mediane ROC-AUC |
 |---|---:|---:|
-| CellCNN | 0,8750 | 1,0000 |
-| SVM | 0,7625 | 0,7500 |
-| Citrus | 0,4875 | 0,5625 |
+| CellCNN | 0,8250 | 0,8750 |
+| SVM | 0,8083 | 0,8750 |
+| Citrus | 0,60625 | 0,6250 |
 
-Die Wiederholungen verwenden dieselben 20 Spender mehrfach. Sie sind keine zehn unabhängigen Studien.
+Die Wiederholungen verwenden dieselben 20 Spender mehrfach. Sie sind keine 30 unabhängigen Studien.
 
 **Papervergleich:** Das Paper bewertet Citrus ebenfalls über Test-ROC-AUC. Seine 100 Wiederholungen und größeren Zellstichproben unterscheiden sich von unserem aktuellen Umfang.
 
@@ -1768,7 +1770,7 @@ Die zentralen Ausgaben sind:
 
 | Datei | Inhalt | Zweck |
 |---|---|---|
-| [Testvorhersagen](tables/task4_citrus_predictions_gated_alive_full.csv) | 60 Zeilen mit Wahrscheinlichkeit, Label, Lambda und Clusterzahl | Leistungsbewertung |
+| [Testvorhersagen](tables/task4_citrus_predictions_gated_alive_full.csv) | 180 Zeilen mit Wahrscheinlichkeit, Label, Lambda und Clusterzahl | Leistungsbewertung |
 | [Auswahlübersicht](tables/task4_citrus_selection_gated_alive_full.csv) | Pro Split gewähltes Lambda, zulässige und ausgewählte Clusterzahl | Dokumentation der Modellauswahl |
 | [Clusterprofile](tables/task4_citrus_clusters_gated_alive_full.csv) | Markerzentroiden und Koeffizienten ausgewählter Cluster | Vorbereitung der biologischen Interpretation |
 
@@ -1780,7 +1782,7 @@ Nach jedem abgeschlossenen Split werden Zwischenstände gespeichert.
 
 Die CSVs enthalten allerdings **nicht den vollständigen Clusterbaum, den vollständigen Modellzustand oder sämtliche inneren Lambda-Fehlerraten**. Anders als bei unseren gespeicherten SVM-Parametern reichen die Clusterprofile allein nicht aus, um beliebige neue Spender vollständig vorherzusagen.
 
-Es gibt am Ende zehn finale Split-Modelle im Ablauf, aber kein zusätzliches Modell, das auf allen 20 Spendern trainiert wurde.
+Es gibt am Ende 30 finale Split-Modelle im Ablauf, aber kein zusätzliches Modell, das auf allen 20 Spendern trainiert wurde.
 
 ## 3.22 Wie interpretieren wir die ausgewählten Populationen?
 
@@ -1802,6 +1804,6 @@ Außerdem sind hierarchische Cluster überlappend und korreliert. Ein positiver 
 
 **Im Paper:** Ausgewählte Citrus-Populationen werden ebenfalls biologisch charakterisiert und über Wiederholungen zusammengefasst. Unser Notebook exportiert dafür Profile; die weiterführende Interpretation gehört zu Aufgabe 5.
 
-Die vorhandenen älteren Citrus-Interpretationen und entsprechenden Berichtsabbildungen gehören laut aktueller Projektdokumentation noch zur früheren Konfiguration. Sie dürfen nicht als Interpretation dieses neuen Laufs ausgegeben werden.
+Die aktuelle Interpretation verwendet `task5_paper_*` über dieselben 30 Splits und ist in den [Methodenerklärungen zu Aufgabe 5](AUFGABE_5_METHODENERKLAERUNGEN.md) beschrieben. Ältere `task5_*`-Dateien und der Detailbericht bleiben historische Ergebnisse.
 
 Für diese Erklärung wurden das aktuelle Notebook, die tatsächlich installierten Citrus-Funktionen, die Supplementary Methods und die gespeicherten Ergebnisse geprüft. Die Kennzahlen wurden neu berechnet; neue Clusterbäume oder Regressionsmodelle wurden nicht trainiert.

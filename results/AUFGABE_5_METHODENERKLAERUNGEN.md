@@ -2,15 +2,16 @@
 
 Diese Datei erklärt die Umsetzung von Aufgabe 5 im Stil der [Methodenerklärungen zu Aufgabe 4](AUFGABE_4_METHODENERKLAERUNGEN.md): vom gespeicherten Modell über eine quantitative Auswahlregel bis zur Darstellung der Zellsubsets, einschließlich Formeln, Entscheidungsbegründungen und Grenzen.
 
-**Dokumentationsstand: 9. September 2026.** Grundlage ist die aktuelle Auswertung von **30 gemeinsamen äußeren Splits, IDs 0–29**, auf `gated_alive`. Die Erklärung zu Aufgabe 4 nennt für Citrus noch einen früheren Stand mit zehn Splits. Für diese Datei sind das aktuelle Aufgabe-5-Notebook, seine Implementierung und die gespeicherten `task5_paper_*`-Ergebnisse maßgeblich.
+**Dokumentationsstand: 9. September 2026, ergänzt um das SVM-Markerprofil.** Grundlage ist die aktuelle Auswertung von **30 gemeinsamen äußeren Splits, IDs 0–29**, auf `gated_alive`. Maßgeblich sind das Aufgabe-5-Notebook, seine Implementierung und die gespeicherten `task5_paper_*`-Ergebnisse. Das ergänzende SVM-Markerprofil wird im Präsentationsexporter aus denselben gespeicherten Testmodellen berechnet.
 
-Für diese Dokumentation wurden keine Modelle neu trainiert und keine Analysen neu exportiert. Die Zahlen wurden aus den vorhandenen Ergebnistabellen nachgerechnet. Die beschriebenen Auswahlregeln sind nachvollziehbare Operationalisierungen; dass jede ausgewählte Zelle biologisch relevant ist, folgt daraus nicht.
+Es wurden keine Modelle neu trainiert. Die bisherigen Analyseergebnisse bleiben unverändert; das ergänzende SVM-Markerprofil und die Präsentationsassets werden separat exportiert. Die beschriebenen Auswahlregeln sind nachvollziehbare Operationalisierungen; dass jede ausgewählte Zelle biologisch relevant ist, folgt daraus nicht.
 
 ## Quellen und Orientierung
 
 - [Aufgabenstellung](../Group_projects_ssbi_2026.pdf), Aufgabe 5.
 - [Notebook zur Interpretation](../notebooks/05_interpretation.ipynb).
 - [Implementierung der Interpretation](../src/task5_interpretation.py).
+- [Präsentationsexporter mit ergänzendem SVM-Markerprofil](../src/presentation_assets.py).
 - [Datenaufbereitung und Projektionen aus Aufgabe 2](../src/task23_analysis.py).
 - [CellCNN-Notebook](../notebooks/04c_cellcnn.ipynb), [Citrus-Notebook](../notebooks/04d_citrus.ipynb) und [SVM-Notebook](../notebooks/04b_svm.ipynb).
 - [Lokales CellCNN-Paper](../CellCNN.pdf), insbesondere Seite 8, Abschnitt „NK-cell benchmark data set“; [Onlinefassung des Papers](https://www.nature.com/articles/ncomms14825).
@@ -524,6 +525,52 @@ Diese Werte dürfen nicht als vergleichbare Effektstärken gelesen werden. Ein W
 
 Über verschiedene Splits kann dieselbe SVM-Zelle sowohl positiv als auch negativ ausgewählt werden. Innerhalb eines Splits schließen sich beide Richtungen aus.
 
+## 5.7 Wie entsteht das spendergleich gewichtete SVM-Markerprofil?
+
+Für die biologische Einordnung auf Folie 9 wird zusätzlich ein Profil der **positiv ausgewählten Zellen vollständiger Testspender** berechnet. Es verwendet dieselben 30 äußeren Modelle, ihre gespeicherten Scaler und Schwellen sowie die Auswahlregel aus Abschnitt 5.3. Beide tatsächlichen CMV-Klassen gehen ein. Es gibt keine Einschränkung auf die 93 positiv markierten Karten-Zellen oder auf positiv klassifizierte Spender.
+
+Für Spender $d$ und dessen äußeren Testauftritt $s$ sei
+
+$$
+P_{ds}=\{i\in I_{ds}:m_{is}>\tau_s\}.
+$$
+
+Bei nichtleerer Auswahl mitteln wir für Marker $j$ die ArcSinh-Werte:
+
+$$
+c_{dsj}=\frac{1}{|P_{ds}|}\sum_{i\in P_{ds}}a_{ij}.
+$$
+
+Anschließend mitteln wir zuerst über die **nichtleeren Testauftritte eines Spenders** und danach gleichgewichtet über die vertretenen Spender:
+
+$$
+\mathcal T_d^+=\{s\in\mathcal T_d:|P_{ds}|>0\},\qquad
+c_{dj}=\frac{1}{|\mathcal T_d^+|}\sum_{s\in\mathcal T_d^+}c_{dsj},
+$$
+
+$$
+D^+=\{d:|\mathcal T_d^+|>0\},\qquad
+c_j^{\mathrm{SVM}}=\frac{1}{|D^+|}\sum_{d\in D^+}c_{dj}.
+$$
+
+**Warum diese Reihenfolge?** Ein Spender soll weder wegen mehr gemessener oder ausgewählter Zellen noch wegen mehr Testauftritten stärker gewichtet werden. Innerhalb eines nichtleeren Subsets zählen alle Zellen gleich. Die Zusammenfassung ist eine eigene deskriptive Ergänzung, keine im Paper vorgegebene SVM-Interpretation.
+
+**Leere Auswahlen:** Für $P_{ds}=\varnothing$ ist das Markerprofil undefiniert und wird als fehlend gespeichert. Es geht nicht als Nullprofil in die Mittelung ein. Spender ohne irgendeine positive Auswahl würden ebenfalls kein Profil beitragen. Die Abdeckung wird deshalb stets mitberichtet. Fehlt jede positive Auswahl, stoppt der Export mit einer Fehlermeldung. Das Profil beschreibt bedingt auf positive Auswahl die Markerausprägung; deren Häufigkeit wird dadurch nicht geschätzt.
+
+Für die Auswahl bleibt die ursprüngliche Arithmetik erhalten: Rohwerte zunächst als `float32`, dann `arcsinh(x/5)`, gespeicherter Scaler und gespeicherte SVM-Gewichte. Die Markerwerte werden in `float64` aufsummiert. Erst nach der dreistufigen Mittelung wird das Profil mit der **bestehenden explorativen** Marker-Skalierung aus Aufgabe 2 dargestellt:
+
+$$
+z_j^{\mathrm{SVM}}=\frac{c_j^{\mathrm{SVM}}-\mu_j^{\mathrm{expl}}}{\sigma_j^{\mathrm{expl}}}.
+$$
+
+Es wird kein neuer Scaler gefittet. Die acht dargestellten Marker sind CD3, CD19, CD56, CD16, CD94, NKG2A, NKG2C und CD57. SVM-Gewichte selbst werden nicht als Markerexpression ausgegeben.
+
+## 5.8 Welche Abdeckung hat das zusätzliche Profil?
+
+Alle **20 Testspender** tragen zum Profil bei. **168 von 180 Testauftritten** enthalten mindestens eine positiv ausgewählte Zelle; zwölf Auswahlen sind leer. Pro Spender tragen vier bis 16 nichtleere Auftritte bei. Insgesamt werden **82.189 ausgewählte Zellvorkommen über Testauftritte** erfasst. Das ist keine Anzahl eindeutiger Zellen: Eine ursprüngliche Zelle kann in mehreren Splits erneut ausgewählt werden.
+
+Die [Tabelle je Testauftritt](../praesentation/aufgaben_04_05/data/svm_profiles_by_test_visit.csv) enthält alle 180 Spender-/Split-Kombinationen, vollständige Zellzahl, Top-Zellzahl, positive Auswahlzahl und die acht Marker-Mittelwerte. Leere Profile sind ausdrücklich als fehlend enthalten. Diese Tabelle ermöglicht die unabhängige Nachrechnung der beiden anschließenden Mittelungsschritte.
+
 # 6. Darstellung und vorhandene Ergebnisse
 
 ## 6.1 Welche Karte verwenden wir?
@@ -617,6 +664,22 @@ Die 87 CellCNN-Zellen entsprechen 0,87 % der Karte. Das ist ein Anteil in der Ka
 
 Die SVM-Zahlen zählen jede Karten-Zelle, sobald sie mindestens einmal in der jeweiligen Richtung ausgewählt wurde. Sie dürfen weder mit den 87 Zellen eines einzelnen CellCNN-Filters noch mit der Anzahl von Citrus-Zentroiden als Maß der Methodenqualität verglichen werden.
 
+## 6.7 Was zeigt die ergänzte Markerprofil-Folie?
+
+Die [Markerprofilgrafik](../praesentation/aufgaben_04_05/figures/marker_profiles.pdf) stellt drei Profile auf derselben explorativen z-Skala dar. Werte in dieser Tabelle sind wie auf der Folie auf eine Nachkommastelle gerundet:
+
+| Profil | CD3 | CD19 | CD56 | CD16 | CD94 | NKG2A | NKG2C | CD57 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| CellCNN G1 | −0,2 | −0,1 | 2,1 | 1,7 | 2,4 | 0,5 | 4,6 | 1,9 |
+| Citrus G1 | 0,7 | 0,0 | −0,2 | −0,1 | 0,4 | −0,4 | 0,3 | 2,2 |
+| SVM positive OOF | 0,3 | 0,1 | 1,2 | 1,6 | 1,9 | 0,4 | 3,0 | 2,0 |
+
+CellCNN und Citrus verwenden unverändert die gespeicherten G1-Repräsentanten: Split 9/Filter 2 beziehungsweise Split 25/Cluster 139891. Die SVM-Zeile verwendet die spendergleich gewichteten Testzellprofile aus Abschnitt 5.7. Sie ist **kein dritter Gruppenrepräsentant** und besitzt deshalb keine einzelne Split-, Filter- oder Cluster-ID.
+
+CellCNN zeigt ein NKG2C-/CD57- und NK-assoziiertes Muster, das mit dem im Paper beschriebenen memory-like NK-Phänotyp vereinbar ist. Beim Citrus-Repräsentanten fallen CD3 und CD57 bei deutlich geringerer NKG2C-Erhöhung auf, was ein T-assoziiertes Muster nahelegt. Auch die SVM-Auswahl zeigt erhöhte NKG2C-/CD57-Werte zusammen mit CD56, CD16 und CD94; CD3 liegt ebenfalls etwas über dem Referenzmittel. Diese Mittelwerte erlauben weder eine gesicherte Zelltypzuordnung noch eine Aussage über die Reinheit der Subsets.
+
+Die gemeinsame Farbskala macht Markerwerte lesbar vergleichbar, beseitigt aber nicht die unterschiedlichen Subset-Definitionen und Aggregationen. Insbesondere ist ein höherer z-Wert keine bessere Klassifikationsleistung und kein Positivitätsgate. Die ungerundeten 24 Werte samt Profiltyp stehen in der [Profiltabelle](../praesentation/aufgaben_04_05/data/representative_profiles.csv).
+
 # 7. Paper-Nähe, Aussagegrenzen und Nachvollziehbarkeit
 
 ## 7.1 Welche Schritte übernehmen wir aus dem Paper?
@@ -633,6 +696,7 @@ Die NK-Benchmark-Interpretation im Paper definiert CellCNN-Subsets über die Hä
 | Zentroidgruppierung | Explorative z-Skalierung, Average-Linkage, Kosinusdistanz, Schnitt 0,4 | Konkrete Übertragung der dokumentierten Filtergruppierungsregel; keine belegte Originalparametrisierung für NK-Zentroiden |
 | Kartenstichprobe | 500 Zellen je Spender | Wiederverwendung von Aufgabe 2; deutlich weniger Zellen als die 20.000 je Person der Paperabbildung |
 | SVM-Interpretation | Top-1-%-Auswahl, Richtung relativ zur Spenderschwelle, OOF-Zellhäufigkeiten | Eigene, an den gespeicherten SVM-Spenderscore angeschlossene Lösung |
+| Ergänzendes SVM-Markerprofil | Zellen je Testauftritt, nichtleere Auftritte je Spender, Spender gleichgewichtet mitteln | Deskriptives Profil bedingt auf positive Auswahl; keine zusätzliche Zentroidgruppe oder neue Leistungsbewertung |
 | Citrus-Darstellung | Ausgewählte Clusterzentroiden | Keine exakte Zellzuordnung ohne ursprüngliche Zuordnungsstruktur |
 | Weitere Zelltypanalyse | Keine zusätzliche Unterteilung der CellCNN-Subsets im aktuellen Aufgabe-5-Lauf | Ein Subset kann mehrere Zelltypen enthalten; seine Homogenität ist nicht nachgewiesen |
 
@@ -665,6 +729,8 @@ Für den Bericht ist deshalb die Formulierung **„wiederkehrende, modellassozii
 | [figures/task5_paper_centroids.png](figures/task5_paper_centroids.png) | Wiederkehrende CellCNN-/Citrus-Subset-Zentroiden auf der vorhandenen t-SNE-Karte |
 | [figures/task5_paper_subsets.png](figures/task5_paper_subsets.png) | CellCNN-Repräsentant sowie positive und negative SVM-Zellhäufigkeiten |
 
+Die ergänzenden Markerprofile liegen getrennt unter `praesentation/aufgaben_04_05/data/`: `svm_profiles_by_test_visit.csv` und `representative_profiles.csv`. Die dortige `provenance.json` dokumentiert die ursprünglichen FCS-/Modellquellen, Auswahl und Aggregation, Abdeckung sowie die Prüfsummen der Präsentationsausgaben. Die bestehende `task5_paper_provenance.json` und ihre Ergebnisse werden nicht überschrieben.
+
 Die ebenfalls vorhandenen älteren Dateien wie `task5_cell_scores.csv`, `task5_marker_profiles.csv` und `task5_provenance.json` gehören zu einem historischen Auswertungsstand. Ihre Zahlen und Auswahlregeln werden für diese Erklärung nicht mit den aktuellen Ergebnissen vermischt.
 
 ## 7.5 Was wurde für diese Erklärung tatsächlich geprüft?
@@ -673,4 +739,4 @@ Die Beschreibung wurde mit dem aktuellen Notebook und der Implementierung abgegl
 
 Aus den gespeicherten CSV-Dateien wurden die Zentroid- und Gruppenzahlen, die Citrus-Splits ohne wirksame Cluster, die Angaben zum CellCNN-Repräsentanten und die SVM-Zellzahlen einschließlich ihrer Nenner nachgerechnet. Alle **16 in der Provenienz erfassten Artefaktprüfsummen**, die **vier Ergebnis-CSV-Prüfsummen** und die **Prüfsumme der Implementierung** stimmen mit den vorhandenen Dateien überein.
 
-Diese Prüfung bestätigt die Konsistenz der für die Erklärung verwendeten Artefakte. Die vollständigen FCS-Eingabeprüfsummen wurden für diese Dokumentation nicht erneut berechnet; das Notebook und der Benchmark wurden nicht erneut ausgeführt.
+Für die ergänzenden SVM-Profile wurden auch die ursprünglichen FCS-Eingabeprüfsummen kontrolliert und die 180 Testauswertungen rekonstruiert. Top-Zellzahlen und Schwellen stimmen mit den gespeicherten Vorhersagen überein; die größte absolute Abweichung eines rekonstruierten Spenderscores beträgt $4{,}44\cdot10^{-16}$. Die positiven und negativen Auswahlzählungen sowie Testauftrittsnenner der 10.000 Karten-Zellen stimmen exakt mit dem bestehenden Export überein. Kein Klassifikator, Scaler oder Projektionsmodell wurde neu gefittet; das Notebook und der Benchmark wurden nicht erneut ausgeführt.
