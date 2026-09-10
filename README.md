@@ -4,6 +4,18 @@ Dieses Repository enthält die Analysen des SSBI-Gruppenprojekts zum
 NK/CMV-Datensatz. Der Datensatz selbst wird nicht mit Git versioniert. Alle
 Mitwirkenden verwenden dieselbe Original-ZIP-Datei und entpacken sie lokal.
 
+## Quadratic CellCNN mit Learnable Pooling (06e)
+
+Das [ausgeführte 06e-Notebook](notebooks/06e_cellcnn_quadratic_learnable_pooling.ipynb)
+und seine zehn Checkpoints für Splits 0–9 sind auf `GrHa` versioniert.
+Die [Vergleichstabelle](results/tables/task6_quadratic_learnable_paired_comparison.csv)
+zeigt auf diesen zehn Splits eine mittlere Network-AUC von 0,9500 für
+Quadratic Soft-Top-Alpha, 0,9375 für Quadratic Hard-Top-1% und 0,8750 für die
+lineare Baseline. Die separat abgeschlossene
+[50-Split-Auswertung auf GrHa-learnable-pooling](https://github.com/habicht12/SSBI-Project/blob/GrHa-learnable-pooling/results/tables/task6_quadratic_learnable_50/README.md)
+verwendet dieselbe Modell- und Trainingsimplementierung. Unterschiedliche
+Splitumfänge werden dort ausdrücklich getrennt verglichen.
+
 ## Voraussetzungen
 
 - Git
