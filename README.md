@@ -4,21 +4,22 @@ Dieses Repository enthält die Analysen des SSBI-Gruppenprojekts zum
 NK/CMV-Datensatz. Der Datensatz selbst wird nicht mit Git versioniert. Alle
 Mitwirkenden verwenden dieselbe Original-ZIP-Datei und entpacken sie lokal.
 
-## Bonusmodelle auf `GrHa-learnable-pooling`
+## Vier Bonusmodelle auf `GrHa-learnable-pooling`
 
-Auf diesem Branch liegen zwei getrennte Modelle mit lernbarem Poolinganteil:
+Die Notebooks `06a`, `06b`, `06d` und `06e` vergleichen CellCNN,
+Mahalanobis-/Prototypfilter mit Radius/ReLU und Learnable Pooling sowie
+Quadratic-Filter mit hartem Top-1%- beziehungsweise Learnable Pooling.
+Alle vier wurden auf denselben **100 Spendersplits** mit einheitlicher
+Half-Max-Frequency-Auswertung ausgewertet.
 
-- **06b: diagonale Prototypfilter mit Radius/ReLU.**
-  [Modell, Ergebnisse und Reproduktion](results/tables/task6_learnable_pooling_relu_50/README.md).
-  Mittlere Klassifikations-AUC über 50 Splits: **0,7125**.
-- **06e: freie lineare und quadratische Zellfilter mit ReLU.**
-  [Modell, Ergebnisse und Reproduktion](results/tables/task6_quadratic_learnable_50/README.md).
-  Mittlere Klassifikations-AUC über dieselben 50 Splits: **0,9200**.
+- [Ergebnisse, Plots und Reproduktion](results/tables/task6_comparison_100/README.md)
+- [Vergleichsfolien im gemeinsamen Theme](praesentation/aufgabe_06_vergleich/slides.pdf)
+- [Folienquelle und Bauanleitung](praesentation/aufgabe_06_vergleich/README.md)
 
-Die lineare CellCNN-Baseline erreicht auf diesen 50 Splits **0,8025**.
-Beide Ergebnisordner enthalten Modelle, Tabellen und ausgeführte Notebooks.
-Die Quadratic-Hard-Top-1%-Referenz aus 06d umfasst nur zehn Splits und wird
-deshalb separat auf den gemeinsamen Splits 0–9 verglichen.
+Frühere Ergebnisstände bleiben unter
+[Prototyp/ReLU, 50 Splits](results/tables/task6_learnable_pooling_relu_50/README.md)
+und [Quadratic Soft-Pooling, 50 Splits](results/tables/task6_quadratic_learnable_50/README.md)
+erhalten. Die gemeinsame 100-Split-Auswertung ist der aktuelle Vierervergleich.
 
 ## Voraussetzungen
 

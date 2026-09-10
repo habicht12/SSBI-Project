@@ -1,0 +1,21 @@
+{
+  "source": "/home/gregor/projects/SSBI-Project-learnable-pooling/results/tables/task6_comparison_100/comparison",
+  "common_frequency_splits": 98,
+  "input_sha256": {
+    "summary.csv": "c05c47a1011bb9b6cf7d100378d7a1183733a3151ad83274bb15d24c0903d6c2",
+    "paired_differences.csv": "76647a534342e6b3fd43477b350803fb56c184b467bc7afbbde7e06d2a6fcd8d",
+    "split_metrics.csv": "07cf53efc0b5c6bf13a256b10523931c960909350c77dcf60f817782fb06e27e",
+    "learned_alphas.csv": "4ac0549d05b2e4c3c736ca269e1e2c6b9214ceb4db38ce49ebc8a9016295d52f"
+  },
+  "takeaways": {
+    "CommonFrequencySplits": "98",
+    "NetworkTakeaway": "Höchste mittlere Network-AUC: Quadratic Top-1\\,\\% und Quadratic Soft-$\\alpha$ (0,9125).",
+    "ClassificationTakeaway": "Höchste Mittelwerte: AP bei Quadratic Top-1\\,\\% (0,907); BA bei Quadratic Top-1\\,\\% (0,801).",
+    "FrequencyTakeaway": "Höchste mittlere Frequency-AUC: Quadratic Top-1\\,\\% (0,8610).",
+    "EffectTakeaway": "Größter mittlerer Frequency-Effect: CellCNN (0,740 Prozentpunkte).",
+    "PairedTakeaway": "Quadratic Soft-$\\alpha$ gegen CellCNN: 53 besser, 37 gleich, 10 schlechter; mittlere Differenz +0,1050.",
+    "AlphaTakeaway": "Median $\\alpha$: Quadratic 0,96\\,\\%; Prototyp 1,04\\,\\%. Alpha beschreibt das Pooling, nicht die gemessene Zellhäufigkeit.",
+    "FinalTakeaway": "Quadratic Hard und Soft erreichen beide 0,9125 mittlere Network-AUC. Lernbares Soft-Pooling erhöht sie hier nicht."
+  },
+  "exporter_sha256": "60a10008da6da2626249e07127a40af221f770c7b13636bc22e773fd3314c253"
+}
