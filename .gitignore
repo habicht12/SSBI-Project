@@ -89,3 +89,19 @@ results/tables/task6_learnable_pooling_relu_50/*
 !results/tables/task6_learnable_pooling_relu_50/task6_learnable_pooling_relu_50_executed.ipynb
 !results/tables/task6_learnable_pooling_relu_50/task6_learnable_pooling_relu_split_[0-9].pt
 !results/tables/task6_learnable_pooling_relu_50/task6_learnable_pooling_relu_split_[0-9][0-9].pt
+
+# Reviewed quadratic learnable-pooling benchmark shared with collaborators.
+!results/tables/task6_quadratic_learnable_50/
+results/tables/task6_quadratic_learnable_50/*
+!results/tables/task6_quadratic_learnable_50/README.md
+!results/tables/task6_quadratic_learnable_50/run.py
+!results/tables/task6_quadratic_learnable_50/run_scope.json
+!results/tables/task6_quadratic_learnable_50/*.csv
+!results/tables/task6_quadratic_learnable_50/task4_cellcnn_predictions_gated_alive_full.config.json
+!results/tables/task6_quadratic_learnable_50/task6_quadratic_learnable_50_executed.ipynb
+!results/tables/task6_quadratic_learnable_50/task6_quadratic_learnable_split_[0-9].pt
+!results/tables/task6_quadratic_learnable_50/task6_quadratic_learnable_split_[0-9][0-9].pt
+!results/tables/task6_quadratic_learnable_50/hard_reference/
+results/tables/task6_quadratic_learnable_50/hard_reference/*
+!results/tables/task6_quadratic_learnable_50/hard_reference/*.csv
+!results/tables/task6_quadratic_learnable_50/hard_reference/task6_quadratic_split_[0-9].pt

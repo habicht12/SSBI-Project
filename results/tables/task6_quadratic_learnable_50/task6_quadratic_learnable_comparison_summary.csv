@@ -1,0 +1,7 @@
+Metrik,Lineare Baseline,Quadratic Soft-Top-Alpha
+Mittlere Network-ROC-AUC,0.8025,0.92
+Mediane Network-ROC-AUC,0.875,1.0
+Mittlere Häufigkeits-ROC-AUC (gemeinsame Splits),0.8482142857142857,0.8520408163265306
+Mittlere Häufigkeitsdifferenz CMV+ minus CMV− (gemeinsame Splits),0.006197448834371949,0.0053568876186620065
+Anzahl Network-Splits,50.0,50.0
+Anzahl gemeinsam bestimmbarer Frequency-Splits,49.0,49.0
