@@ -4,6 +4,15 @@ Dieses Repository enthält die Analysen des SSBI-Gruppenprojekts zum
 NK/CMV-Datensatz. Der Datensatz selbst wird nicht mit Git versioniert. Alle
 Mitwirkenden verwenden dieselbe Original-ZIP-Datei und entpacken sie lokal.
 
+## Aktueller Bonus-Ergebnisstand auf `GrHa-learnable-pooling`
+
+Der neue 06b-Stand verwendet diagonale Prototypfilter mit lernbarem Radius/ReLU,
+Learnable Pooling und einer Half-Max-Populationsauswertung. Der abgeschlossene
+50-Split-Lauf vom 10.09.2026 ist einschließlich Modellen und Notebookausgaben
+versioniert. Einstieg für Mitwirkende:
+[Ergebnisse, Methodik und Reproduktion](results/tables/task6_learnable_pooling_relu_50/README.md).
+Die mittlere Klassifikations-AUC beträgt 0,7125 gegenüber 0,8025 für die Baseline.
+
 ## Voraussetzungen
 
 - Git

@@ -76,3 +76,16 @@ results/tables/**/status.json
 results/tables/**/preflight_executed.ipynb
 results/tables/**/task6_learnable_pooling_100.ipynb
 results/tables/**/task6_learnable_pooling_geometry_50.ipynb
+
+# Reviewed Radius/ReLU benchmark shared at the user's request (2026-09-10).
+!results/tables/task6_learnable_pooling_relu_50/
+results/tables/task6_learnable_pooling_relu_50/*
+!results/tables/task6_learnable_pooling_relu_50/README.md
+!results/tables/task6_learnable_pooling_relu_50/run.py
+!results/tables/task6_learnable_pooling_relu_50/run_scope.json
+!results/tables/task6_learnable_pooling_relu_50/*.csv
+!results/tables/task6_learnable_pooling_relu_50/task4_cellcnn_predictions_gated_alive_full.config.json
+!results/tables/task6_learnable_pooling_relu_50/task6_baseline_evaluation.config.json
+!results/tables/task6_learnable_pooling_relu_50/task6_learnable_pooling_relu_50_executed.ipynb
+!results/tables/task6_learnable_pooling_relu_50/task6_learnable_pooling_relu_split_[0-9].pt
+!results/tables/task6_learnable_pooling_relu_50/task6_learnable_pooling_relu_split_[0-9][0-9].pt
