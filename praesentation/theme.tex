@@ -1,0 +1,37 @@
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+\definecolor{Ink}{HTML}{172B43}
+\definecolor{Muted}{HTML}{526579}
+\definecolor{Teal}{HTML}{087F8C}
+\definecolor{Indigo}{HTML}{4956A3}
+\definecolor{Amber}{HTML}{DD8D29}
+\definecolor{Rust}{HTML}{AF4D35}
+\definecolor{Pale}{HTML}{EFF4F7}
+\definecolor{Line}{HTML}{DBE4EB}
+\setbeamercolor{normal text}{fg=Ink,bg=white}
+\setbeamercolor{structure}{fg=Teal}
+\setbeamercolor{frametitle}{fg=Ink}
+\setbeamercolor{alerted text}{fg=Rust}
+\setbeamercolor{block title}{fg=Ink,bg=Pale}
+\setbeamercolor{block body}{fg=Ink,bg=Pale}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{block title}{size=\normalsize,series=\bfseries}
+\setbeamersize{text margin left=8mm,text margin right=8mm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}{\color{Teal}\small\textbullet}
+\setbeamertemplate{frametitle}{\vspace{3mm}\insertframetitle\par\vspace{1mm}\textcolor{Line}{\rule{\textwidth}{.5pt}}}
+\setbeamertemplate{footline}{%
+  \hspace{8mm}\textcolor{Muted}{\scriptsize SSBI · Task 3 · 20,000 PBMCs}\hfill
+  \textcolor{Muted}{\scriptsize\insertframenumber}\hspace{8mm}\vspace{3mm}}
+\setlength{\parskip}{2pt}
+\newcommand{\takeaway}[1]{\vspace{2mm}\begin{beamercolorbox}[sep=1.7mm,wd=\linewidth]{block body}\small\textbf{#1}\end{beamercolorbox}}
+\newcommand{\source}[1]{\vfill{\fontsize{6.5}{8}\selectfont\color{Muted}#1\par}}
+\newcommand{\up}{\ensuremath{\uparrow}}
+\newcommand{\down}{\ensuremath{\downarrow}}
