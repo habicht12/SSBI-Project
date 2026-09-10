@@ -1,0 +1,7 @@
+Method,Selected parameters,davies_bouldin ↓,Mean stability
+k-means,k=4,2.363,0.995
+Single linkage,k=2,0.264,1.0
+Average linkage,k=2,0.894,0.602
+Complete linkage,k=2,0.948,0.617
+Ward linkage,k=6,2.522,0.611
+Leiden,"30 neighbours, resolution=1.2; 18 clusters",2.361,0.683

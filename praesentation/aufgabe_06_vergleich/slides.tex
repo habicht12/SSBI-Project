@@ -1,0 +1,290 @@
+% !TeX root = slides.tex
+\documentclass[aspectratio=169,10pt]{beamer}
+\PassOptionsToPackage{ngerman}{babel}
+\input{../theme}
+\usepackage{amsmath,amssymb}
+\AtBeginDocument{\selectlanguage{ngerman}}
+\graphicspath{{figures/}}
+\input{data/numbers}
+\hypersetup{pdftitle={CellCNN-Varianten: 100 gemeinsame Spendersplits},pdfauthor={SSBI-Gruppenprojekt},colorlinks=true,urlcolor=Teal}
+\setbeamertemplate{footline}{%
+  \hspace{8mm}\textcolor{Muted}{\scriptsize SSBI · Aufgabe 6 · 100 Splits · 20 Spender}\hfill
+  \textcolor{Muted}{\scriptsize\insertframenumber}\hspace{8mm}\vspace{3mm}}
+\newcommand{\eyebrow}[1]{{\color{Teal}\bfseries #1}\par\smallskip}
+\newcommand{\plotcontext}[1]{\par{\scriptsize\color{Muted}#1}\par}
+
+\begin{document}
+
+\begin{frame}{Four cell-filter models, one controlled comparison}
+  \eyebrow{Same data, same donor splits, same half-max rule}
+  \begin{tabular}{@{}ll@{}}\toprule
+    Model & Pooling\\\midrule
+    \textcolor{Teal}{CellCNN} & hard top-1\%\\
+    \textcolor{Indigo}{Quadratic Top-1\%} & hard top-1\%\\
+    \textcolor{Amber}{Quadratic Soft-$\alpha$} & learnable soft-$\alpha$\\
+    \textcolor{Rust}{Prototype Soft-$\alpha$} & learnable soft-$\alpha$\\\bottomrule
+  \end{tabular}
+  \par\medskip
+  All models aggregate cell responses, then apply a linear classifier.
+  \takeaway{Network classification and disease-association of the selected population are scored separately.}
+\end{frame}
+
+\begin{frame}{Network classification: quadratic filters win}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.62\textwidth}
+      \includegraphics[width=\linewidth,height=48mm,keepaspectratio]{network_roc.pdf}
+    \end{column}
+    \begin{column}{.35\textwidth}\scriptsize
+      \begin{tabular}{@{}lrr@{}}\toprule
+      Model & Mean & Median\\\midrule
+      CellCNN & 0.807 & 0.875\\
+      Quad. Top-1\% & 0.913 & 1.000\\
+      Quad. Soft-$\alpha$ & 0.913 & 1.000\\
+      Prototype & 0.738 & 0.750\\\bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \takeaway{Highest mean network AUC: Quadratic Top-1\% and Quadratic Soft-$\alpha$ (0.913).}
+\end{frame}
+
+\begin{frame}{Frequency AUC and effect size answer different questions}
+  \centering\includegraphics[width=.94\textwidth,height=46mm,keepaspectratio]{frequency_metrics.pdf}
+  \takeaway{Largest mean frequency effect: CellCNN (0.740 percentage points).}
+  \plotcontext{AUC: donor ranking. Effect: difference of mean population frequencies; unit percentage points.}
+\end{frame}
+
+\begin{frame}{Take-away and scope}
+  \begin{itemize}
+    \item Quadratic geometry (hard or soft) gives the best network classification here.
+    \item Learnable soft pooling doesn't add further gain: learned $\alpha\approx$ the fixed 1\% cutoff.
+    \item Quadratic Soft-$\alpha$ beats CellCNN in 53/100 paired splits (mean $\Delta$AUC $+0.105$).
+    \item Limitation: only 20 independent donors -- more splits are not more independent evidence.
+  \end{itemize}
+  \takeaway{Quadratic Hard and Soft both reach 0.913 mean network AUC; learnable soft pooling doesn't increase it here.}
+\end{frame}
+
+\begin{frame}{Backup: selecting a filter and defining half-max population frequency}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.54\textwidth}
+      \eyebrow{Filter selection and fixed training threshold}
+      \[\Delta_k=V_{1k}-V_{0k},\qquad k^*=\arg\max_{k:\Delta_k>0}\Delta_k\]
+      \[M=\max_{x\in\text{inner-train cells}}h_{k^*}(x),\qquad t=\tfrac12M\]
+      \[f_i=\frac{\#\{x\in\text{test sample }i:h_{k^*}(x)>t\}}{N_i}\]
+      \small Same fixed sample of up to 20{,}000 cells per test donor. The strict rule also applies when $M=0$.
+    \end{column}
+    \begin{column}{.42\textwidth}
+      \eyebrow{Two population metrics}
+      \[\mathrm{AUC}_{\mathrm{freq}}=\operatorname{AUC}(y_i,f_i)\]
+      \[\mathrm{Effect}=\bar f_{\mathrm{CMV+}}-\bar f_{\mathrm{CMV-}}\]
+      \small Without a positive filter, values remain missing. No post-hoc flipping of AUC direction.
+      \medskip\par
+      For frequency comparisons: \textbf{98} jointly determinable splits.
+    \end{column}
+  \end{columns}
+  \takeaway{Half-max is a cell-selection rule, not clustering; CMV is a donor label, not a cell-type label.}
+\end{frame}
+
+\begin{frame}{Backup: how much does classification vary between splits?}
+  \centering\includegraphics[width=\textwidth,height=53mm,keepaspectratio]{network_metrics.pdf}
+  \takeaway{Highest means: AP for Quadratic Top-1\% (0.907); BA for Quadratic Top-1\% (0.801).}
+  \plotcontext{ROC-AUC, Average Precision and Balanced Accuracy per split; BA at score threshold 0.5. Boxes Q1--Q3, line = median; spread is not a confidence interval.}
+\end{frame}
+
+\begin{frame}{Backup: paired differences to the linear CellCNN baseline}
+  \centering\includegraphics[width=.94\textwidth,height=49mm,keepaspectratio]{paired_differences.pdf}
+  \takeaway{Quadratic Soft-$\alpha$ vs.\ CellCNN: 53 better, 37 tied, 10 worse; mean difference $+0.105$.}
+  \plotcontext{Differences computed within the same outer split. Positive values mean a higher AUC than CellCNN.}
+\end{frame}
+
+\begin{frame}{Backup: what frequencies do individual donors show?}
+  \centering\includegraphics[width=\textwidth,height=51mm,keepaspectratio]{donor_frequencies.pdf}
+  \takeaway{Each donor counts as one point; repeated test runs are averaged per donor first.}
+  \plotcontext{Circles: CMV$-$; triangles: CMV$+$. Bars: mean of donor points. A different filter may define the population in each split.}
+\end{frame}
+
+\begin{frame}{Backup: what does the extra pooling parameter learn?}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.58\textwidth}
+      \includegraphics[width=\linewidth,height=51mm,keepaspectratio]{learned_alphas.pdf}
+    \end{column}
+    \begin{column}{.39\textwidth}
+      \eyebrow{Rank fraction, not population frequency}
+      \[\alpha_k=\sigma(\theta_k),\quad \alpha_k^{(0)}=0.01\]
+      \[m_{rk}=\sigma\!\left(\frac{\alpha_k-q_r}{0.002}\right)\]
+      \small With $q_r=(r-\tfrac12)/N$. Temperature stays fixed. A soft $\alpha$ of 1\% is not identical to hard top-1\%.
+    \end{column}
+  \end{columns}
+  \takeaway{Median $\alpha$: Quadratic 0.96\%; Prototype 1.04\%. Alpha describes pooling, not the measured cell frequency.}
+\end{frame}
+
+\begin{frame}{Backup: scope of the controlled comparison}
+  \begin{itemize}
+    \item \textbf{Quadratic Hard vs.\ Soft:} same cell response and L2 penalty; only the pooling function changes.
+    \item \textbf{CellCNN vs.\ Quadratic:} adds a quadratic term and its L2 penalty.
+    \item \textbf{Prototype vs.\ Quadratic:} different geometry, initialization and regularization; not an isolated alpha comparison.
+    \item \textbf{Limitation:} variants were developed after earlier results. More splits do not create new independent donors.
+  \end{itemize}
+  \medskip
+  \textbf{Regularization:} CellCNN on $W,V$; Quadratic on $W,Q,V$. Prototype: output L2 plus $10^{-3}\operatorname{mean}((a-1)^2)$.
+  \takeaway{Quadratic Hard and Soft both reach 0.913 mean network AUC; learnable soft pooling doesn't increase it here.}
+  \plotcontext{All 100 planned splits are reported. Code, checkpoints, tables and figures are documented together.}
+\end{frame}
+
+\begin{frame}{Vier Zellfilter-Modelle im gemeinsamen Vergleich}
+  \eyebrow{Gleiche Daten, gleiche Spendersplits, gleiche Half-Max-Regel}
+  \begin{tabular}{@{}p{.25\textwidth}p{.47\textwidth}p{.20\textwidth}@{}}\toprule
+    Modell  & Pooling\\\midrule
+    \textcolor{Teal}{CellCNN} & hartes Top-1\,\%\\[2mm]
+    \textcolor{Indigo}{Quadratic Top-1\,\%}  & hartes Top-1\,\%\\[2mm]
+    \textcolor{Amber}{Quadratic Soft-$\alpha$} & lernbares Soft-$\alpha$\\[2mm]
+    \textcolor{Rust}{Prototyp Soft-$\alpha$}  & lernbares Soft-$\alpha$\\\bottomrule
+  \end{tabular}
+  \par \medskip
+  Alle Modelle aggregieren Zellresponses und erzeugen danach lineare Klassenlogits.
+  \takeaway{Netzwerk-Klassifikation und Assoziation der ausgewählten Population werden getrennt bewertet.}
+\end{frame}
+
+\begin{frame}{100 Auswertungen, aber nur 20 unabhängige Spender}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.47\textwidth}
+      \eyebrow{Gemeinsame Datengrundlage}
+      \begin{tabular}{@{}lr@{}}\toprule
+      Unabhängige Spender & 20\\
+      CMV$-$ / CMV$+$ & 11 / 9\\
+      Marker & 37\\
+      Gate & \texttt{gated\_alive}\\
+      Äußere Train-/Testspender & 14 / 6\\\bottomrule
+      \end{tabular}
+      \medskip\par
+      \small Transformation $\operatorname{asinh}(x/5)$; Scaler ausschließlich auf Inner-Train-Spendern.
+    \end{column}
+    \begin{column}{.49\textwidth}
+      \eyebrow{Dasselbe Auswahlverfahren}
+      \begin{itemize}
+        \item Drei Inner-Folds $\times$ drei Filterzahlen: neun Kandidaten je Split.
+        \item Auswahl nach Validierungsgenauigkeit, AUC und Verlust.
+        \item Ausgewähltes Inner-Modell wird ohne Refit getestet.
+        \item 3.000 Zellen/Trainingsbag, 200 Bags/Spender; fünf Prediction-Bags mit bis zu 20.000 Zellen.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \takeaway{600 Testauftritte je Methode sind keine 600 unabhängigen Spender. Die Analyse ist deskriptiv.}
+\end{frame}
+
+\begin{frame}{Eine gemeinsame Half-Max-Definition für alle vier Modelle}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.54\textwidth}
+      \eyebrow{Filterauswahl und feste Trainingsschwelle}
+      \[\Delta_k=V_{1k}-V_{0k},\qquad k^*=\arg\max_{k:\Delta_k>0}\Delta_k\]
+      \[M=\max_{x\in\text{Inner-Train-Zellen}}h_{k^*}(x),\qquad t=\tfrac12M\]
+      \[f_i=\frac{\#\{x\in\text{Teststichprobe }i:h_{k^*}(x)>t\}}{N_i}\]
+      \small Gleiche feste Stichprobe von bis zu 20.000 Zellen je Testspender. Die strikte Regel gilt auch bei $M=0$.
+    \end{column}
+    \begin{column}{.42\textwidth}
+      \eyebrow{Zwei Populationsmetriken}
+      \[\mathrm{AUC}_{\mathrm{freq}}=\operatorname{AUC}(y_i,f_i)\]
+      \[\mathrm{Effekt}=\bar f_{\mathrm{CMV+}}-\bar f_{\mathrm{CMV-}}\]
+      \small Ohne positiven Filter bleiben die Werte fehlend. Kein nachträgliches Umdrehen der AUC.
+      \medskip\par
+      Für Frequency-Vergleiche: \textbf{\CommonFrequencySplits{} gemeinsam bestimmbare Splits}.
+    \end{column}
+  \end{columns}
+  \takeaway{Half-Max ist eine Zellselektion. Es wird kein Clustering ausgeführt; CMV ist kein Zelltyp-Label.}
+\end{frame}
+
+\begin{frame}{Netzwerk-ROC auf denselben 100 Splits}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.65\textwidth}
+      \includegraphics[width=\linewidth,height=49mm,keepaspectratio]{network_roc.pdf}
+    \end{column}
+    \begin{column}{.32\textwidth}
+      \eyebrow{Mittelwert / Median}
+      {\scriptsize\input{data/network_table}}
+      \medskip\par\small ROC-Kurven je Split berechnen, auf gemeinsamer FPR-Achse interpolieren und mitteln.
+    \end{column}
+  \end{columns}
+  \takeaway{\NetworkTakeaway}
+  \plotcontext{Legenden-AUC: Mittel der ursprünglichen Split-AUCs. Kein Pooling aller 600 Testauftritte zu einer ROC.}
+\end{frame}
+
+\begin{frame}{Wie stark schwankt die Klassifikation zwischen Splits?}
+  \relax
+  {\centering
+    \includegraphics[width=\textwidth,height=53mm,keepaspectratio]{network_metrics.pdf}
+  \par}
+  \takeaway{\ClassificationTakeaway}
+  \plotcontext{ROC-AUC, Average Precision und Balanced Accuracy je Split; BA bei Score-Schwelle 0,5. Boxen Q1--Q3, Linie Median; Streuung ist kein Konfidenzintervall.}
+\end{frame}
+
+\begin{frame}{Frequency-ROC der ausgewählten Zellpopulation}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.65\textwidth}
+      \includegraphics[width=\linewidth,height=49mm,keepaspectratio]{frequency_roc.pdf}
+    \end{column}
+    \begin{column}{.32\textwidth}
+      \eyebrow{Gemeinsame Splits}
+      {\scriptsize\input{data/frequency_table}}
+      \medskip\par\small Alle vier Methoden werden auf denselben \CommonFrequencySplits{} bestimmbaren Splits verglichen.
+    \end{column}
+  \end{columns}
+  \takeaway{\FrequencyTakeaway}
+  \plotcontext{Gemessen wird CMV-Assoziation der Häufigkeit; daraus folgt keine Zelltypvalidierung.}
+\end{frame}
+
+\begin{frame}{Frequency-AUC und Effektgröße beantworten verschiedene Fragen}
+  \relax
+  {\centering
+    \includegraphics[width=.94\textwidth,height=46mm,keepaspectratio]{frequency_metrics.pdf}
+  \par}
+  \takeaway{\EffectTakeaway}
+  \plotcontext{AUC: Rangordnung der Donoren. Effekt: Differenz ihrer mittleren Populationsfrequenzen; Einheit Prozentpunkte.}
+\end{frame}
+
+\begin{frame}{Gepaarte Differenzen zur linearen CellCNN-Baseline}
+  \relax
+  {\centering
+    \includegraphics[width=.94\textwidth,height=49mm,keepaspectratio]{paired_differences.pdf}
+  \par}
+  \takeaway{\PairedTakeaway}
+  \plotcontext{Differenzen werden innerhalb desselben äußeren Splits gebildet. Positive Werte bedeuten eine höhere AUC als CellCNN.}
+\end{frame}
+
+\begin{frame}{Welche Frequenzen haben die einzelnen Spender?}
+  \relax
+  {\centering
+    \includegraphics[width=\textwidth,height=51mm,keepaspectratio]{donor_frequencies.pdf}
+  \par}
+  \takeaway{Jeder Spender zählt als ein Punkt; wiederholte Testauftritte werden zuerst je Spender gemittelt.}
+  \plotcontext{Kreise: CMV$-$; Dreiecke: CMV$+$. Striche: Mittel der Spenderpunkte. Je Split kann ein anderer Filter die Population definieren.}
+\end{frame}
+
+\begin{frame}{Was lernt der zusätzliche Poolingparameter?}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.58\textwidth}
+      \includegraphics[width=\linewidth,height=51mm,keepaspectratio]{learned_alphas.pdf}
+    \end{column}
+    \begin{column}{.39\textwidth}
+      \eyebrow{Ranganteil statt Populationsfrequenz}
+      \[\alpha_k=\sigma(\theta_k),\quad \alpha_k^{(0)}=0{,}01\]
+      \[m_{rk}=\sigma\!\left(\frac{\alpha_k-q_r}{0{,}002}\right)\]
+      \small Mit $q_r=(r-1/2)/N$. Die Temperatur bleibt fest. Ein weiches Alpha von 1\,\% ist nicht identisch mit hartem Top-1\,\%.
+    \end{column}
+  \end{columns}
+  \takeaway{\AlphaTakeaway}
+\end{frame}
+
+\begin{frame}{Einordnung des kontrollierten Vergleichs}
+  \begin{itemize}
+    \item \textbf{Quadratic Hard vs. Soft:} gleiche Zellresponse und L2-Strafe; geändert wird die Poolingfunktion.
+    \item \textbf{CellCNN vs. Quadratic:} zusätzlicher quadratischer Term und dessen L2-Strafe.
+    \item \textbf{Prototyp vs. Quadratic:} andere Geometrie, Initialisierung und Regularisierung; kein isolierter Alpha-Vergleich.
+    \item \textbf{Begrenzung:} Varianten wurden nach früheren Ergebnissen entwickelt. Mehr Splits erzeugen keine neuen unabhängigen Donoren.
+  \end{itemize}
+  \medskip
+  \textbf{Regularisierung:} CellCNN auf $W,V$; Quadratic auf $W,Q,V$.
+  Prototyp: Output-L2 plus $10^{-3}\operatorname{mean}((a-1)^2)$.
+  \takeaway{\FinalTakeaway}
+  \plotcontext{Alle 100 vorgesehenen Splits werden berichtet. Code, Checkpoints, Tabellen und Abbildungen sind gemeinsam dokumentiert.}
+\end{frame}
+
+\end{document}

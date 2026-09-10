@@ -6,7 +6,6 @@ Untersucht wurden ausschließlich das [bereinigte Notebook](../notebooks/02_dime
 
 **Die `_clean`-Version deckt die technische Aufgabenstellung weitgehend ab.** PCA, sechs t-SNE-Parameterbeispiele, 16 UMAP-Parameterbeispiele und quantitative Vergleiche aller drei Verfahrenspaare sind vorhanden. Der Procrustes-Vergleich erfüllt bereits die Forderung nach einem paarweisen Maß. Vor der Abgabe müssen jedoch der zusätzliche kNN-Vergleich korrigiert, Widersprüche zwischen Text und tatsächlichem Versuchsaufbau bereinigt und die Ergebnisse abschließend interpretiert werden.
 
-**Die zuvor berichteten Ausführungsfehler gelten für diese Version nicht:** Die GMM-Funktion ist vor ihrer Verwendung definiert, `labels` wird nicht mit Plotbeschriftungen überschrieben, eine Verwendung des nicht importierten Moduls `warnings` und der problematische t-SNE-Cache kommen hier nicht vor. Auch der frühere Vorwurf fehlender t-SNE-Beispiele und eines 48er-UMAP-Sweeps mit nur 16 Bildern trifft hier nicht zu.
 
 Zellangaben zählen alle Code- und Markdown-Zellen ab 1, unabhängig von Jupyters Ausführungsnummern. Untersucht wurden **50 Zellen, darunter 29 Codezellen**. SHA-256 des Notebooks: `59b57fa69d587ed04d126f17d86be19e2e995c964a7919ac127fcf977788543b`.
 

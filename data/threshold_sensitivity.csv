@@ -1,0 +1,31 @@
+cutoff,method,id,clusters,k,neighbors,resolution,score,stability
+0.5,k-means,2,4,4.0,,,2.363,0.995
+0.5,Hierarchical (single),7,2,2.0,,,0.264,1.0
+0.5,Hierarchical (average),14,2,2.0,,,0.894,0.602
+0.5,Hierarchical (complete),21,2,2.0,,,0.948,0.617
+0.5,Hierarchical (ward),31,6,6.0,,,2.522,0.611
+0.5,Leiden,40,18,,30.0,1.2,2.361,0.683
+0.6,k-means,2,4,4.0,,,2.363,0.995
+0.6,Hierarchical (single),7,2,2.0,,,0.264,1.0
+0.6,Hierarchical (average),14,2,2.0,,,0.894,0.602
+0.6,Hierarchical (complete),21,2,2.0,,,0.948,0.617
+0.6,Hierarchical (ward),31,6,6.0,,,2.522,0.611
+0.6,Leiden,40,18,,30.0,1.2,2.361,0.683
+0.65,k-means,2,4,4.0,,,2.363,0.995
+0.65,Hierarchical (single),7,2,2.0,,,0.264,1.0
+0.65,Hierarchical (average),,,,,,,
+0.65,Hierarchical (complete),,,,,,,
+0.65,Hierarchical (ward),28,2,2.0,,,2.553,0.691
+0.65,Leiden,40,18,,30.0,1.2,2.361,0.683
+0.7,k-means,2,4,4.0,,,2.363,0.995
+0.7,Hierarchical (single),7,2,2.0,,,0.264,1.0
+0.7,Hierarchical (average),,,,,,,
+0.7,Hierarchical (complete),,,,,,,
+0.7,Hierarchical (ward),,,,,,,
+0.7,Leiden,35,7,,10.0,0.3,2.392,0.719
+0.75,k-means,2,4,4.0,,,2.363,0.995
+0.75,Hierarchical (single),7,2,2.0,,,0.264,1.0
+0.75,Hierarchical (average),,,,,,,
+0.75,Hierarchical (complete),,,,,,,
+0.75,Hierarchical (ward),,,,,,,
+0.75,Leiden,38,6,,30.0,0.3,2.443,0.762

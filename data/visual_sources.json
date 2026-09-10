@@ -1,0 +1,41 @@
+{
+  "notebook": "C:\\Users\\SebderDepp\\Desktop\\SSBI_Presentation\\SSBI-Project\\notebooks\\03_clustering.ipynb",
+  "notebook_sha256_lf": "31d6fa894afc8de492d1106c739d8b268df43459b2efd323b12d3319db05ef09",
+  "stability_image": "Original stored notebook PNG, unchanged.",
+  "marker_heatmaps": "Pixel crops of stored notebook PNG; no recolouring or rescaling.",
+  "marker_crops_px": {
+    "marker_heatmap_kmeans.png": [
+      0,
+      31,
+      1563,
+      345
+    ],
+    "marker_heatmap_leiden.png": [
+      0,
+      1737,
+      1563,
+      2061
+    ]
+  },
+  "lecture_source": "D:\\OneDrive\\Uni\\ML\\vorlesung_main_SlidesLive.pdf",
+  "lecture_page_crops_pdf_points": {
+    "voronoi_lecture.pdf": [
+      844,
+      [
+        102.8,
+        70.9,
+        268.4,
+        197.4
+      ]
+    ],
+    "linkage_lecture.pdf": [
+      854,
+      [
+        18,
+        50.9,
+        284,
+        213.0
+      ]
+    ]
+  }
+}

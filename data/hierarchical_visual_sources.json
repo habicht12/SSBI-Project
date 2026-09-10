@@ -1,0 +1,47 @@
+{
+  "source": "notebooks/03_clustering.ipynb",
+  "umap_output_indices": {
+    "single": 1,
+    "ward": 4
+  },
+  "umap_panel_crop": "x=0..1064; full height; removes legend only",
+  "heatmap_crops_px": {
+    "single": [
+      58,
+      379,
+      1434,
+      569
+    ],
+    "average": [
+      58,
+      721,
+      1434,
+      911
+    ],
+    "complete": [
+      58,
+      1062,
+      1434,
+      1252
+    ],
+    "ward": [
+      58,
+      1404,
+      1434,
+      1594
+    ],
+    "axis": [
+      58,
+      1594,
+      1434,
+      1695
+    ],
+    "colourbar": [
+      1511,
+      1395,
+      1565,
+      1610
+    ]
+  },
+  "display": "Original pixel strips, vertically scaled to equal height per cluster row. Shared marker axis and colour scale."
+}

@@ -13,7 +13,7 @@
     Convex regions with linear boundaries.\par
     \textbf{Probabilistic model:} hard-assignment Gaussian clusters with a shared spherical covariance and equal prior weights.
     \column{.45\textwidth}
-    \includegraphics[width=\linewidth,height=36mm,keepaspectratio]{figures/voronoi_lecture.pdf}\par
+    \includegraphics[width=\linewidth,height=36mm,keepaspectratio]{../figures/voronoi_lecture.pdf}\par
     \small Yellow points: centres. Each region contains points closest to its centre.
   \end{columns}
   \vspace{2mm}\small\textbf{Our data:} 20,000 live PBMCs, 37 markers, 20 donors.
@@ -90,7 +90,7 @@
 \begin{frame}{Agglomerative clustering: which groups merge?}
   \begin{columns}[T,onlytextwidth]
     \column{.58\textwidth}
-    \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{figures/linkage_lecture.pdf}\par
+    \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{../figures/linkage_lecture.pdf}\par
     \small $C,C'$: two clusters; $x,y$: cells.\par
     $d(x,y)$: Euclidean distance; $|C|$: cell count.
     \column{.38\textwidth}
@@ -128,7 +128,7 @@
 \begin{frame}{SKIP: Leiden 2/2: move, refine and aggregate}
   \begin{columns}[T,onlytextwidth]
     \column{.56\textwidth}
-    \includegraphics[width=\linewidth,height=47mm,keepaspectratio]{figures/leiden_algorithm.pdf}
+    \includegraphics[width=\linewidth,height=47mm,keepaspectratio]{../figures/leiden_algorithm.pdf}
     \column{.41\textwidth}\small
     \textbf{1. Move nodes (a--b)}\par
     Start with one group per node. Move nodes when this improves the quality score.\par\vspace{2mm}
@@ -142,7 +142,7 @@
 \end{frame}
 
 \begin{frame}{Selection: stability first, then Davies--Bouldin}
-  \includegraphics[width=\textwidth,height=43mm,keepaspectratio]{figures/stability_eligibility.png}\par
+  \includegraphics[width=\textwidth,height=43mm,keepaspectratio]{../figures/stability_eligibility.png}\par
   \small\textbf{Each dot: one configuration.} Keep mean stability $\geq0.6$ (arbitrary), then minimise DB per method.\par
   \vspace{1mm}
   \begin{columns}[T,onlytextwidth]
@@ -158,7 +158,7 @@
 \begin{frame}{Excellent scores can describe an unhelpful partition}
   \small\renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{5pt}
-  \input{data/winner_table}
+  \input{../data/winner_table}
   \vspace{2mm}\par
   \begin{columns}[T,onlytextwidth]
     \column{.47\textwidth}
@@ -175,11 +175,11 @@
   \begin{columns}[T,onlytextwidth]
     \column{.49\textwidth}
     \textcolor{Teal}{\textbf{Ward: 6 clusters}}
-    \includegraphics[width=\linewidth,height=37mm,keepaspectratio]{figures/umap_ward_panel.png}\par
+    \includegraphics[width=\linewidth,height=37mm,keepaspectratio]{../figures/umap_ward_panel.png}\par
     \small DB: \textbf{2.522}\quad Mean stability: \textbf{0.611}\par
     \column{.49\textwidth}
     \textcolor{Rust}{\textbf{Single: 19,999 cells + 1 cell}}
-    \includegraphics[width=\linewidth,height=37mm,keepaspectratio]{figures/umap_single_panel.png}\par
+    \includegraphics[width=\linewidth,height=37mm,keepaspectratio]{../figures/umap_single_panel.png}\par
     \small DB:  \textbf{0.264} \quad Mean stability: \textbf{1.000} 
   \end{columns}
   \takeaway{Ward divides the broad cloud. Single linkage assigns almost the entire cloud to one cluster.}
@@ -192,12 +192,12 @@
   \begin{columns}[T,onlytextwidth]
     \column{.49\textwidth}
     \textcolor{Teal}{\textbf{K-means: 4 clusters}}
-    \includegraphics[width=\linewidth,height=36mm,keepaspectratio,trim=0 0 86mm 0,clip]{figures/umap_kmeans.png}
+    \includegraphics[width=\linewidth,height=36mm,keepaspectratio,trim=0 0 86mm 0,clip]{../figures/umap_kmeans.png}
     \small 3,148--7,556 cells per cluster\par
     DB: \textbf{2.363}\quad Mean stability: \textbf{0.995}
     \column{.49\textwidth}
     \textcolor{Indigo}{\textbf{Leiden: 18 clusters}}
-    \includegraphics[width=\linewidth,height=36mm,keepaspectratio,trim=0 0 86mm 0,clip]{figures/umap_leiden.png}
+    \includegraphics[width=\linewidth,height=36mm,keepaspectratio,trim=0 0 86mm 0,clip]{../figures/umap_leiden.png}
     \small 223--3,588 cells per cluster\par
     DB: \textbf{2.361}\quad Mean stability: \textbf{0.683}
   \end{columns}
@@ -205,7 +205,7 @@
 \end{frame}
 
 \begin{frame}{K-means: marker profiles of the four groups}
-  \includegraphics[width=\textwidth]{figures/marker_heatmap_kmeans.png}\par
+  \includegraphics[width=\textwidth]{../figures/marker_heatmap_kmeans.png}\par
   \small
   \[\text{Relative marker score}=\frac{\text{cluster median}-\text{sample median}}{\text{sample IQR}} \text{ vs. } \frac{\text{cluster mean}-\text{sample mean}}{\text{sample standard deviation}}\]
   \small For each marker after arcsinh: IQR $=Q_{75\%}-Q_{25\%}$. Red: higher median; blue: lower.\par
@@ -215,7 +215,7 @@
 \end{frame}
 
 \begin{frame}{Leiden: marker profiles of the finer groups}
-  \includegraphics[width=\textwidth]{figures/marker_heatmap_leiden.png}\par
+  \includegraphics[width=\textwidth]{../figures/marker_heatmap_leiden.png}\par
   \small 
   \vspace{2mm}
   \source{Original notebook panel.}
@@ -226,31 +226,31 @@
     \column{.12\textwidth}\scriptsize
     \textbf{Single}\par C0, C1
     \column{.83\textwidth}
-    \includegraphics[width=\linewidth,height=6mm]{figures/hierarchical_single.png}
+    \includegraphics[width=\linewidth,height=6mm]{../figures/hierarchical_single.png}
     \column{.03\textwidth}
   \end{columns}\vspace{1mm}
   \begin{columns}[c,onlytextwidth]
     \column{.12\textwidth}\scriptsize
     \textbf{Average}\par C0, C1
     \column{.83\textwidth}
-    \includegraphics[width=\linewidth,height=6mm]{figures/hierarchical_average.png}
+    \includegraphics[width=\linewidth,height=6mm]{../figures/hierarchical_average.png}
     \column{.03\textwidth}
   \end{columns}\vspace{1mm}
   \begin{columns}[c,onlytextwidth]
     \column{.12\textwidth}\scriptsize
     \textbf{Complete}\par C0, C1
     \column{.83\textwidth}
-    \includegraphics[width=\linewidth,height=6mm]{figures/hierarchical_complete.png}
+    \includegraphics[width=\linewidth,height=6mm]{../figures/hierarchical_complete.png}
     \column{.03\textwidth}
   \end{columns}\vspace{1mm}
   \begin{columns}[c,onlytextwidth]
     \column{.12\textwidth}\scriptsize
     \textbf{Ward}\par C0--C5
     \column{.83\textwidth}
-    \includegraphics[width=\linewidth,height=18mm]{figures/hierarchical_ward.png}\par\vspace{-1mm}
-    \includegraphics[width=\linewidth,height=9mm]{figures/hierarchical_axis.png}
+    \includegraphics[width=\linewidth,height=18mm]{../figures/hierarchical_ward.png}\par\vspace{-1mm}
+    \includegraphics[width=\linewidth,height=9mm]{../figures/hierarchical_axis.png}
     \column{.03\textwidth}
-    \includegraphics[width=\linewidth]{figures/hierarchical_colourbar.png}
+    \includegraphics[width=\linewidth]{../figures/hierarchical_colourbar.png}
   \end{columns}
   \small Single / average / complete: tiny groups with broadly elevated markers. Ward: more differentiated profiles.
   \source{Original notebook heatmap strips.}

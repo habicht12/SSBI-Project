@@ -1,0 +1,8 @@
+{
+  "source": "notebooks/03_clustering.ipynb",
+  "sha256": "31d6fa894afc8de492d1106c739d8b268df43459b2efd323b12d3319db05ef09",
+  "cells": 20000,
+  "markers": 37,
+  "configurations": 44,
+  "note": "Values and original UMAP images extracted from saved outputs; numeric tables rounded by notebook."
+}

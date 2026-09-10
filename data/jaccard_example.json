@@ -1,0 +1,21 @@
+{
+  "description": "Illustration only, not a PBMC result. Same 10,000 cells.",
+  "contingency": [
+    [
+      9900,
+      0,
+      0
+    ],
+    [
+      0,
+      50,
+      50
+    ]
+  ],
+  "adjusted_rand": 0.9987134577415451,
+  "best_jaccards": [
+    1.0,
+    0.5
+  ],
+  "unweighted_mean_jaccard": 0.75
+}
