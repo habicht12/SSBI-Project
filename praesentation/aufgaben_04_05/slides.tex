@@ -6,13 +6,17 @@
 \input{data/numbers}
 \hypersetup{pdftitle={Tasks 4 and 5: Classification and interpretation},
   pdfauthor={SSBI group project},colorlinks=true,urlcolor=Teal}
+\newcommand{\slidetask}{4}
 \setbeamertemplate{footline}{%
-  \hspace{8mm}\textcolor{Muted}{\scriptsize SSBI · Tasks 4--5 · 20 donors · gated\_alive}\hfill
+  \hspace{8mm}\textcolor{Muted}{\scriptsize SSBI · Task \slidetask}\hfill
   \textcolor{Muted}{\scriptsize\insertframenumber}\hspace{8mm}\vspace{3mm}}
 \tikzset{stage/.style={draw=Line,fill=Pale,rounded corners=1.5mm,align=center,
   minimum height=14mm,text width=27mm,inner sep=1mm,font=\small},
   flow/.style={-{Stealth[length=2mm]},thick,draw=Teal}}
 \newcommand{\eyebrow}[1]{{\color{Teal}\bfseries #1}\par\smallskip}
+\newcommand{\compactmath}{%
+  \setlength{\abovedisplayskip}{4pt}\setlength{\belowdisplayskip}{4pt}%
+  \setlength{\abovedisplayshortskip}{2pt}\setlength{\belowdisplayshortskip}{4pt}}
 \newcommand{\papersource}{Arvaniti \& Claassen (2017), \href{https://doi.org/10.1038/ncomms14825}{doi:10.1038/ncomms14825}.}
 \newcommand{\citrussource}{Bruggner et al. (2014), \href{https://doi.org/10.1073/pnas.1408792111}{doi:10.1073/pnas.1408792111}.}
 \newcommand{\horowitzsource}{Horowitz et al. (2013), \href{https://doi.org/10.1126/scitranslmed.3006702}{doi:10.1126/scitranslmed.3006702}.}
@@ -30,12 +34,11 @@
         Protein markers & 37\\
         Input gate & \texttt{gated\_alive}\\\bottomrule
       \end{tabular}\par\medskip
-      Live, singlet PBMCs; no extra NK gate.
       \[a_{ij}=\operatorname{asinh}(x_{ij}/5)\]
+      {\scriptsize $i$: cell; $j$: marker; $x_{ij}$: raw value; $a_{ij}$: transformed value; 5: cofactor.}\par\smallskip
       \small CellCNN/SVM: fit marker scaling on training donors only. Citrus uses ArcSinh values directly.
     \end{column}
     \begin{column}{.52\textwidth}
-      \eyebrow{30 shared donor splits}
       \centering
       \begin{tikzpicture}[x=1mm,y=1mm]
         \node[stage,text width=31mm] (all) at (33,0) {20 donors};
@@ -48,7 +51,6 @@
       \end{tikzpicture}
     \end{column}
   \end{columns}
-  \takeaway{The independent observation is the donor. Cells from one donor stay together.}
   \source{\horowitzsource\ \papersource}
 \end{frame}
 
@@ -67,46 +69,45 @@
     \begin{column}{.49\textwidth}
       \eyebrow{Learn which cells matter}
       \[r_{if}=\max(0,w_f^\top z_i+b_f)\]
-      A filter scores a marker combination. Pooling focuses on the strongest responses; the whole network learns from donor labels.
+      {\scriptsize $\boldsymbol{i}$: cell; $\boldsymbol{f}$: filter; $\boldsymbol{z_i}$: 37 standardized markers; $\boldsymbol{w_f}$: filter weights; $\boldsymbol{b_f}$: bias; $\boldsymbol{r_{if}}$: response. $\boldsymbol{w_f^\top z_i}$: weighted sum; $\boldsymbol{\max(0,\cdot)}$: ReLU.}\par\smallskip
+      A filter scores a marker combination. Pooling focuses on the strongest responses.
     \end{column}
     \begin{column}{.47\textwidth}
       \eyebrow{Our paper-guided implementation}
       \begin{itemize}\setlength\itemsep{2pt}
         \item PyTorch; 200 cell groups per training donor.
-        \item Choose the best inner-fold network; no outer refit.
+        \item Choose the best inner-fold network.
         \item Adaptations: fixed 3/4/5-filter search; average five test-input probabilities.
       \end{itemize}
     \end{column}
   \end{columns}
-  \takeaway{Filter learning and donor classification are trained jointly.}
   \source{\papersource}
 \end{frame}
 
-\begin{frame}{Citrus predicts from population frequencies}
+\begin{frame}{Running the original Citrus implementation}
   \begin{center}
     \begin{tikzpicture}[x=1mm,y=1mm]
-      \node[stage] (a) at (0,0) {\textbf{Balanced cells}\\10,000/donor};
-      \node[stage] (b) at (36,0) {\textbf{Ward tree}\\training cells};
-      \node[stage] (c) at (72,0) {\textbf{Frequencies}\\donor $\times$ cluster};
-      \node[stage] (d) at (108,0) {\textbf{L1 logistic}\\CMV probability};
-      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c); \draw[flow] (c) -- (d);
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{1. R environment}\\separate Conda env};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{2. Original packages}\\fixed Git commits};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{3. Notebook kernel}\\shared donor splits};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
     \end{tikzpicture}
   \end{center}
-  \vspace{2mm}
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{.49\textwidth}
-      \eyebrow{First define populations}
-      Retain tree clusters containing at least \textbf{0.05\% of training cells}. Parent and child clusters may overlap.\par\medskip
-      Each donor is represented by the fraction of its cells in each retained cluster.
+    \begin{column}{.31\textwidth}
+      \small R 4.5, \texttt{flowCore} and \texttt{glmnet}; C++ compiler and \texttt{make} supplied by Conda.
     \end{column}
-    \begin{column}{.47\textwidth}
-      \eyebrow{Then select predictive frequencies}
-      Nonzero L1-logistic coefficients identify selected model populations. New cells inherit memberships from their nearest training cell.\par\medskip
-      \small Compute compromise: 10,000 cells and 30 splits, versus 20,000 and 100 in the paper.
+    \begin{column}{.32\textwidth}
+      \small Citrus 0.8 and \texttt{Rclusterpp} installed from the official repositories at pinned commits.
+    \end{column}
+    \begin{column}{.31\textwidth}
+      \small Register \texttt{IRkernel}; the R notebook connects the original functions to our fixed donor folds.
     \end{column}
   \end{columns}
-  \takeaway{Citrus separates population discovery from supervised prediction.}
-  \source{\citrussource\ \papersource}
+  \bigskip
+  \eyebrow{Two routes to a paper-guided implementation}
+  \small\textbf{CellCNN:} new PyTorch implementation based on the paper and reference code.\par
+  \textbf{Citrus:} original legacy package code; recorded runtime: R 4.5.3.
 \end{frame}
 
 \begin{frame}{A linear SVM assigns a score to each cell}
@@ -127,7 +128,6 @@
         \node[font=\scriptsize,fill=white,inner sep=1mm] at (1.5,3.15) {$m_i=0$};
       \end{tikzpicture}\par\smallskip
       {\scriptsize\textcolor{Amber}{\textbullet} CMV$-$ donor \quad\textcolor{Teal}{\textbullet} CMV$+$ donor}\par
-      {\scriptsize\color{Muted}Schematic in 2D; actual model uses 37 markers.}
     \end{column}
     \begin{column}{.47\textwidth}
       \eyebrow{Train on donor-labelled cells}
@@ -137,11 +137,11 @@
       \textbf{Linear SVM:} L2 penalty and squared-hinge loss. The margin is a score, not a probability.
     \end{column}
   \end{columns}
-  \takeaway{A donor label is weak supervision: it does not establish the state of each cell.}
   \source{\papersource}
 \end{frame}
 
 \begin{frame}{Our adaptation: aggregate the highest cell margins}
+  \small\compactmath
   \begin{columns}[c,onlytextwidth]
     \begin{column}{.53\textwidth}
       \eyebrow{A few high-scoring cells can matter}
@@ -162,61 +162,156 @@
     \begin{column}{.43\textwidth}
       \eyebrow{One score per donor}
       \[k_d=\lceil0.01N_d\rceil,\qquad
-        s_d=\frac{1}{k_d}\sum_{i\in\mathrm{Top}_{k_d}}m_i\]
+        s_d=\frac{1}{k_d}\sum_{i\in I_d}m_i\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{N_d}$: its cell count; $\boldsymbol{k_d}$: count rounded up; $\boldsymbol{I_d}$: its top-scoring cell indices; $\boldsymbol{i}$: cell; $\boldsymbol{m_i}$: cell margin; $\boldsymbol{s_d}$: mean donor score; $\boldsymbol{\tau}$: donor threshold.}\par\smallskip
       \begin{enumerate}\setlength\itemsep{3pt}
-        \item Select $C\in\{0.01,0.1,1\}$ by inner donor ROC-AUC.
+        \item Select loss weight $C\in\{0.01,0.1,1\}$ by inner donor ROC-AUC.
         \item Learn $\tau$ from inner out-of-fold donor scores.
         \item Refit on 14 training donors; score all test cells.
       \end{enumerate}
     \end{column}
   \end{columns}
-  \takeaway{Our project adaptation is the Top-1-\% donor score, fixed before testing.}
 \end{frame}
 
 \begin{frame}{Performance across 30 shared donor splits}
   \begin{columns}[c,onlytextwidth]
     \begin{column}{.57\textwidth}
       \includegraphics[width=\linewidth]{performance_30.pdf}
+      \par{\scriptsize Six test donors per split. Boxes show Q1--Q3; dots show individual splits.}
     \end{column}
     \begin{column}{.40\textwidth}
       \eyebrow{Median across 30 splits}
       {\fontsize{8}{10}\selectfont\input{data/performance_30}}\par\medskip
       \small AUC: ranking of CMV$+$ versus CMV$-$.\par
       AP: average precision.\par
-      BA: balanced accuracy.\par\medskip
-      Six test donors per split. Boxes show Q1--Q3; dots show individual splits.
+      BA: balanced accuracy.
     \end{column}
   \end{columns}
-  \takeaway{CellCNN and SVM share the highest median AUC; split variability remains substantial.}
-  \smallskip
-  \small Only 20 independent donors. Overlapping splits do not establish general superiority.
-  \par\smallskip{\scriptsize BA thresholds: 0.5 for CellCNN/Citrus; inner-trained for SVM. Quartiles are not confidence intervals.}
+  \par\smallskip{\scriptsize BA thresholds: 0.5 for CellCNN/Citrus; inner-trained for SVM.}
+\end{frame}
+
+\renewcommand{\slidetask}{5}
+\begin{frame}[t]{CellCNN: select cells with a strong filter response}
+  \relax
+  {\centering
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{Cell response}\\apply a learned filter};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{Normalize}\\training-reference max};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{Select cells}\\above half-maximum};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \par}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{One score per cell and filter}
+      \compactmath
+      \[q_{if}=\frac{r_{if}}{M_f},\qquad q_{if}>0.5\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{i}$: & cell\\
+        $\boldsymbol{f}$: & filter\\
+        $\boldsymbol{r_{if}}$: & filter response\\
+        $\boldsymbol{M_f}$: & its positive maximum on the original training reference\\
+        $\boldsymbol{q_{if}}$: & normalized score.
+      \end{tabular}}
+    \end{column}
+    \begin{column}{.46\textwidth}
+      \eyebrow{A simple example}
+      Reference maximum: \textbf{10}. Selection threshold: \textbf{5}.\par\medskip
+      Responses \textcolor{Teal}{\textbf{8 and 6}} pass; responses \textcolor{Muted}{\textbf{5 and 2}} do not.\par\medskip
+      \small Use effective filters. Their output weights determine the CMV direction.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{Citrus: select clusters used by the classifier}
+  \relax
+  {\centering
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{Cluster frequency}\\one feature per donor};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{Model coefficient}\\effect on CMV prediction};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{Selected cluster}\\saved mean marker profile};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \par}\smallskip
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{A score for a whole cluster}
+      \compactmath
+      \[q_j=|\beta_j|,\qquad q_j>10^{-10}\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{j}$: & cluster\\
+        $\boldsymbol{\beta_j}$: & its frequency coefficient in the selected logistic model\\
+        $\boldsymbol{q_j}$: & absolute coefficient.
+      \end{tabular}}\par\smallskip
+      \small The tolerance excludes numerical zeros.
+    \end{column}
+    \begin{column}{.46\textwidth}
+      \eyebrow{What this selects}
+      All clusters with an effective coefficient enter the interpretation.\par\medskip
+      \small Positive coefficient: higher frequency supports CMV$+$; negative: CMV$-$, with other features fixed.\par\smallskip
+      The stored centroid summarizes the cluster's training cells.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{SVM: select the strongest positive cell scores}
+  \relax
+  {\centering
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{Full test donor}\\score every cell};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{Highest 1\%}\\rank within that donor};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{Positive selection}\\above donor threshold};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \par}\smallskip
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{1. Compute the cell score}
+      \compactmath
+      \[m_i=w^\top z_i+b\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{i}$: & cell\\
+        $\boldsymbol{z_i}$: & standardized marker vector\\
+        $\boldsymbol{w}$: & learned weights\\
+        $\boldsymbol{b}$: & intercept\\
+        $\boldsymbol{m_i}$: & margin\\
+        $\boldsymbol{w^\top z_i}$: & weighted sum.
+      \end{tabular}}
+    \end{column}
+    \begin{column}{.46\textwidth}
+      \eyebrow{2. Check the selected top cells}
+      \compactmath
+      \[t_i=m_i-\tau,\qquad t_i>0\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{\tau}$: & donor threshold learned in inner validation\\
+        $\boldsymbol{t_i}$: & cell score relative to that threshold.
+      \end{tabular}}\par\smallskip
+      \small A positive value passes \textbf{only within the highest 1\%} of the full donor.
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Which CellCNN and Citrus subsets recur?}
   \relax
-  {\small\textbf{CellCNN:} $r_{if}/\max_{j\in T_s}r_{jf}>0.5$ on the original training reference.\par
-   \textbf{Citrus:} cluster centroids with nonzero logistic coefficients ($|\beta|>10^{-10}$).}
+  {\small Group similar subset centroids separately for each method; count distinct splits.}
   \mapcontext
   \begin{center}\vspace{-2mm}
     \includegraphics[width=.91\linewidth,height=40mm,keepaspectratio]{centroids.pdf}
   \end{center}\vspace{-3mm}
-  {\small $F_G=\#\{\text{splits containing group }G\}/30$; show $F_G\geq20\%$.
+  {\small Show groups present in at least 6 of 30 splits (20\%).
    Top groups: \textbf{\CNNRecurrence/30} and \textbf{\CitrusRecurrence/30}, both positive.}
-  \par{\scriptsize Projected training centroids; stars: representatives; group IDs/colours are method-specific.}
   \source{\papersource}
 \end{frame}
 
 \begin{frame}{Which cells does the SVM repeatedly select?}
   \relax
-  {\small SVM: keep the highest 1\% of margins in each full test donor; positive selection requires $m_i>\tau_s$.}
+  {\small Colour shows how often the same cell passes the positive SVM selection rule.}
   \mapcontext
   \begin{center}\vspace{-2mm}
     \includegraphics[width=.98\linewidth,height=44mm,keepaspectratio]{selected_cells.pdf}
   \end{center}\vspace{-3mm}
   {\small\textbf{CellCNN:} \CNNSelected\ map cells (exploratory).
-   \textbf{SVM:} \SVMSelected\ map cells selected positively at least once.\par
-   SVM denominator: all \MinTestModels--\MaxTestModels\ test appearances of that cell's donor.}
+   \textbf{SVM:} \SVMSelected\ map cells selected positively at least once.}
   \source{\papersource}
 \end{frame}
 
@@ -240,12 +335,11 @@
       \small NKG2C/CD57 and NK-associated markers are elevated; CD3 is also above the reference mean.
     \end{column}
   \end{columns}
-  \par\smallskip{\scriptsize SVM: \SVMProfileVisits/180 nonempty test visits; \SVMProfileDonors/20 donors. Shared exploratory z-scale; different subset definitions.}
-  \takeaway{These profiles support biological hypotheses, not validated cell-type assignments.}
   \source{\papersource\ \horowitzsource}
 \end{frame}
 
 \appendix
+\renewcommand{\slidetask}{4}
 \begin{frame}{Backup: hyperparameters and paper deviations}
   \relax
   {\fontsize{8.3}{10.2}\selectfont
@@ -257,11 +351,58 @@
     & Best validation accuracy; ties: AUC, loss, fewer filters, fold order. Fixed search; five rather than one test input. Selected net uses 9/10 donors.\\
     \textbf{Citrus} & 10,000 cells/donor; Ward; 37 ArcSinh markers; minimum cluster fraction 0.0005; L1 logistic; cv.min; no marker z-scoring.
     & 10,000 cells/30 repeats versus paper's 20,000/100. Inner trees fitted per fold; original lambda grid uses all 14 outer training donors. Final fit on 14 donors.\\
-    \textbf{SVM} & 10,000 cells/training donor; train-only scaler; L2 squared hinge; $C\in\{0.01,0.1,1\}$; top $\lceil0.01N_d\rceil$ full-test margins.
+    \textbf{SVM} & 10,000 cells/training donor; train-only scaler; L2 squared hinge; loss weight $C\in\{0.01,0.1,1\}$; top 1\% of full-test margins (count rounded up).
     & Maximize mean inner AUC; ties: smaller $C$. Inner OOF threshold maximizes sensitivity + specificity. Final fit on 14 donors. Top-1-\% aggregation is our adaptation.\\\bottomrule
   \end{tabular}}\par
-  {\scriptsize Interpretation adaptation: average-linkage/cosine/cut 0.4 transferred from filter grouping to subset centroids.}
   \source{\papersource\ \citrussource}
+\end{frame}
+
+\begin{frame}{Backup: SVM approach 1 --- training the cell scorer}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.45\textwidth}
+      \eyebrow{Training data and scaling}
+      \small\compactmath Sample 10,000 cells per training donor without replacement, with fixed seeds. Each cell inherits its donor's label. Fit a shared scaler on these training cells only.
+      \[a_{ij}=\operatorname{asinh}(x_{ij}/5),\qquad
+        z_{ij}=\frac{a_{ij}-\mu_j}{\sigma_j}\]
+      {\scriptsize $\boldsymbol{i}$: cell; $\boldsymbol{j}$: marker; $\boldsymbol{x_{ij}}$: raw value; $\boldsymbol{a_{ij}}$: transformed value; 5: cofactor; $\boldsymbol{\mu_j,\sigma_j}$: training mean and standard deviation; $\boldsymbol{z_{ij}}$: standardized value.}\par\medskip
+      \small Equal cell counts give donors equal weight in the training loss. No extra class weighting.\par\smallskip
+      {\scriptsize Labels provide weak cell supervision. The 37 markers yield 37 learned weights and one intercept.}
+    \end{column}
+    \begin{column}{.51\textwidth}
+      \eyebrow{Linear score and squared-hinge loss}
+      \[m_i=\sum\nolimits_{j=1}^{37}w_jz_{ij}+b\]
+      \[\min\nolimits_{w,b}\left[\tfrac12(\|w\|^2+b^2)
+        +C\sum\nolimits_{i=1}^{N}\max(0,1-y_i m_i)^2\right]\]
+      {\scriptsize $\boldsymbol{w}$: vector of marker weights $w_j$; $\boldsymbol{b}$: intercept; $\boldsymbol{m_i}$: cell margin; $\boldsymbol{N}$: training-cell count; $\boldsymbol{y_i}$: donor label, $-1$ for CMV$-$ and $+1$ for CMV$+$.}\par\smallskip
+      {\scriptsize $\boldsymbol{C}$: loss weight; $\boldsymbol{\|w\|^2}$: sum of squared weights; $\boldsymbol{\min_{w,b}}$: optimize weights and intercept. The squared maximum is the squared-hinge loss.}\par\smallskip
+      \small Smaller $\boldsymbol{C}$: more regularization. Larger $\boldsymbol{C}$: more weight on fitting labels.\par\smallskip
+      {\scriptsize \texttt{LinearSVC} with \texttt{intercept\_scaling=1} also penalizes $b$. No probability calibration.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: SVM approach 2 --- model selection and test}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{1. Choose settings within 14 donors}
+      \small Use 3 inner donor folds. Test loss weights $C\in\{0.01,0.1,1\}$ on identical cell samples and scalers within each fold.\par\smallskip
+      Highest mean inner donor ROC-AUC wins; ties favour smaller $C$. For that $C$, collect one out-of-fold score per training donor.
+      \[J(\tau)=\operatorname{sens}(\tau)+\operatorname{spec}(\tau)-1\]
+      {\scriptsize $\boldsymbol{\tau}$: candidate donor threshold; $\boldsymbol{J}$: Youden index; $\boldsymbol{\operatorname{sens}}$: fraction of CMV$+$ donors predicted positive; $\boldsymbol{\operatorname{spec}}$: fraction of CMV$-$ donors predicted negative.}\par\smallskip
+      \small Maximize $J$ over finite ROC thresholds; ties choose the highest offered optimum.
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{2. Refit, then evaluate six test donors}
+      \small Resample 10,000 cells from each of the 14 training donors; fit a new scaler and SVM. Keep the inner-selected threshold.
+      \[k_d=\lceil0.01N_d\rceil,\qquad
+        s_d=\frac{1}{k_d}\sum_{i\in I_d}m_i\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{N_d}$: its full cell count; $\boldsymbol{k_d}$: count rounded up; $\boldsymbol{I_d}$: top-scoring cell indices; $\boldsymbol{i}$: cell; $\boldsymbol{m_i}$: margin; $\boldsymbol{s_d}$: donor score.}\par\smallskip
+      \small Predict CMV$+$ when $s_d\geq\tau$. AUC uses continuous scores; balanced accuracy uses thresholded labels.\par\medskip
+      {\scriptsize The uncalibrated threshold transfers from inner models to a refitted model. Changes in score scale can affect thresholded predictions. Outer test donors choose neither $C$ nor $\tau$.}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Backup: CellCNN and SVM across 100 splits}
@@ -279,6 +420,234 @@
   \end{columns}
   \takeaway{Both median AUCs remain 0.875. More splits do not add independent donors.}
   \par\smallskip{\scriptsize Boxes: Q1--Q3; dots: individual splits; dashed line: AUC 0.5.}
+\end{frame}
+
+\renewcommand{\slidetask}{5}
+\begin{frame}{Backup: CellCNN subset selection in detail}
+  \small\compactmath
+  {\small All quantities refer to one saved model and its original training reference.}\par\medskip
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{Response and reference maximum}
+      \[r_{if}=\max(0,w_f^\top z_i+b_f)\]
+      \[M_f=\max_{\ell\in T}r_{\ell f},\qquad q_{if}=r_{if}/M_f\]
+      {\scriptsize $\boldsymbol{i,\ell}$: cells; $\boldsymbol{f}$: filter; $\boldsymbol{z_i}$: 37 markers standardized by the saved scaler; $\boldsymbol{w_f}$: weights; $\boldsymbol{b_f}$: bias; $\boldsymbol{r_{if}}$: ReLU response; $\boldsymbol{w_f^\top z_i}$: weighted sum.}\par\smallskip
+      {\scriptsize $\boldsymbol{T}$: reference cells; $\boldsymbol{M_f}$: maximum response; $\boldsymbol{q_{if}}$: normalized score, defined for $M_f>0$.}\par\medskip
+      \small Reconstruct \textbf{20,000 cells per actual training donor} with the original seed: 9 or 10 donors, hence 180,000 or 200,000 reference cells.
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{Direction, subset and centroid}
+      \[\Delta_f=v_{f,+}-v_{f,-}\]
+      \[S_f=\{i\in T:q_{if}>0.5\},\qquad
+        c_f=\frac{1}{|S_f|}\sum_{i\in S_f}a_i\]
+      {\scriptsize $\boldsymbol{v_{f,+},v_{f,-}}$: weights from filter $f$ to the CMV$+$/CMV$-$ outputs; $\boldsymbol{\Delta_f}$: output contrast. Its sign gives the direction.}\par\smallskip
+      {\scriptsize $\boldsymbol{S_f}$: selected reference cells; $\boldsymbol{|S_f|}$: their count; $\boldsymbol{a_i}$: ArcSinh marker vector; $\boldsymbol{c_f}$: mean marker vector (centroid).}\par\medskip
+      \small Skip filters with zero maximum or zero output contrast. Equality at half-maximum is excluded.\par\smallskip
+      {\scriptsize Selected cells have equal weight; donor contributions vary. New cells can score above 1.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Citrus subset selection in detail}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{Which frequency features matter?}
+      \[\eta_d=\beta_0+\sum_j\beta_j h_{dj}\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{j}$: cluster; $\boldsymbol{h_{dj}}$: cluster-frequency feature; $\boldsymbol{\beta_0}$: intercept; $\boldsymbol{\beta_j}$: coefficient; $\boldsymbol{\eta_d}$: linear predictor for CMV$+$.}\par\smallskip
+      \small\compactmath \texttt{glmnet} standardizes frequency features internally.
+      \[q_j=|\beta_j|>10^{-10}\]
+      {\scriptsize $\boldsymbol{q_j}$: absolute coefficient; $\boldsymbol{10^{-10}}$: numerical zero tolerance.}\par\smallskip
+      \small Retain every effective cluster. A positive coefficient raises the CMV$+$ predictor as frequency increases, with other features fixed; a negative coefficient lowers it.
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{What the exports preserve}
+      \[c_j=\frac{1}{|A_j|}\sum_{i\in A_j}a_i\]
+      {\scriptsize $\boldsymbol{A_j}$: training cells belonging to cluster $j$; $\boldsymbol{|A_j|}$: their count; $\boldsymbol{i}$: cell; $\boldsymbol{a_i}$: ArcSinh marker vector; $\boldsymbol{c_j}$: saved cluster centroid.}\par\medskip
+      \small Training uses 10,000 cells/donor and retains clusters from 0.05\% of training cells. Parent and child clusters can share cells.\par\medskip
+      Stored centroids and coefficients do not preserve the full tree and cell memberships needed to assign arbitrary map cells.\par\smallskip
+      {\scriptsize Assigning cells to the nearest centroid would introduce a different selection rule. Null models remain in the 30-split recurrence denominator.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: SVM cell selection and recurrence}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{Exact selection within a test donor}
+      \[k_d=\lceil0.01N_d\rceil,\qquad t_{is}=m_{is}-\tau_s\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{s}$: outer split; $\boldsymbol{i}$: cell; $\boldsymbol{N_d}$: full cell count; $\boldsymbol{k_d}$: count rounded up; $\boldsymbol{m_{is}}$: cell margin; $\boldsymbol{\tau_s}$: learned donor threshold; $\boldsymbol{t_{is}}$: centered score.}\par\medskip
+      \small Let $\boldsymbol{I_{ds}}$ contain the $k_d$ highest-scoring cell indices. Break boundary ties by original FCS event number.\par\medskip
+      Within $\boldsymbol{I_{ds}}$: positive if $t_{is}>0$, negative if $t_{is}<0$, neither if $t_{is}=0$. Cells outside $I_{ds}$ are unselected.\par\medskip
+      {\scriptsize Example: 101 cells give 2 top cells. Margins 9 and 8 at threshold 8.5 give one positive and one negative selection.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{Repeat across that donor's test visits}
+      \[f_i^+=\frac{n_i^+}{|\mathcal T_d|}\]
+      {\scriptsize $\boldsymbol{\mathcal T_d}$: all splits testing donor $d$; $\boldsymbol{|\mathcal T_d|}$: their count; $\boldsymbol{n_i^+}$: visits where cell $i$ is in $I_{ds}$ and $t_{is}>0$; $\boldsymbol{f_i^+}$: positive selection frequency.}\par\smallskip
+      \small\compactmath Include visits without selection: 3 positive selections in 8 test visits give 3/8.
+      \[s_{ds}-\tau_s=\frac{1}{k_d}\sum_{i\in I_{ds}}t_{is}\]
+      {\scriptsize $\boldsymbol{s_{ds}}$: mean of the selected cell margins, the donor score in split $s$.}\par\smallskip
+      \small Fixed-selection decomposition of the donor score; no causal cell-removal effect.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: CellCNN --- from cells to one plotted point}
+  \small
+  \eyebrow{Slide 10: one selected model per split, one subset profile per effective filter}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{1. Reconstruct the training reference}\par
+      20,000 cells per actual inner training donor; 9 or 10 donors give 180,000 or 200,000 reference cells. Reuse the original seed.\par\medskip
+      \textbf{2. Select cells for each filter}\par
+      Apply the saved scaler and filter. Keep responses strictly above half of that filter's reference maximum.\par\medskip
+      \textbf{3. Average the selected marker profiles}\par
+      Average each of the 37 ArcSinh-transformed markers across the selected cells. One filter gives one centroid, carrying its split and filter ID.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \eyebrow{Actual example: split 9, filter 2}
+      \begin{tabular}{@{}lr@{}}\toprule
+        Reference cells & 200,000\\
+        Half-maximum-selected cells & 1,633\\
+        Result & 1 centroid\\\bottomrule
+      \end{tabular}\par\medskip
+      This centroid becomes the representative of G1. The later cell map applies the same filter to a different, 10,000-cell display sample.\par\medskip
+      \textbf{Mean, not median}\par
+      Illustrative values for one marker: 1, 2, 9. Their mean is 4; their median is 2. We use the mean.\par\medskip
+      Across 30 selected models: 7 have 3 filters, 6 have 4, and 17 have 5. Together they yield \textbf{130 subset centroids}.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Citrus --- two levels of clustering}
+  \small
+  \eyebrow{Slide 10: original cell clusters first, groups of their profiles afterwards}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{1. Cluster cells within each split}\par\smallskip
+      The final Citrus model uses 10,000 cells from each of 14 training donors: \textbf{140,000 cells}.\par\medskip
+      A Ward tree defines cell clusters. L1-logistic regression uses their donor frequencies and retains effective coefficients of either sign.\par\medskip
+      For every selected cluster, average each ArcSinh marker over its training members. This gives \textbf{one centroid per selected cluster}.\par\medskip
+      Across 30 splits: \textbf{123 selected cluster centroids}. Three splits select no effective clusters; they remain in the recurrence denominator.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{2. Group profiles across the splits}\par\smallskip
+      Compare the 123 centroids in the common standardized marker space. Similar profiles form \textbf{17 groups}; 5 occur in at least 6 splits and are shown.\par\medskip
+      Each coloured point still belongs to an original cluster in a specific split. A colour identifies its profile group.\par\medskip
+      \eyebrow{Actual example: Citrus G1}
+      \textbf{28 cluster centroids} from \textbf{18 splits}.\par\smallskip
+      Its star is one existing member: cluster 139891 from split 25. It is not an average of all 28 cluster profiles.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Colours, stars and overlapping centroids}
+  \small
+  \eyebrow{Slide 10: grouping and display are separate operations}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Colour: a group of similar profiles}\par
+      Use all 37 markers on the shared exploratory z-scale. Group separately for each method with cosine distance, average linkage and a cut at 0.4.\par\smallskip
+      Average linkage averages pairwise distances between groups. It does not replace their members with one mean profile.\par\smallskip
+      Coefficient signs are ignored during grouping: a group may be positive, negative or mixed. Show groups present in at least \textbf{6 distinct splits}; each split counts once.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Star: an existing representative}\par
+      Choose the member with the smallest summed cosine distance to its group members. This is the \textbf{medoid}, not a median or a new mean profile.\par\medskip
+      \textbf{Position: the nearest map cell}\par
+      Reuse the Task 2 map: 10,000 cells, 500/donor. Assign each centroid the t-SNE position of its nearest map cell in standardized marker space (Euclidean distance).\par\smallskip
+      Several centroids can share a position. The star need not look central in the 2D map.
+    \end{column}
+  \end{columns}\par\medskip
+  {\scriptsize\renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrrr@{}}\toprule
+    & All centroids & Shown groups & Plotted centroids & Distinct positions\\\midrule
+    CellCNN & 130 & 4 of 15 & 111 & 44\\
+    Citrus & 123 & 5 of 17 & 77 & 52\\\bottomrule
+  \end{tabular}}
+\end{frame}
+
+\begin{frame}{Backup: Individual cells and SVM selection frequency}
+  \small
+  \eyebrow{Slide 11: each coloured point is one original cell in the 10,000-cell map}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Left: one CellCNN representative}\par\smallskip
+      Use the G1 representative: \textbf{split 9, filter 2}. Apply its saved scaler and filter to all 10,000 map cells from all 20 donors.\par\medskip
+      Keep the original half-maximum threshold from its training reference; do not recompute a maximum on the map.\par\medskip
+      \textbf{87 map cells} pass and are coloured turquoise. Colour indicates selection, not response strength or recurrence.\par\medskip
+      The centroid used 1,633 selected reference cells. The 87 points are a separate application to the map sample. This is exploratory and includes training donors.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Right: repeated SVM test evaluations}\par\smallskip
+      Each saved SVM scores only its outer test donors. Select the highest 1\% of each \textbf{full donor's} margins; positive selection also requires exceeding the learned donor threshold.\par\medskip
+      Count positive selections of the same map cell across \textbf{all test appearances of its donor}: 4--16 appearances, including those without selection.\par\medskip
+      \textbf{Example:} 3 positive selections in 8 test appearances give a frequency of \textbf{0.375}. Plot that cell once with this colour.\par\medskip
+      \textbf{93 map cells} pass at least once. Zero frequency stays grey; brighter colours mean more consistent positive selection.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Which cells enter each heatmap row?}
+  \small
+  \eyebrow{Slide 12: eight displayed markers; all profiles start on the ArcSinh scale}
+  {\renewcommand{\arraystretch}{1.15}\setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{22mm}>{\raggedright\arraybackslash}p{57mm}>{\raggedright\arraybackslash}p{57mm}@{}}\toprule
+    \textbf{Row} & \textbf{Cells used} & \textbf{How the profile is formed}\\\midrule
+    CellCNN G1 & Split 9/filter 2: 1,633 of 200,000 reference cells; 10 inner training donors.
+    & Mean markers of one G1 representative; not all G1 centroids or the 87 map cells.\\\addlinespace[3pt]
+    Citrus G1 & Split 25/cluster 139891: its members within 140,000 training cells from 14 donors.
+    & Mean markers of one G1 representative cluster; not all 28 G1 centroids.\\\addlinespace[3pt]
+    SVM positive OOF & Positively selected cells from full outer test donors in splits 0--29; 168 of 180 visits are nonempty.
+    & Average cells within visits; nonempty visits within donors; then the 20 donors equally.\\\bottomrule
+  \end{tabular}}\par\medskip\vspace{1mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Positive OOF}\par
+      Top-1-\% cells above the learned threshold, scored only when their donor was held out. Both CMV classes can contribute.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Equal donor weights}\par
+      Each donor contributes equally, regardless of cell count or test visits. Use full-donor selections, not just the 93 map cells.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Reading the shared marker scale}
+  \small
+  \eyebrow{Slide 12: expression relative to a common reference, not classifier weights}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Standardize each mean marker value}
+      \compactmath
+      \[z_j=\frac{c_j-\mu_j}{\sigma_j}\]
+      {\scriptsize\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{j}$: & marker\\
+        $\boldsymbol{c_j}$: & profile's mean ArcSinh marker value\\
+        $\boldsymbol{\mu_j}$: & reference mean of that marker\\
+        $\boldsymbol{\sigma_j}$: & reference standard deviation\\
+        $\boldsymbol{z_j}$: & value shown in the heatmap
+      \end{tabular}}\par\medskip
+      \textbf{The shared reference}\par
+      10,000 map cells, 500 per donor, including both CMV classes. Reuse the stored exploratory scaler from Task 2 for every heatmap row.\par\smallskip
+      The model-specific scalers still govern cell selection; this shared scale is used for display.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Read the number and colour together}\par\smallskip
+      \begin{tabular}{@{}rl@{}}\toprule
+        Value & Relative to the reference mean\\\midrule
+        $-1$ & 1 standard deviation below\\
+        $0$ & Equal to the reference mean\\
+        $+1$ & 1 standard deviation above\\\bottomrule
+      \end{tabular}\par\medskip
+      \textbf{Example: CellCNN NKG2C = 4.6}\par
+      4.6 reference standard deviations above the reference mean; not 4.6 times the expression.\par\medskip
+      Red: above reference. Blue: below. These signs do not describe CMV class or model direction. Zero means reference-level expression.\par\smallskip
+      Mean profiles can hide heterogeneous cells. These values are not cell-type gates.
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \end{document}

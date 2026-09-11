@@ -1,0 +1,176 @@
+% !TeX root = slides.tex
+\documentclass[aspectratio=169,10pt]{beamer}
+% English is already loaded by the existing main-branch theme; remove German overrides.
+\input{../theme}
+\usepackage{amsmath,amssymb}
+\graphicspath{{figures/}}
+\input{data/numbers}
+% Set Beamer title metadata explicitly; its document hook otherwise clears pdftitle.
+\title{CellCNN variants: 100 shared donor splits}
+\author{SSBI group project}
+\hypersetup{pdftitle={CellCNN variants: 100 shared donor splits},pdfauthor={SSBI group project},colorlinks=true,urlcolor=Teal}
+\setbeamertemplate{footline}{%
+  \hspace{8mm}\textcolor{Muted}{\scriptsize SSBI · Task 6 · 100 splits · 20 donors}\hfill
+  \textcolor{Muted}{\scriptsize\insertframenumber}\hspace{8mm}\vspace{3mm}}
+\newcommand{\eyebrow}[1]{{\color{Teal}\bfseries #1}\par\smallskip}
+
+\begin{document}
+
+\begin{frame}{Four cell-filter models, one evaluation protocol}
+  % Replace the vague "same data" claim with the actual cohort and outer split sizes.
+  % Only outer splits are shared: the selected inner fold can differ by model.
+  \eyebrow{20 donors · 37 markers · \texttt{gated\_alive}}
+  {\small 100 shared outer splits: 14 training / 6 test donors.\par}
+  \smallskip
+  \begin{tabular}{@{}p{.25\textwidth}p{.47\textwidth}p{.20\textwidth}@{}}\toprule
+    Model & Cell response $h_k(x)$ & Pooling\\\midrule
+    \textcolor{Teal}{CellCNN} & $\operatorname{ReLU}(b_k+w_k^\top x)$ & hard Top-1\,\%\\[2mm]
+    \textcolor{Indigo}{Quadratic Top-1\,\%} & $\operatorname{ReLU}(b_k+w_k^\top x+\sum_j q_{kj}x_j^2)$ & hard Top-1\,\%\\[2mm]
+    \textcolor{Amber}{Quadratic Soft-$\alpha$} & $\operatorname{ReLU}(b_k+w_k^\top x+\sum_j q_{kj}x_j^2)$ & learnable Soft-$\alpha$\\[2mm]
+    \textcolor{Rust}{Prototype Soft-$\alpha$} & $\operatorname{ReLU}(\rho_k-\frac1d\sum_j a_{kj}(x_j-c_{kj})^2)$ & learnable Soft-$\alpha$\\\bottomrule
+  \end{tabular}
+  \par\smallskip
+  % State the actual selection rule rather than another generic pipeline sentence.
+  {\small Population: largest positive output contrast; cells with $h>\tfrac12\max_{\text{inner-train}}h$.\par}
+  % CMV labels encode donor status; these data do not establish clinical disease.
+  \takeaway{Donor prediction and CMV-status association of the selected population are evaluated separately.}
+  \source{Cohort: 9 CMV$+$, 11 CMV$-$. Each split: train 7$+$/7$-$, test 2$+$/4$-$. ArcSinh($x/5$); scaling and half-max reference use the selected model's inner-training donors only.}
+\end{frame}
+
+\begin{frame}{Network classification across 100 donor splits}
+  % Replace "win" by a dataset-specific comparison; both quadratic variants tie.
+  % Generate the table from the benchmark so all AUCs use consistent precision.
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.62\textwidth}
+      \includegraphics[width=\linewidth,height=45mm,keepaspectratio]{network_roc.pdf}
+    \end{column}
+    \begin{column}{.35\textwidth}\scriptsize
+      \input{data/network_table}
+    \end{column}
+  \end{columns}
+  \takeaway{\NetworkTakeaway}
+  \source{100 outer test sets, each with 2 CMV$+$ and 4 CMV$-$ donors. Donor score: mean of five prediction bags of 20,000 cells. Curves are averaged per split; legend values are mean original split AUCs.}
+\end{frame}
+
+\begin{frame}{Selected-population frequency difference}
+  % Only the former right-hand panel is relevant here. Re-render it from the same
+  % 98-split values; update the title and explanation to describe the effect alone.
+  % A wider standalone aspect ratio uses the space without removing any observations.
+  \relax
+  {\centering\includegraphics[width=.94\textwidth,height=43mm,keepaspectratio]{frequency_effect.pdf}\par}
+  \takeaway{\EffectTakeaway}
+  \source{98 jointly evaluable splits; test set: 2 CMV$+$ and 4 CMV$-$ donors. One fixed 20,000-cell sample per test donor. Effect = mean CMV$+$ frequency minus mean CMV$-$ frequency, in percentage points.}
+\end{frame}
+
+\begin{frame}{What does the extra pooling parameter learn?}
+  % Fill the previously empty explanation column with the parameter's role and
+  % initial value; retain the full rank-mask equation only in the backup.
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.58\textwidth}
+      \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{learned_alphas.pdf}
+    \end{column}
+    \begin{column}{.39\textwidth}
+      \eyebrow{Rank fraction, not population frequency}
+      \[\alpha_k=\sigma(\theta_k)\]
+      \small Starts at 1\%; fixed temperature $\tau=0.002$.\par\medskip
+      Alpha weights cell ranks within a bag. Half-max defines the separately evaluated population.
+    \end{column}
+  \end{columns}
+  \takeaway{\AlphaTakeaway}
+  \source{All filters from 100 selected models per variant: \QuadraticFilterCount{} Quadratic and \PrototypeFilterCount{} Prototype filters. These are model parameters, not independent donor observations.}
+\end{frame}
+
+\begin{frame}{Take-away}
+  \begin{itemize}
+    \item Quadratic Hard and Soft share the highest mean network AUC on this dataset.
+    % Replace the unsupported possibility of gains on other datasets by the
+    % observed, paired hard-versus-soft result: 5 better / 90 tied / 5 worse.
+    \item Soft vs.\ Hard: \HardSoftCounts; mean $\Delta$AUC $0.0000$.
+    \item \PairedTakeaway
+    \item Only 20 independent donors: repeated splits are descriptive, not independent replication.
+  \end{itemize}
+  \par\medskip
+  \takeaway{\FinalTakeaway}
+  \source{All 100 planned outer splits are included. Paired differences use the same test donors in each split. These results do not establish performance on a new cohort.}
+\end{frame}
+
+\begin{frame}{Backup: half-max population frequency}
+  % Retain the exact rule, including M=0 and missing positive-output filters.
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.54\textwidth}
+      \eyebrow{Filter selection and fixed training threshold}
+      \[\Delta_k=V_{1k}-V_{0k},\qquad k^*=\arg\max_{k:\Delta_k>0}\Delta_k\]
+      \[M=\max_{x\in\text{inner-train cells}}h_{k^*}(x),\qquad t=\tfrac12M\]
+      \[f_i=\frac{\#\{x\in\text{test sample }i:h_{k^*}(x)>t\}}{N_i}\]
+      \small One fixed 20,000-cell sample per test donor. The strict rule also applies when $M=0$.
+    \end{column}
+    \begin{column}{.42\textwidth}
+      \eyebrow{Two population metrics}
+      \[\mathrm{AUC}_{\mathrm{freq}}=\operatorname{AUC}(y_i,f_i)\]
+      \[\mathrm{Effect}=\bar f_{\mathrm{CMV+}}-\bar f_{\mathrm{CMV-}}\]
+      \small Without a positive filter, values remain missing. No post-hoc flipping of AUC direction.\par\medskip
+      Frequency comparisons use \textbf{\CommonFrequencySplits{}} jointly evaluable splits.
+    \end{column}
+  \end{columns}
+  \takeaway{Half-max is cell selection, not clustering; CMV is a donor label, not a cell-type label.}
+  \source{The baseline has no positive-output filter in splits 44 and 84. These two splits are excluded from all common frequency comparisons, but retained for network metrics.}
+\end{frame}
+
+\begin{frame}{Backup: variation in classification across splits}
+  % Keep all three recorded network metrics; report the fixed BA threshold and
+  % distinguish split dispersion from confidence intervals.
+  \relax
+  {\centering\includegraphics[width=\textwidth,height=44mm,keepaspectratio]{network_metrics.pdf}\par}
+  \takeaway{\ClassificationTakeaway}
+  \source{100 test sets of six donors (2 CMV$+$, 4 CMV$-$). AP: average precision; BA: balanced accuracy at score threshold 0.5. Boxes: Q1--Q3; line: median; dots: splits. Not confidence intervals.}
+\end{frame}
+
+\begin{frame}{Backup: paired differences to CellCNN}
+  % The two panels have different eligible split counts; make both explicit.
+  \relax
+  {\centering\includegraphics[width=.94\textwidth,height=43mm,keepaspectratio]{paired_differences.pdf}\par}
+  \takeaway{\PairedTakeaway}
+  \source{Network: 100 paired splits; frequency: 98 common paired splits. Difference = model AUC minus CellCNN AUC within the same split. Positive values indicate higher AUC, not independent replication.}
+\end{frame}
+
+\begin{frame}{Backup: population frequencies of individual donors}
+  % One point per donor avoids displaying repeated test visits as independent
+  % individuals; all panels retain the same frequency axis.
+  \relax
+  {\centering\includegraphics[width=\textwidth,height=44mm,keepaspectratio]{donor_frequencies.pdf}\par}
+  \takeaway{Each donor contributes one point, averaging their available test visits first.}
+  \source{20 donors per model: 9 CMV$+$ (triangles), 11 CMV$-$ (circles); visits restricted to the same 98 common splits. Bars: mean of donor points. The selected filter may differ between splits.}
+\end{frame}
+
+\begin{frame}{Backup: the learnable rank mask}
+  % Keep the complete mathematical definition here; the main slide stays brief.
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.58\textwidth}
+      \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{learned_alphas.pdf}
+    \end{column}
+    \begin{column}{.39\textwidth}
+      \eyebrow{Rank fraction, not population frequency}
+      \[\alpha_k=\sigma(\theta_k),\qquad \alpha_k^{(0)}=0.01\]
+      \[m_{rk}=\sigma\!\left(\frac{\alpha_k-q_r}{0.002}\right)\]
+      \small $q_r=(r-\tfrac12)/N$ for descending response ranks. Temperature is fixed. Soft $\alpha=1\%$ is not identical to hard Top-1\%.
+    \end{column}
+  \end{columns}
+  \takeaway{\AlphaTakeaway}
+  \source{100 selected models per variant; all \QuadraticFilterCount{} Quadratic and \PrototypeFilterCount{} Prototype filter parameters are shown. The temperature is not fitted or tuned in this comparison.}
+\end{frame}
+
+\begin{frame}{Backup: scope of the controlled comparison}
+  \begin{itemize}
+    \item \textbf{Quadratic Hard vs.\ Soft:} same cell response and L2 penalty; the pooling function changes.
+    \item \textbf{CellCNN vs.\ Quadratic:} adds a quadratic term and its L2 penalty.
+    \item \textbf{Prototype vs.\ Quadratic:} different geometry, initialization and regularization; not an isolated alpha comparison.
+    % Add the omitted distinction between outer-training and actual fit donors.
+    \item \textbf{No refit:} the selected inner model uses 9--10 training donors, not all 14 outer-training donors.
+    \item \textbf{Limitation:} variants were developed after earlier results on these same 20 donors.
+  \end{itemize}
+  {\small L2 coefficient $10^{-4}$: CellCNN on $W,V$; Quadratic on $W,Q,V$; Prototype on $V$, plus $10^{-3}\operatorname{mean}((a-1)^2)$. No extra alpha or radius penalty.\par}
+  \takeaway{\FinalTakeaway}
+  \source{Nine candidates per outer split: three inner folds and 3/4/5 filters. The same donor splits, sampling seeds, learning rate and early-stopping procedure are used.}
+\end{frame}
+
+\end{document}

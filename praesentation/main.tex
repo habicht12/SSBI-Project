@@ -1,0 +1,1582 @@
+% !TeX root = main.tex
+% Gemeinsame Fassung; die Einzelquellen bleiben unveraendert.
+% Aufgabe 2/6: main 0829915; Aufgabe 3: lokale finale Datei;
+% Aufgabe 4/5: gesicherter lokaler Arbeitsstand auf GrHa.
+\documentclass[aspectratio=169,10pt]{beamer}
+\input{theme}
+\usepackage{amsmath,amssymb}
+\definecolor{Best}{HTML}{157553}
+\newcommand{\best}[1]{\textcolor{Best}{\textbf{#1}}}
+\newcommand{\worst}[1]{\textcolor{Rust}{#1}}
+\input{aufgabe_02/data/numbers}
+\input{aufgaben_04_05/data/numbers}
+\input{aufgabe_06_vergleich/data/numbers}
+\title{Group-Project SSBI}
+\author{Sebastian Fay, Marie Schygulla, Gregor Habitzreither}
+\date{}
+\hypersetup{pdftitle={Group-Project SSBI},
+  pdfauthor={Sebastian Fay, Marie Schygulla, Gregor Habitzreither},
+  colorlinks=true,urlcolor=Teal}
+\newcommand{\slidelabel}{SSBI}
+\setbeamertemplate{footline}{%
+  \hspace{8mm}\textcolor{Muted}{\scriptsize\slidelabel}\hfill
+  \textcolor{Muted}{\scriptsize\insertframenumber}\hspace{8mm}\vspace{3mm}}
+\tikzset{stage/.style={draw=Line,fill=Pale,rounded corners=1.5mm,align=center,
+  minimum height=14mm,text width=27mm,inner sep=1mm,font=\small},
+  flow/.style={-{Stealth[length=2mm]},thick,draw=Teal}}
+\newcommand{\eyebrow}[1]{{\color{Teal}\bfseries #1}\par\smallskip}
+\newcommand{\compactmath}{%
+  \setlength{\abovedisplayskip}{4pt}\setlength{\belowdisplayskip}{4pt}%
+  \setlength{\abovedisplayshortskip}{2pt}\setlength{\belowdisplayshortskip}{4pt}}
+\newcommand{\papersource}{Arvaniti \& Claassen (2017), \href{https://doi.org/10.1038/ncomms14825}{doi:10.1038/ncomms14825}.}
+\newcommand{\citrussource}{Bruggner et al. (2014), \href{https://doi.org/10.1073/pnas.1408792111}{doi:10.1073/pnas.1408792111}.}
+\newcommand{\horowitzsource}{Horowitz et al. (2013), \href{https://doi.org/10.1126/scitranslmed.3006702}{doi:10.1126/scitranslmed.3006702}.}
+\newcommand{\mapcontext}{\par{\scriptsize 10,000 gated\_alive cells; 500/donor; t-SNE perplexity 30; model splits 0--29.}\par}
+
+
+\begin{document}
+
+\begin{frame}[plain,noframenumbering]
+  \vfill
+  {\color{Ink}\LARGE\bfseries Group-Project SSBI\par}
+  \vspace{4mm}
+  {\color{Teal}\rule{32mm}{0.7pt}\par}
+  \vspace{6mm}
+  {\large Sebastian Fay\par}
+  \smallskip
+  {\large Marie Schygulla\par}
+  \smallskip
+  {\large Gregor Habitzreither\par}
+  \vfill
+\end{frame}
+
+% Hauptfolien: Aufgabe 2
+\renewcommand{\slidelabel}{SSBI · Task 2}
+\section{Task 2}
+\begin{frame}{Benchmark of comparative single-cell analysis approaches}
+  \begin{columns}[T,onlytextwidth]
+  \begin{column}{.45\textwidth}
+    \textcolor{Teal}{\large The Data}\par\medskip
+    from Horowitz et al. (2013)
+    \par\medskip
+    \begin{tabular}{lr}\toprule
+      Provided donors & 20\\
+      CMV+/CMV- & 9/11\\
+      Analysis markers & 37\\
+      Available gated NK cells & 261,593\\
+      Balanced analysis sample & 40,000\\\bottomrule
+    \end{tabular}
+  \end{column}
+  \begin{column}{.42\textwidth}
+    \textcolor{Teal}{\large The context}\par\medskip
+    \textbf{Mass cytometry (CyTOF)}: simultaneous protein-marker measurements on individual cells.
+    \textbf{Natural Killer (NK) cells}: immune cells with a high cell diversity
+    \par\medskip
+    From some donors a subpopulation of NK cells shows a characteristic expression of proteins typical after a CMV infection, which was given in the data
+    \par\medskip
+  \end{column}
+  \end{columns}
+  \takeaway{CMV labels describe donors; they do not identify infected individual cells.}
+  \source{Horowitz et al., Sci. Transl. Med. 2013; Arvaniti \& Claassen, Nat. Commun. 2017. Provided 20-donor subset}
+\end{frame}
+
+\begin{frame}{Does the balanced subsample preserve the selected phenotype?}
+  \begin{columns}[c,onlytextwidth]
+  \begin{column}{.49\textwidth}
+    \centering\includegraphics[height=54mm]{aufgabe_02/figures/subsample.png}
+  \end{column}
+  \begin{column}{.47\textwidth}
+    Compare randomly choosen \textbf{2,000 cells per donor} with all available gated NK cells from that donor.\par\medskip
+    NKG2C$^+$/CD57$^+$ is a marker phenotype associated with \textbf{memory-like (``adaptive'') NK cells} after CMV exposure.
+  \end{column}
+  \end{columns}
+  \source{Positivity: two-component GMM crossover per marker on all 261,593 cells. This check concerns one approximate phenotype, not every rare population.}
+\end{frame}
+
+\begin{frame}{PCA}
+  \begin{columns}[c,onlytextwidth]
+  \begin{column}{.45\textwidth}
+    \includegraphics[width=\linewidth]{aufgabe_02/figures/pca_spectrum.pdf}
+  \end{column}
+  \begin{column}{.53\textwidth}
+    \includegraphics[width=\linewidth]{aufgabe_02/figures/pca_donor.pdf}
+  \end{column}
+  \end{columns}
+  \medskip
+  \textbf{Retention choice:} 29 PCs reach the 90\% threshold and become the input to t-SNE/UMAP.\par
+  \takeaway{29 PCs retain 91.50\%, the plotted two retain only 20.29\%}
+  \source{40,000 cells, arcsinh + z-scoring. Spectrum verified from the same 37-marker covariance matrix}
+\end{frame}
+
+\begin{frame}{t-SNE: changing perplexity changes the neighbourhood scale}
+  \centering\includegraphics[width=\textwidth,height=33mm,keepaspectratio]{aufgabe_02/figures/tsne_selected.pdf}\par\smallskip
+  \begin{columns}[T,onlytextwidth]
+  \begin{column}{.40\textwidth}\small
+    \textbf{Input}:
+    5,000 cells and 29 PCs reduce sweep time and memory. 
+    \par\smallskip
+    The top-scoring of 5, 15, 30, 40, 50, 60, 70 and 100. \textbf{Selected: 60}
+  \end{column}
+  \begin{column}{.50\textwidth}\small
+    \centering
+    \begin{tabular}{rr}\toprule
+      Perplexity & Trustworthiness\\\midrule
+      50 & 0.92597\\
+      60 & 0.92605\\
+      100 & 0.92580\\\bottomrule
+    \end{tabular}\\[2pt]
+    \par\smallskip
+    \raggedright $T$: penalises false low-dimensional neighbours by their high-dimensional ranks.
+  \end{column}
+  \end{columns}
+  \source{Selected panels; colours indicate donor CMV status.}
+\end{frame}
+
+\begin{frame}{UMAP: neighbourhood scale versus point packing}
+  \begin{columns}[c,onlytextwidth]
+  \begin{column}{.40\textwidth}
+    \centering\includegraphics[height=51mm]{aufgabe_02/figures/umap_selected.pdf}
+  \end{column}
+  \begin{column}{.60\textwidth}
+    \begin{center}
+      \small\input{aufgabe_02/data/umap_top}\par\medskip
+    \end{center}
+    \normalsize Selected: \textbf{5 neighbours, min\_dist = 0.0}. %Compact islands do not prove distinct cell types.
+  \end{column}
+  \end{columns}
+  \source{Four corner settings from the 16-panel saved grid, colours indicate CMV status. Top three rows ranked by saved Trustworthiness on the same 5,000 cells and 29 PCs.}
+\end{frame}
+
+\begin{frame}{Local preservation and global distances favour different maps}
+  \begin{columns}[c,onlytextwidth]
+  \begin{column}{.60\textwidth}
+  \centering\includegraphics[width=.90\textwidth,height=26mm,keepaspectratio]{aufgabe_02/figures/embeddings_cmv.pdf}\par
+  \smallskip\small\input{aufgabe_02/data/quality}\par\smallskip
+  \end{column}
+  \begin{column}{.38\textwidth}
+    \begin{minipage}{\linewidth}\scriptsize
+    \textcolor{Teal}{\textbf{Local structure}}\par
+    $T$: \textbf{Trustworthiness} -- false neighbours, ranked.\par \smallskip
+    $R$: \textbf{kNN preservation} -- exact overlap; small values are normal at $n=40{,}000$ (chance level $\approx 0.0004$).\par \smallskip
+    {\itshape t-SNE wins both: it directly optimises neighbour probabilities.}\par
+    \vspace{5pt}\hrule\vspace{5pt}
+    \textcolor{Teal}{\textbf{Global / label structure}}\par
+    $r_d$: \textbf{Pearson correlation} of all pairwise distances.\par
+    {\itshape PCA wins: a linear projection built to preserve overall variance/distance.}\par \smallskip
+    $S_{\rm CMV}$: \textbf{Silhouette score} - separation by donor CMV label -- near zero for all three maps, as expected: only a minority subset of each CMV+ donor's cells is actually altered.
+    \end{minipage}
+  \end{column}
+  \end{columns}
+  \takeaway{t-SNE leads locally; PCA leads in distance correlation.}
+  \source{40,000 cells; 29 PCs; k=15. Distance correlation: fixed 2,000-cell sample.}
+\end{frame}
+
+\begin{frame}{Which maps are most similar?}
+  \begin{columns}[c,onlytextwidth]
+  \begin{column}{.51\textwidth}
+    \begin{center}
+      \small\input{aufgabe_02/data/pairwise}\par\smallskip
+      {\scriptsize $R$ values look small in absolute terms, but sit far above the $\sim0.0004$ level expected by chance at $n=40{,}000$, $k=15$.}
+    \end{center}
+    \par\medskip
+  
+  \end{column}
+  \begin{column}{.44\textwidth}
+      \textcolor{Teal}{\textbf{$M^2$ -- Procrustes disparity}}\par\smallskip
+    \small Align two maps by translation, rotation/reflection and scaling; measure the remaining mismatch. Lower = closer overall shape after alignment.\par
+    \vspace{5pt}\hrule\vspace{5pt}
+    \textbf{Local neighbours ($R$):} t-SNE and UMAP are the most similar pair.\par\medskip
+    \textbf{Aligned global shape ($M^2$):} PCA and t-SNE are the most similar pair. \par \medskip
+  \end{column}
+  \end{columns}
+  \takeaway{$R$ and $M^2$ disagree because they ask different questions: exact shared neighbours vs. overall shape after optimal alignment}
+  \source{All three pairs evaluated on the same 40,000 cells in the same order. R(15) corrected from saved coordinates; SciPy Procrustes values independently reproduced. Neither metric identifies biologically correct cell types.}
+\end{frame}
+
+% Hauptfolien: Aufgabe 3
+\renewcommand{\slidelabel}{SSBI · Task 3}
+\section{Task 3}
+\begin{frame}{K-means: nearest centres and Voronoi regions}
+  \begin{columns}[T,onlytextwidth]
+    \column{.51\textwidth}
+    \textbf{Choose $K$, then repeat}\par
+    \begin{enumerate}
+      \item Assign every cell to its nearest centre.
+      \item Update each centre to its cluster mean.
+    \end{enumerate}
+    \small $K$: number of clusters. Each cell gets one label.\par
+    \vspace{2mm}
+    \textbf{Geometric model}\par
+    Convex regions with linear boundaries.\par
+    \textbf{Probabilistic model:} hard-assignment Gaussian clusters with a shared spherical covariance and equal prior weights.
+    \column{.45\textwidth}
+    \includegraphics[width=\linewidth,height=36mm,keepaspectratio]{figures/voronoi_lecture.pdf}\par
+    \small Yellow points: centres. Each region contains points closest to its centre.
+  \end{columns}
+  \vspace{2mm}\small\textbf{Our data:} 20,000 live PBMCs, 37 markers, 20 donors.
+  \takeaway{Which choice of $K$ resolves meaningful populations, including potentially rare subsets?}
+  \source{Figure excerpt: Ulrike von Luxburg, \href{https://www.tml.cs.uni-tuebingen.de/teaching/2024_statistical_learning/downloads_free/vorlesung_main.pdf}{Statistical Machine Learning, Summer 2024}, slide 840 (PDF p. 844), cropped. Gaussian interpretation: Macke / Hennig, Lecture 11.}
+\end{frame}
+
+\begin{frame}{Silhouette and Davies--Bouldin: what gets averaged?}
+  \begin{columns}[T,onlytextwidth]
+    \column{.47\textwidth}
+    \textcolor{Indigo}{\textbf{Silhouette: cell-weighted average}}
+    \[\overline{s}=\sum_{c=1}^{K}\frac{n_c}{N}\,\overline{s}_c\]
+    \small
+    $n_c$: number of cells in cluster $c$.\par
+    $N$: total number of cells.\par
+    $\overline{s}_c$: mean silhouette in cluster $c$.\par
+    \vspace{3mm}
+    A group with \textbf{1\,\% of cells} has \textbf{1\,\% weight} for its own mean silhouette.
+    \column{.49\textwidth}
+    \textcolor{Teal}{\textbf{DB: equal weight per cluster}}
+    \[DB=\frac{1}{K}\sum_{c=1}^{K}\max_{j\ne c}
+        \frac{S_c+S_j}{\lVert\mu_c-\mu_j\rVert}\]
+    \small
+    $S_c$: mean distance of cells to their centre.\par
+    $\mu_c$: centre (mean vector) of cluster $c$.\par
+    \vspace{7mm}
+    Each cluster has \textbf{$1/K$ weight}. Lower is better.
+  \end{columns}
+  \takeaway{DB gives every cluster same weight.}
+  \source{Definitions: scikit-learn clustering documentation.}
+\end{frame}
+
+\begin{frame}{Subsampling within the observed cells}
+  \begin{columns}[T,onlytextwidth]
+    \column{.47\textwidth}
+    \textbf{Why keep the initial sample?}
+    \begin{itemize}
+      \item A fresh sample may omit a rare population that we observed initially.
+      \item Different cells also prevent a direct membership comparison.
+      \item We first test how well observed groups survive removing cells.
+    \end{itemize}
+    \column{.49\textwidth}
+    \textbf{Our stability experiment}
+    \begin{enumerate}
+      \item Keep 80\,\% of cells within each donor, without replacement.
+      \item Refit scaling and clustering with the same parameter settings.
+      \item Compare both partitions on the \textbf{same retained cell IDs}.
+    \end{enumerate}
+    \small Ten repeats, 16,000 cells each, with changing random seeds.
+  \end{columns}
+  \takeaway{This measures stability conditional on our initial sample. Even 80\,\% subsampling can lose a tiny group.}
+  \source{Our notebook implementation.}
+\end{frame}
+
+\begin{frame}{Stability: global ARI or cluster-wise Jaccard?}
+  \begin{columns}[T,onlytextwidth]
+    \column{.43\textwidth}
+    \textbf{ARI compares entire partitions}\par
+    \small It measures agreement over cell pairs and adjusts for chance.\par
+    \vspace{3mm}
+    A group of $n$ cells contains $n(n-1)/2$ within-group pairs. Large groups therefore contribute far more pairs.\par
+    \vspace{2mm}
+    Splitting a rare group changes relatively few pairs, so global ARI can remain high.
+    \column{.53\textwidth}
+    \textcolor{Teal}{\textbf{Jaccard follows each population}}
+    \[J(C,D)=\frac{|C\cap D|}{|C\cup D|}\]
+    \small $C$: reference cluster among the retained cells.\par
+    $D$: cluster from the new fit on those same cells.\par
+  \end{columns}
+  \takeaway{Our choice: Jaccard per cluster, then equal cluster weights. Both approaches work without ground truth.}
+  \source{SOURCE}
+\end{frame}
+
+\begin{frame}{Agglomerative clustering: which groups merge?}
+  \begin{columns}[T,onlytextwidth]
+    \column{.58\textwidth}
+    \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{figures/linkage_lecture.pdf}\par
+    \small $C,C'$: two clusters; $x,y$: cells.\par
+    $d(x,y)$: Euclidean distance; $|C|$: cell count.
+    \column{.38\textwidth}
+    \textbf{Start with one cluster per cell}\par
+    \small Merge the closest groups repeatedly. Cut the resulting tree at the desired cluster count.\par
+    \vspace{3mm}
+    \textbf{Ward uses a different merge rule}\par
+    Choose the smallest increase in within-cluster squared error (very k-means like). This favours compact groups.\par
+    \vspace{3mm}
+    Earlier merges remain fixed in every variant.
+  \end{columns}
+  \source{Figure excerpt: Ulrike von Luxburg, \href{https://www.tml.cs.uni-tuebingen.de/teaching/2024_statistical_learning/downloads_free/vorlesung_main.pdf}{Statistical Machine Learning, Summer 2024}, slide 850 (PDF p. 854), cropped. Ward: SciPy linkage documentation.}
+\end{frame}
+
+\begin{frame}{Selection: stability first, then Davies--Bouldin}
+  \includegraphics[width=\textwidth,height=43mm,keepaspectratio]{figures/stability_eligibility.png}\par
+  \small\textbf{Each dot: one configuration.} Keep mean stability $\geq0.6$ (arbitrary), then minimise DB per method.\par
+  \vspace{1mm}
+  \begin{columns}[T,onlytextwidth]
+    \column{.48\textwidth}\small\textbf{K-means++ and 10 starts}\par
+    Reduce sensitivity to poor initial centres.\\
+    Stochastic \textbf{farthest first} heuristic
+    \column{.48\textwidth}\small\textbf{Single linkage and chaining}\par
+    A large group can grow through large chain of local neighbourhoods
+  \end{columns}
+   \source{Original saved notebook plots.}
+\end{frame}
+
+\begin{frame}{Excellent scores can describe an unhelpful partition}
+  \small\renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{5pt}
+  \input{data/winner_table}
+  \vspace{2mm}\par
+  \begin{columns}[T,onlytextwidth]
+    \column{.47\textwidth}
+    \textcolor{Rust}{\textbf{Single linkage: 19,999 cells + 1 cell}}\par
+    DB $=0.264$ and mean stability $=1$.
+    \column{.49\textwidth}
+
+  \end{columns}
+  \takeaway{An isolated event can score well and recur. These metrics alone do not establish a rare cell population.}
+  \source{}
+\end{frame}
+
+\begin{frame}{Ward and single linkage on the same UMAP }
+  \begin{columns}[T,onlytextwidth]
+    \column{.49\textwidth}
+    \textcolor{Teal}{\textbf{Ward: 6 clusters}}
+    \includegraphics[width=\linewidth,height=37mm,keepaspectratio]{figures/umap_ward_panel.png}\par
+    \small DB: \textbf{2.522}\quad Mean stability: \textbf{0.611}\par
+    \column{.49\textwidth}
+    \textcolor{Rust}{\textbf{Single: 19,999 cells + 1 cell}}
+    \includegraphics[width=\linewidth,height=37mm,keepaspectratio]{figures/umap_single_panel.png}\par
+    \small DB:  \textbf{0.264} \quad Mean stability: \textbf{1.000} 
+  \end{columns}
+  \takeaway{Ward divides the broad cloud. Single linkage assigns almost the entire cloud to one cluster.}
+  \source{Original saved notebook plots.}
+\end{frame}
+
+\begin{frame}{K-means and Leiden give different resolutions}
+  \begin{columns}[T,onlytextwidth]
+    \column{.49\textwidth}
+    \textcolor{Teal}{\textbf{K-means: 4 clusters}}
+    \includegraphics[width=\linewidth,height=36mm,keepaspectratio,trim=0 0 86mm 0,clip]{figures/umap_kmeans.png}
+    \small 3,148--7,556 cells per cluster\par
+    DB: \textbf{2.363}\quad Mean stability: \textbf{0.995}
+    \column{.49\textwidth}
+    \textcolor{Indigo}{\textbf{Leiden: 18 clusters}}
+    \includegraphics[width=\linewidth,height=36mm,keepaspectratio,trim=0 0 86mm 0,clip]{figures/umap_leiden.png}
+    \small 223--3,588 cells per cluster\par
+    DB: \textbf{2.361}\quad Mean stability: \textbf{0.683}
+  \end{columns}
+  \source{Original notebook plots on the same UMAP coordinates.}
+\end{frame}
+
+\begin{frame}{K-means: marker profiles of the four groups}
+  \includegraphics[width=\textwidth]{figures/marker_heatmap_kmeans.png}\par
+  \small
+  \[\text{Relative marker score}=\frac{\text{cluster median}-\text{sample median}}{\text{sample IQR}} \text{ vs. } \frac{\text{cluster mean}-\text{sample mean}}{\text{sample standard deviation}}\]
+  \small For each marker after arcsinh: IQR $=Q_{75\%}-Q_{25\%}$. Red: higher median; blue: lower.\par
+  more robust statistical marker
+  \vspace{2mm}
+  \source{Original notebook panel. NIST}
+\end{frame}
+
+\begin{frame}{Leiden: marker profiles of the finer groups}
+  \includegraphics[width=\textwidth]{figures/marker_heatmap_leiden.png}\par
+  \small 
+  \vspace{2mm}
+  \source{Original notebook panel.}
+\end{frame}
+
+\begin{frame}{Hierarchical clustering: marker profiles}
+  \begin{columns}[c,onlytextwidth]
+    \column{.12\textwidth}\scriptsize
+    \textbf{Single}\par C0, C1
+    \column{.83\textwidth}
+    \includegraphics[width=\linewidth,height=6mm]{figures/hierarchical_single.png}
+    \column{.03\textwidth}
+  \end{columns}\vspace{1mm}
+  \begin{columns}[c,onlytextwidth]
+    \column{.12\textwidth}\scriptsize
+    \textbf{Average}\par C0, C1
+    \column{.83\textwidth}
+    \includegraphics[width=\linewidth,height=6mm]{figures/hierarchical_average.png}
+    \column{.03\textwidth}
+  \end{columns}\vspace{1mm}
+  \begin{columns}[c,onlytextwidth]
+    \column{.12\textwidth}\scriptsize
+    \textbf{Complete}\par C0, C1
+    \column{.83\textwidth}
+    \includegraphics[width=\linewidth,height=6mm]{figures/hierarchical_complete.png}
+    \column{.03\textwidth}
+  \end{columns}\vspace{1mm}
+  \begin{columns}[c,onlytextwidth]
+    \column{.12\textwidth}\scriptsize
+    \textbf{Ward}\par C0--C5
+    \column{.83\textwidth}
+    \includegraphics[width=\linewidth,height=18mm]{figures/hierarchical_ward.png}\par\vspace{-1mm}
+    \includegraphics[width=\linewidth,height=9mm]{figures/hierarchical_axis.png}
+    \column{.03\textwidth}
+    \includegraphics[width=\linewidth]{figures/hierarchical_colourbar.png}
+  \end{columns}
+  \small Single / average / complete: tiny groups with broadly elevated markers. Ward: more differentiated profiles.
+  \source{Original notebook heatmap strips.}
+\end{frame}
+
+\begin{frame}{Assessment for the cell-population question}
+  \begin{columns}[T,onlytextwidth]
+    \column{.55\textwidth}\small
+    \textcolor{Teal}{\textbf{K-means: broad, reproducible groups}}\par
+    4 clusters, mean stability 0.995.\par
+    \vspace{3mm}
+    \textcolor{Amber}{\textbf{Ward: intermediate resolution}}\par
+    6 clusters with differentiated marker profiles.\par
+    Mean stability 0.611; 3 of 6 groups below 0.6.\par\vspace{3mm}
+    \textcolor{Indigo}{\textbf{Leiden: finer groups}}\par
+    18 clusters, mean stability 0.683.\par
+    More detail, but 4 of 18 groups below 0.6.
+    \column{.41\textwidth}\small
+    \textbf{Single, average and complete}\par
+    Selected solutions mainly separate a few events from almost all other cells.\par\vspace{4mm}
+    \textbf{Rare cell populations}\par
+    Equal cluster weighting helps evaluate small groups. A biological interpretation also needs coherent markers and replication.
+  \end{columns}
+  \takeaway{K-means provides a stable baseline. Ward and Leiden add detail with weaker reproducibility.}
+  \source{Our saved results for 20,000 live PBMCs.}
+\end{frame}
+
+% Hauptfolien: Aufgabe 4
+\renewcommand{\slidelabel}{SSBI · Task 4}
+\section{Task 4}
+\begin{frame}{From cells to donor-level prediction}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.44\textwidth}
+      \eyebrow{One CMV label per donor}
+      \begin{tabular}{@{}lr@{}}\toprule
+        Donors & 20\\
+        CMV$-\,/\,+$ & 11 / 9\\
+        Protein markers & 37\\
+        Input gate & \texttt{gated\_alive}\\\bottomrule
+      \end{tabular}\par\medskip
+      \[a_{ij}=\operatorname{asinh}(x_{ij}/5)\]
+      {\scriptsize $i$: cell; $j$: marker; $x_{ij}$: raw value; $a_{ij}$: transformed value; 5: cofactor.}\par\smallskip
+      \small CellCNN/SVM: fit marker scaling on training donors only. Citrus uses ArcSinh values directly.
+    \end{column}
+    \begin{column}{.52\textwidth}
+      \centering
+      \begin{tikzpicture}[x=1mm,y=1mm]
+        \node[stage,text width=31mm] (all) at (33,0) {20 donors};
+        \node[stage,text width=30mm] (train) at (15,-20) {\textbf{14 train}\\7 CMV$-$ + 7 CMV$+$};
+        \node[stage,text width=30mm] (test) at (53,-20) {\textbf{6 test}\\4 CMV$-$ + 2 CMV$+$};
+        \draw[flow] (all) -- (train);
+        \draw[flow] (all) -- (test);
+        \node[font=\small,align=center,text width=34mm] at (15,-36) {3 inner donor folds\\for model selection};
+        \node[font=\small,align=center,text width=30mm] at (53,-36) {Evaluate once\\on unseen donors};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \source{\horowitzsource\ \papersource}
+\end{frame}
+
+\begin{frame}{CellCNN learns filters for informative cells}
+  \begin{center}
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage] (a) at (0,0) {\textbf{Cell group}\\3,000 $\times$ 37};
+      \node[stage] (b) at (36,0) {\textbf{3--5 filters}\\linear + ReLU};
+      \node[stage] (c) at (72,0) {\textbf{Top 1\%}\\mean per filter};
+      \node[stage] (d) at (108,0) {\textbf{Softmax}\\CMV probability};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c); \draw[flow] (c) -- (d);
+    \end{tikzpicture}
+  \end{center}
+  \vspace{0mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{Learn which cells matter}
+      \[r_{if}=\max(0,w_f^\top z_i+b_f)\]
+      {\scriptsize $\boldsymbol{i}$: cell; $\boldsymbol{f}$: filter; $\boldsymbol{z_i}$: 37 standardized markers; $\boldsymbol{w_f}$: filter weights; $\boldsymbol{b_f}$: bias; $\boldsymbol{r_{if}}$: response. $\boldsymbol{w_f^\top z_i}$: weighted sum; $\boldsymbol{\max(0,\cdot)}$: ReLU.}\par\smallskip
+      A filter scores a marker combination. Pooling focuses on the strongest responses.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \eyebrow{Our paper-guided implementation}
+      \begin{itemize}\setlength\itemsep{2pt}
+        \item PyTorch; 200 cell groups per training donor.
+        \item Choose the best inner-fold network.
+        \item Adaptations: fixed 3/4/5-filter search; average five test-input probabilities.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{\papersource}
+\end{frame}
+
+\begin{frame}{Running the original Citrus implementation}
+  \begin{center}
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{1. R environment}\\separate Conda env};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{2. Original packages}\\fixed Git commits};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{3. Notebook kernel}\\shared donor splits};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \end{center}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.31\textwidth}
+      \small R 4.5, \texttt{flowCore} and \texttt{glmnet}; C++ compiler and \texttt{make} supplied by Conda.
+    \end{column}
+    \begin{column}{.32\textwidth}
+      \small Citrus 0.8 and \texttt{Rclusterpp} installed from the official repositories at pinned commits.
+    \end{column}
+    \begin{column}{.31\textwidth}
+      \small Register \texttt{IRkernel}; the R notebook connects the original functions to our fixed donor folds.
+    \end{column}
+  \end{columns}
+  \bigskip
+  \eyebrow{Two routes to a paper-guided implementation}
+  \small\textbf{CellCNN:} new PyTorch implementation based on the paper and reference code.\par
+  \textbf{Citrus:} original legacy package code; recorded runtime: R 4.5.3.
+\end{frame}
+
+\begin{frame}{A linear SVM assigns a score to each cell}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \centering
+      \begin{tikzpicture}[x=7.3mm,y=7.3mm]
+        \draw[-{Stealth},draw=Muted] (0,0) -- (6.1,0) node[below,font=\scriptsize] {marker 1};
+        \draw[-{Stealth},draw=Muted] (0,0) -- (0,4.7) node[above,font=\scriptsize] {marker 2};
+        \draw[thick,draw=Ink] (.35,3.79) -- (5.8,.52);
+        \draw[dashed,draw=Muted] (.35,4.39) -- (5.8,1.12);
+        \draw[dashed,draw=Muted] (.35,3.19) -- (5.3,.22);
+        \foreach \x/\y in {.7/.9,1.1/1.8,1.6/.6,2.2/1.1,2.6/.5,3.2/1.4,3.8/.7,1.0/3.8}
+          \fill[Amber] (\x,\y) circle (2pt);
+        \foreach \x/\y in {2.1/3.4,2.7/4.1,3.4/3.0,3.9/3.8,4.7/2.2,5.4/3.3,4.1/1.1,5.1/4.1}
+          \fill[Teal] (\x,\y) circle (2pt);
+        \draw[flow] (3.55,2.0) -- (4.25,3.15) node[midway,right,font=\scriptsize] {$m_i$ increases};
+        \node[font=\scriptsize,fill=white,inner sep=1mm] at (1.5,3.15) {$m_i=0$};
+      \end{tikzpicture}\par\smallskip
+      {\scriptsize\textcolor{Amber}{\textbullet} CMV$-$ donor \quad\textcolor{Teal}{\textbullet} CMV$+$ donor}\par
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \eyebrow{Train on donor-labelled cells}
+      10,000 cells per training donor; each cell receives its donor's label.
+      \[m_i=w^\top z_i+b\]
+      A larger margin means stronger evidence in the model's positive direction.\par\medskip
+      \textbf{Linear SVM:} L2 penalty and squared-hinge loss. The margin is a score, not a probability.
+    \end{column}
+  \end{columns}
+  \source{\papersource}
+\end{frame}
+
+\begin{frame}{Our adaptation: aggregate the highest cell margins}
+  \small\compactmath
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.53\textwidth}
+      \eyebrow{A few high-scoring cells can matter}
+      \begin{tikzpicture}[x=1mm,y=1mm]
+        \fill[Pale] (0,0) rectangle (35,13);
+        \node[font=\small,align=center] at (17.5,6.5) {990 remaining\\cells};
+        \foreach \i in {0,...,9} {
+          \fill[Indigo] ({40+2.4*\i},0) rectangle ({41.6+2.4*\i},{10.5+.5*\i});
+        }
+        \draw[-{Stealth},draw=Muted] (0,-3) -- (65,-3);
+        \node[font=\scriptsize,align=center] at (33,-8) {cells sorted by margin $m_i$};
+        \node[font=\scriptsize,text=Indigo] at (51,20) {10 highest margins};
+      \end{tikzpicture}\par\smallskip
+      \small Toy example: 1,000 cells; keep 10.\par
+      Margins 2.1, 2.2, \ldots, 3.0 give $s_d=2.55$.\par
+      At $\tau=1.80$: predict CMV$+$.
+    \end{column}
+    \begin{column}{.43\textwidth}
+      \eyebrow{One score per donor}
+      \[k_d=\lceil0.01N_d\rceil,\qquad
+        s_d=\frac{1}{k_d}\sum_{i\in I_d}m_i\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{N_d}$: its cell count; $\boldsymbol{k_d}$: count rounded up; $\boldsymbol{I_d}$: its top-scoring cell indices; $\boldsymbol{i}$: cell; $\boldsymbol{m_i}$: cell margin; $\boldsymbol{s_d}$: mean donor score; $\boldsymbol{\tau}$: donor threshold.}\par\smallskip
+      \begin{enumerate}\setlength\itemsep{3pt}
+        \item Select loss weight $C\in\{0.01,0.1,1\}$ by inner donor ROC-AUC.
+        \item Learn $\tau$ from inner out-of-fold donor scores.
+        \item Refit on 14 training donors; score all test cells.
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Performance across 30 shared donor splits}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.57\textwidth}
+      \includegraphics[width=\linewidth]{aufgaben_04_05/figures/performance_30.pdf}
+      \par{\scriptsize Six test donors per split. Boxes show Q1--Q3; dots show individual splits.}
+    \end{column}
+    \begin{column}{.40\textwidth}
+      \eyebrow{Median across 30 splits}
+      {\fontsize{8}{10}\selectfont\input{aufgaben_04_05/data/performance_30}}\par\medskip
+      \small AUC: ranking of CMV$+$ versus CMV$-$.\par
+      AP: average precision.\par
+      BA: balanced accuracy.
+    \end{column}
+  \end{columns}
+  \par\smallskip{\scriptsize BA thresholds: 0.5 for CellCNN/Citrus; inner-trained for SVM.}
+\end{frame}
+
+% Hauptfolien: Aufgabe 5
+\renewcommand{\slidelabel}{SSBI · Task 5}
+\section{Task 5}
+\begin{frame}[t]{CellCNN: select cells with a strong filter response}
+  \relax
+  {\centering
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{Cell response}\\apply a learned filter};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{Normalize}\\training-reference max};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{Select cells}\\above half-maximum};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \par}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{One score per cell and filter}
+      \compactmath
+      \[q_{if}=\frac{r_{if}}{M_f},\qquad q_{if}>0.5\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{i}$: & cell\\
+        $\boldsymbol{f}$: & filter\\
+        $\boldsymbol{r_{if}}$: & filter response\\
+        $\boldsymbol{M_f}$: & its positive maximum on the original training reference\\
+        $\boldsymbol{q_{if}}$: & normalized score.
+      \end{tabular}}
+    \end{column}
+    \begin{column}{.46\textwidth}
+      \eyebrow{A simple example}
+      Reference maximum: \textbf{10}. Selection threshold: \textbf{5}.\par\medskip
+      Responses \textcolor{Teal}{\textbf{8 and 6}} pass; responses \textcolor{Muted}{\textbf{5 and 2}} do not.\par\medskip
+      \small Use effective filters. Their output weights determine the CMV direction.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{Citrus: select clusters used by the classifier}
+  \relax
+  {\centering
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{Cluster frequency}\\one feature per donor};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{Model coefficient}\\effect on CMV prediction};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{Selected cluster}\\saved mean marker profile};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \par}\smallskip
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{A score for a whole cluster}
+      \compactmath
+      \[q_j=|\beta_j|,\qquad q_j>10^{-10}\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{j}$: & cluster\\
+        $\boldsymbol{\beta_j}$: & its frequency coefficient in the selected logistic model\\
+        $\boldsymbol{q_j}$: & absolute coefficient.
+      \end{tabular}}\par\smallskip
+      \small The tolerance excludes numerical zeros.
+    \end{column}
+    \begin{column}{.46\textwidth}
+      \eyebrow{What this selects}
+      All clusters with an effective coefficient enter the interpretation.\par\medskip
+      \small Positive coefficient: higher frequency supports CMV$+$; negative: CMV$-$, with other features fixed.\par\smallskip
+      The stored centroid summarizes the cluster's training cells.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{SVM: select the strongest positive cell scores}
+  \relax
+  {\centering
+    \begin{tikzpicture}[x=1mm,y=1mm]
+      \node[stage,text width=37mm] (a) at (0,0) {\textbf{Full test donor}\\score every cell};
+      \node[stage,text width=37mm] (b) at (49,0) {\textbf{Highest 1\%}\\rank within that donor};
+      \node[stage,text width=37mm] (c) at (98,0) {\textbf{Positive selection}\\above donor threshold};
+      \draw[flow] (a) -- (b); \draw[flow] (b) -- (c);
+    \end{tikzpicture}
+  \par}\smallskip
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \eyebrow{1. Compute the cell score}
+      \compactmath
+      \[m_i=w^\top z_i+b\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{i}$: & cell\\
+        $\boldsymbol{z_i}$: & standardized marker vector\\
+        $\boldsymbol{w}$: & learned weights\\
+        $\boldsymbol{b}$: & intercept\\
+        $\boldsymbol{m_i}$: & margin\\
+        $\boldsymbol{w^\top z_i}$: & weighted sum.
+      \end{tabular}}
+    \end{column}
+    \begin{column}{.46\textwidth}
+      \eyebrow{2. Check the selected top cells}
+      \compactmath
+      \[t_i=m_i-\tau,\qquad t_i>0\]
+      {\small\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{\tau}$: & donor threshold learned in inner validation\\
+        $\boldsymbol{t_i}$: & cell score relative to that threshold.
+      \end{tabular}}\par\smallskip
+      \small A positive value passes \textbf{only within the highest 1\%} of the full donor.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Which CellCNN and Citrus subsets recur?}
+\label{task5-recurrence}
+  \relax
+  {\small Group similar subset centroids separately for each method; count distinct splits.}
+  \mapcontext
+  \begin{center}\vspace{-2mm}
+    \includegraphics[width=.91\linewidth,height=40mm,keepaspectratio]{aufgaben_04_05/figures/centroids.pdf}
+  \end{center}\vspace{-3mm}
+  {\small Show groups present in at least 6 of 30 splits (20\%).
+   Top groups: \textbf{\CNNRecurrence/30} and \textbf{\CitrusRecurrence/30}, both positive.}
+  \source{\papersource}
+\end{frame}
+
+\begin{frame}{Which cells does the SVM repeatedly select?}
+\label{task5-selection}
+  \relax
+  {\small Colour shows how often the same cell passes the positive SVM selection rule.}
+  \mapcontext
+  \begin{center}\vspace{-2mm}
+    \includegraphics[width=.98\linewidth,height=44mm,keepaspectratio]{aufgaben_04_05/figures/selected_cells.pdf}
+  \end{center}\vspace{-3mm}
+  {\small\textbf{CellCNN:} \CNNSelected\ map cells (exploratory).
+   \textbf{SVM:} \SVMSelected\ map cells selected positively at least once.}
+  \source{\papersource}
+\end{frame}
+
+\begin{frame}{What do the marker profiles support?}
+\label{task5-markers}
+  \relax
+  {\small CellCNN/Citrus: group representatives. SVM: positive test-cell profiles, with equal donor weights.}
+  \begin{center}\vspace{-1mm}
+    \includegraphics[width=.98\linewidth,height=26mm,keepaspectratio]{aufgaben_04_05/figures/marker_profiles.pdf}
+  \end{center}\vspace{-2mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.32\textwidth}
+      \eyebrow{CellCNN}
+      \small NKG2C/CD57 with CD56/CD16/CD94: compatible with a memory-like NK profile.
+    \end{column}
+    \begin{column}{.31\textwidth}
+      \eyebrow{Citrus}
+      \small Higher CD3/CD57 and much less NKG2C elevation suggest a T-associated pattern.
+    \end{column}
+    \begin{column}{.32\textwidth}
+      \eyebrow{SVM positive OOF}
+      \small NKG2C/CD57 and NK-associated markers are elevated; CD3 is also above the reference mean.
+    \end{column}
+  \end{columns}
+  \source{\papersource\ \horowitzsource}
+\end{frame}
+
+% Hauptfolien: Aufgabe 6
+\renewcommand{\slidelabel}{SSBI · Task 6}
+\section{Task 6}
+\begin{frame}{Four cell-filter models, one evaluation protocol}
+  % Replace the vague "same data" claim with the actual cohort and outer split sizes.
+  % Only outer splits are shared: the selected inner fold can differ by model.
+  \eyebrow{20 donors · 37 markers · \texttt{gated\_alive}}
+  {\small 100 shared outer splits: 14 training / 6 test donors.\par}
+  \smallskip
+  \begin{tabular}{@{}p{.25\textwidth}p{.47\textwidth}p{.20\textwidth}@{}}\toprule
+    Model & Cell response $h_k(x)$ & Pooling\\\midrule
+    \textcolor{Teal}{CellCNN} & $\operatorname{ReLU}(b_k+w_k^\top x)$ & hard Top-1\,\%\\[2mm]
+    \textcolor{Indigo}{Quadratic Top-1\,\%} & $\operatorname{ReLU}(b_k+w_k^\top x+\sum_j q_{kj}x_j^2)$ & hard Top-1\,\%\\[2mm]
+    \textcolor{Amber}{Quadratic Soft-$\alpha$} & $\operatorname{ReLU}(b_k+w_k^\top x+\sum_j q_{kj}x_j^2)$ & learnable Soft-$\alpha$\\[2mm]
+    \textcolor{Rust}{Prototype Soft-$\alpha$} & $\operatorname{ReLU}(\rho_k-\frac1d\sum_j a_{kj}(x_j-c_{kj})^2)$ & learnable Soft-$\alpha$\\\bottomrule
+  \end{tabular}
+  \par\smallskip
+  % State the actual selection rule rather than another generic pipeline sentence.
+  {\small Population: largest positive output contrast; cells with $h>\tfrac12\max_{\text{inner-train}}h$.\par}
+  % CMV labels encode donor status; these data do not establish clinical disease.
+  \takeaway{Donor prediction and CMV-status association of the selected population are evaluated separately.}
+  \source{Cohort: 9 CMV$+$, 11 CMV$-$. Each split: train 7$+$/7$-$, test 2$+$/4$-$. ArcSinh($x/5$); scaling and half-max reference use the selected model's inner-training donors only.}
+\end{frame}
+
+\begin{frame}{Network classification across 100 donor splits}
+  % Replace "win" by a dataset-specific comparison; both quadratic variants tie.
+  % Generate the table from the benchmark so all AUCs use consistent precision.
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.62\textwidth}
+      \includegraphics[width=\linewidth,height=45mm,keepaspectratio]{aufgabe_06_vergleich/figures/network_roc.pdf}
+    \end{column}
+    \begin{column}{.35\textwidth}\scriptsize
+      \input{aufgabe_06_vergleich/data/network_table}
+    \end{column}
+  \end{columns}
+  \takeaway{\NetworkTakeaway}
+  \source{100 outer test sets, each with 2 CMV$+$ and 4 CMV$-$ donors. Donor score: mean of five prediction bags of 20,000 cells. Curves are averaged per split; legend values are mean original split AUCs.}
+\end{frame}
+
+\begin{frame}{Selected-population frequency difference}
+  % Only the former right-hand panel is relevant here. Re-render it from the same
+  % 98-split values; update the title and explanation to describe the effect alone.
+  % A wider standalone aspect ratio uses the space without removing any observations.
+  \relax
+  {\centering\includegraphics[width=.94\textwidth,height=43mm,keepaspectratio]{aufgabe_06_vergleich/figures/frequency_effect.pdf}\par}
+  \takeaway{\EffectTakeaway}
+  \source{98 jointly evaluable splits; test set: 2 CMV$+$ and 4 CMV$-$ donors. One fixed 20,000-cell sample per test donor. Effect = mean CMV$+$ frequency minus mean CMV$-$ frequency, in percentage points.}
+\end{frame}
+
+\begin{frame}{What does the extra pooling parameter learn?}
+  % Fill the previously empty explanation column with the parameter's role and
+  % initial value; retain the full rank-mask equation only in the backup.
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.58\textwidth}
+      \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{aufgabe_06_vergleich/figures/learned_alphas.pdf}
+    \end{column}
+    \begin{column}{.39\textwidth}
+      \eyebrow{Rank fraction, not population frequency}
+      \[\alpha_k=\sigma(\theta_k)\]
+      \small Starts at 1\%; fixed temperature $\tau=0.002$.\par\medskip
+      Alpha weights cell ranks within a bag. Half-max defines the separately evaluated population.
+    \end{column}
+  \end{columns}
+  \takeaway{\AlphaTakeaway}
+  \source{All filters from 100 selected models per variant: \QuadraticFilterCount{} Quadratic and \PrototypeFilterCount{} Prototype filters. These are model parameters, not independent donor observations.}
+\end{frame}
+
+\begin{frame}{Take-away}
+  \begin{itemize}
+    \item Quadratic Hard and Soft share the highest mean network AUC on this dataset.
+    % Replace the unsupported possibility of gains on other datasets by the
+    % observed, paired hard-versus-soft result: 5 better / 90 tied / 5 worse.
+    \item Soft vs.\ Hard: \HardSoftCounts; mean $\Delta$AUC $0.0000$.
+    \item \PairedTakeaway
+    \item Only 20 independent donors: repeated splits are descriptive, not independent replication.
+  \end{itemize}
+  \par\medskip
+  \takeaway{\FinalTakeaway}
+  \source{All 100 planned outer splits are included. Paired differences use the same test donors in each split. These results do not establish performance on a new cohort.}
+\end{frame}
+
+\renewcommand{\slidelabel}{SSBI}
+\section{References}
+\begin{frame}{References}
+  \fontsize{8}{9.5}\selectfont
+  \begin{columns}[T,onlytextwidth]
+    \column{.48\textwidth}
+    \textcolor{Teal}{\textbf{Data and learning methods}}\par\smallskip
+    \href{https://doi.org/10.1126/scitranslmed.3006702}{Horowitz et al. (2013).} Genetic and environmental determinants of human NK cell diversity revealed by mass cytometry. \emph{Sci. Transl. Med.} 5:208ra145.\par\smallskip
+    \href{https://doi.org/10.1038/ncomms14825}{Arvaniti \& Claassen (2017).} Sensitive detection of rare disease-associated cell subsets via representation learning. \emph{Nat. Commun.} 8:14825.\par\smallskip
+    \href{https://doi.org/10.1073/pnas.1408792111}{Bruggner et al. (2014).} Citrus. \emph{PNAS}.\par\smallskip
+    \href{https://www.jmlr.org/papers/v9/vandermaaten08a.html}{van der Maaten \& Hinton (2008).} Visualizing data using t-SNE. \emph{JMLR} 9:2579--2605.\par\smallskip
+    \href{https://arxiv.org/abs/1802.03426}{McInnes, Healy \& Melville (2018/2020).} UMAP. arXiv:1802.03426.\par\smallskip
+    Venna \& Kaski (2001). Neighborhood preservation in nonlinear projection methods. \emph{ICANN}, 485--491.
+    \column{.48\textwidth}
+    \textcolor{Teal}{\textbf{Clustering, lecture material and definitions}}\par\smallskip
+    \href{https://doi.org/10.1038/s41598-019-41695-z}{Traag, Waltman \& van Eck (2019).} From Louvain to Leiden: guaranteeing well-connected communities. \emph{Sci. Rep.} \href{https://creativecommons.org/licenses/by/4.0/}{CC BY 4.0}.\par\smallskip
+    Ulrike von Luxburg (2024). \href{https://www.tml.cs.uni-tuebingen.de/teaching/2024_statistical_learning/downloads_free/vorlesung_main.pdf}{\emph{Statistical Machine Learning}}, slides 840 and 850; cropped figures.\par\smallskip
+    Jakob H. Macke / P. Hennig (2024). \emph{Probabilistic Machine Learning}, Lecture 11, slide 15; adapted derivation, \href{https://creativecommons.org/licenses/by-nc-sa/3.0/}{CC BY-NC-SA 3.0}.\par\smallskip
+    Official documentation: \href{https://scikit-learn.org/stable/}{scikit-learn}, \href{https://docs.scipy.org/doc/scipy/}{SciPy}, \href{https://scanpy.readthedocs.io/en/stable/api/generated/scanpy.tl.leiden.html}{Scanpy / Leiden}, \href{https://umap-learn.readthedocs.io/en/latest/how_umap_works.html}{UMAP}.\par\smallskip
+    \href{https://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/iqrange.htm}{NIST: interquartile range}.\par\smallskip
+    \textcolor{Muted}{Project results: saved notebooks and exported tables; experiment settings and figure attributions accompany the slides.}
+  \end{columns}
+\end{frame}
+
+% Gemeinsamer Anhang: erst nach allen Hauptfolien und References.
+\appendix
+
+% Backupfolien: Aufgabe 2
+\renewcommand{\slidelabel}{SSBI · Task 2 · Backup}
+\section{Backup: Task 2}
+\begin{frame}{Backup: Data Transformation and z-scoring}
+  \begin{columns}[c,onlytextwidth]
+  \begin{column}{.58\textwidth}
+    \includegraphics[width=\linewidth]{aufgabe_02/figures/arcsinh.pdf}
+  \end{column}
+  \begin{column}{.38\textwidth}
+    \textcolor{Teal}{\large The arcsinh transformation}
+    \[a_{ij}=\operatorname{asinh}(x_{ij}/5)\]
+    Approximately linear near zero; compresses large magnitudes and accepts negative background values.\par\medskip
+    \textcolor{Teal}{\large Marker-wise z-scoring}
+    \[z_{ij}=\frac{a_{ij}-\bar a_j}{s_j}\]
+    Prevents large marker scales from dominating distances. All 37 markers pass the variance (0.05) filter.
+  \end{column}
+  \end{columns}
+  \source{cofactor 5; pooled scaling across the balanced exploratory sample. Curve is a mathematical illustration.}
+\end{frame}
+
+\begin{frame}{Backup: how t-SNE turns neighbours into a map}
+  \begin{columns}[T,onlytextwidth]
+  \begin{column}{.40\textwidth}
+    \small
+    \setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}
+    High-D affinity (probability that $j$ is a neighbour of $i$):
+    \[p_{ij}\propto\exp(-\lVert x_i-x_j\rVert^2/2\sigma_i^2)\]
+    Low-D affinity (heavy-tailed, avoids "crowding"):
+    \[q_{ij}\propto(1+\lVert y_i-y_j\rVert^2)^{-1}\]
+    Optimisation moves points in 2D until $q_{ij}$ matches $p_{ij}$ as closely as possible (minimises $\mathrm{KL}(P\Vert Q)$).\par\smallskip
+    $\sigma_i$ is tuned per point so its affinities imply the chosen perplexity.
+  \end{column}
+  \begin{column}{.56\textwidth}
+    \scriptsize
+    \begin{tabular}{@{}>{\raggedright\arraybackslash}p{.32\linewidth}@{\hspace{2mm}}>{\raggedright\arraybackslash}p{\dimexpr.68\linewidth-2mm\relax}@{}}\toprule
+      \textbf{perplexity} & swept (5--100); effective neighbourhood size -- see main slide.\\
+      \textbf{init = pca} & starts from the PCA layout instead of random noise: more reproducible, avoids poor local optima.\\
+      \textbf{learning rate = auto} & optimiser step size; scikit-learn scales it with sample size.\\
+      \textbf{early exagg. = 12} & temporarily inflates high-D affinities early on, so initial clusters separate before fine positioning.\\
+      \textbf{angle = 0.5} & Barnes--Hut speed/accuracy trade-off; a numerical setting, not a property of the data.\\
+      \textbf{max\_iter = 750} & fixed iteration budget -- not itself a convergence check (see caveat below).\\\bottomrule
+    \end{tabular}
+  \end{column}
+  \end{columns}
+  \source{van der Maaten \& Hinton (2008); scikit-learn TSNE documentation. A fixed iteration count alone does not confirm convergence. Defaults refer to the documented scikit-learn 1.9 environment.}
+\end{frame}
+
+\begin{frame}{Backup: kNN preservation (R)}
+  Let $N_i^X(k)$, $N_i^Y(k)$ be the $k$ nearest neighbours of cell $i$ in the high-D
+  reference $X$ and the embedding $Y$ (excluding itself).
+  \[
+    R(k)=\frac{1}{n}\sum_{i=1}^n\frac{|N_i^X(k)\cap N_i^Y(k)|}{k}
+  \]
+  \small Symmetric; counts exact shared identities, not just "close enough."\par\medskip
+  \textcolor{Teal}{\textbf{What $k$ controls.}} How many neighbours count as "local." Small $k$
+  is a strict test of fine-grained ordering; large $k$ is a looser test that tolerates more
+  reshuffling and starts to resemble cluster-membership agreement rather than precise
+  neighbour identity.\par\smallskip
+  \textcolor{Teal}{\textbf{Why $k=15$ here.}} Fixed throughout to match the neighbourhood scale
+  explored in the UMAP sweep (\texttt{n\_neighbors} 5--50) and sits within the commonly used
+  10--30 range for trustworthiness-style scores at this dataset size.\par\medskip
+  \textbf{Example:} ten shared neighbours out of fifteen contribute $10/15$.\par\smallskip
+  \source{Venna \& Kaski (2001); scikit-learn NearestNeighbors documentation. Full-sample scores average over cells; equal cells per donor give equal donor weight.}
+\end{frame}
+
+\begin{frame}{Backup: Trustworthiness (T)}
+  Using the same $k=15$ and the same neighbour sets $N_i^X(k)$, $N_i^Y(k)$ as $R$:
+  \[
+    T(k)=1-\frac{2}{nk(2n-3k-1)}\sum_i\sum_{j\in N_i^Y(k)\setminus N_i^X(k)}(r_X(i,j)-k)
+  \]
+  \small Penalises \emph{false} low-D neighbours (points that look close in the embedding but
+  weren't close in the reference) according to how far out of the true top-$k$ they actually
+  ranked. Unlike $R$, direction matters here: $T$ only punishes false positives, not missed
+  true neighbours.\par\medskip
+  \textbf{Example:} a false neighbour originally ranked 16th (just outside the true top-15)
+  contributes only $(16-15)=1$ to the penalty; one ranked 500th contributes 485 -- a much larger
+  embedding error is penalised much more heavily.
+  \source{Venna \& Kaski (2001); scikit-learn trustworthiness documentation. Here $k=15$, matching $R$.}
+\end{frame}
+
+\begin{frame}{Backup: how UMAP constructs and embeds a weighted graph}
+  \small
+  \[w_{j|i}=\exp\!\left[-\frac{\max(0,d(x_i,x_j)-\rho_i)}{\sigma_i}\right],\qquad
+    w_{ij}=w_{j|i}+w_{i|j}-w_{j|i}w_{i|j}.\]
+  Offset $\rho_i$ and scale $\sigma_i$ adapt to local density; directed neighbourhoods are combined into symmetric weights.\par
+  \[v_{ij}=(1+a\lVert y_i-y_j\rVert^{2b})^{-1},\qquad
+    L\sim-\sum_{i<j}\{w_{ij}\log v_{ij}+(1-w_{ij})\log(1-v_{ij})\}.\]
+  Sampled updates balance attraction and repulsion. The parameters $a,b$ depend on min\_dist and spread.\par\smallskip
+  \begin{tabular}{lp{.67\textwidth}}\toprule
+    Swept & n\_neighbors: 5, 15, 30, 50; min\_dist: 0, 0.1, 0.3, 0.5.\\
+    Fixed/default & 2 dimensions, seed 42, Euclidean metric, spectral initialisation, spread 1.\\\bottomrule
+  \end{tabular}\par\smallskip
+  Larger neighbourhoods change the scale of the graph; larger min\_dist discourages tight packing. Neither guarantees accurate global distances.
+  \source{McInnes, Healy \& Melville (2018/2020); official UMAP parameter and algorithm documentation. Equations describe the conceptual objective, not every optimisation approximation.}
+\end{frame}
+
+\begin{frame}{Backup: how UMAP constructs and embeds a weighted graph}
+  \footnotesize\compactmath
+  \textcolor{Teal}{\textbf{Step 1 -- build the high-D graph.}}
+  \[w_{j|i}=\exp\!\left[-\frac{\max(0,d(x_i,x_j)-\rho_i)}{\sigma_i}\right],\qquad
+    w_{ij}=w_{j|i}+w_{i|j}-w_{j|i}w_{i|j}.\]
+  Offset $\rho_i$ and scale $\sigma_i$ \textbf{adapt to local density}; directed neighbourhoods
+  are combined into symmetric edge weights.\par\smallskip
+  \textcolor{Teal}{\textbf{Step 2 -- fit a low-D layout to match it.}}
+  \[v_{ij}=(1+a\lVert y_i-y_j\rVert^{2b})^{-1},\qquad
+    L\sim-\sum_{i<j}\{w_{ij}\log v_{ij}+(1-w_{ij})\log(1-v_{ij})\}.\]
+  Sampled updates balance \textbf{attraction} (true neighbours pulled together) and
+  \textbf{repulsion} (non-neighbours pushed apart). $a,b$ are fit automatically from
+  \texttt{min\_dist}/\texttt{spread}, not set directly.\par\smallskip
+  \begin{tabular}{lp{.67\textwidth}}\toprule
+    \textcolor{Teal}{Swept} & \textbf{n\_neighbors}: 5, 15, 30, 50; \textbf{min\_dist}: 0, 0.1, 0.3, 0.5.\\
+    \textcolor{Teal}{Fixed/default} & 2 dimensions, seed 42, Euclidean metric, spectral initialisation, spread 1.\\\bottomrule
+  \end{tabular}\par\smallskip
+  Larger neighbourhoods change the \textbf{scale} of the graph; larger \texttt{min\_dist}
+  discourages tight packing. Neither guarantees accurate global distances.
+  \source{McInnes, Healy \& Melville (2018/2020); official UMAP parameter and algorithm documentation. Equations describe the conceptual objective, not every optimisation approximation.}
+\end{frame}
+
+\begin{frame}{Backup: UMAP sweep, 5 and 15 neighbours}
+  \centering\includegraphics[width=.96\textwidth,height=60mm,keepaspectratio]{aufgabe_02/figures/umap_grid_1.pdf}
+\source{Rows 1--2 of the original 16-panel grid. Same 5,000 cells, 29 PCs, seed 42;  Visual changes are parameter effects within one run, not a stability study across seeds.}
+\end{frame}
+
+\begin{frame}{Backup: UMAP sweep, 30 and 50 neighbours}
+  \centering\includegraphics[width=.96\textwidth,height=60mm,keepaspectratio]{aufgabe_02/figures/umap_grid_2.pdf}
+\source{Rows 3--4 of the original 16-panel grid. Same 5,000 cells, 29 PCs, seed 42; Visual changes are parameter effects within one run, not a stability study across seeds.}
+\end{frame}
+
+\begin{frame}{Backup: the same markers on the t-SNE map}
+  \centering\includegraphics[width=.98\textwidth,height=56mm,keepaspectratio]{aufgabe_02/figures/tsne_markers.png}
+\source{40,000 balanced cells. Arcsinh-transformed marker values; colour limits use the 1st/99th percentiles separately per marker. A bright region does not establish an infected-cell population.}
+\end{frame}
+
+\begin{frame}{Backup: marker expression on the UMAP map}
+  \centering\includegraphics[width=.98\textwidth,height=56mm,keepaspectratio]{aufgabe_02/figures/umap_markers.png}
+\source{40,000 balanced cells. Arcsinh-transformed marker values; colour limits use the 1st/99th percentiles separately per marker. A bright region does not establish an infected-cell population.}
+\end{frame}
+
+\begin{frame}{Backup: Shepard diagram to compare distances}
+  \centering
+  \includegraphics[
+    width=0.88\textwidth,
+    height=48mm,
+    keepaspectratio
+  ]{aufgabe_02/figures/shepard.png}
+  \vspace{2mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \scriptsize
+      Each point represents one sampled cell pair. The \textbf{horizontal axis} is the distance in the 29-dimensional PCA reference space. \par \smallskip
+      The \textbf{vertical axis} is the distance in the two-dimensional embedding.
+      Pearson correlation measures agreement in relative distances.
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \scriptsize
+      UMAP's loss doesn't optimize for preserving absolute distances at all, and \texttt{min\_dist}=0 actively encourages tight packing, so many far-apart high-D pairs get compressed into a similar low-D distance ceiling $\rightarrow$ lowest $r_d$ of the three
+    \end{column}
+  \end{columns}
+  \source{Fixed 2,000-cell sample; 29-PC reference space; Pearson correlation of pairwise distances.}
+\end{frame}
+
+\begin{frame}{Backup: Procrustes aligns the maps before measuring mismatch}
+  Centre and normalise each coordinate matrix to unit Frobenius norm:
+  \[ A_c=\frac{A-\bar A}{\lVert A-\bar A\rVert_F},\qquad B_c=\frac{B-\bar B}{\lVert B-\bar B\rVert_F}.\]
+  \[M^2=\min_{s,Q:\,Q^\top Q=I}\lVert A_c-sB_cQ\rVert_F^2.\]
+  \smallskip
+  \begin{itemize}
+    \item Rows must correspond to exactly the same cells in the same order.
+    \item Rotation/reflection, translation and uniform scaling do not count as biological differences.
+    \item Lower disparity means a closer global fit after alignment; it does not establish local fidelity or class separation.
+    \item Nonlinear deformations can change neighbour identities and global shape differently.
+  \end{itemize}
+  \source{SciPy scipy.spatial.procrustes. With its normalisation and optimal scaling, the scalar disparity is symmetric even though the returned transformed matrices have different normalisation conventions.}
+\end{frame}
+
+\begin{frame}[shrink=10]{Backup: Procrustes aligns the maps before measuring mismatch}
+  \footnotesize\compactmath
+  Centre and normalise each coordinate matrix to unit Frobenius norm:
+  \[ A_c=\frac{A-\bar A}{\lVert A-\bar A\rVert_F},\qquad B_c=\frac{B-\bar B}{\lVert B-\bar B\rVert_F}.\]
+  {\scriptsize $\lVert M\rVert_F=\sqrt{\sum_{ij}M_{ij}^2}$ -- treat the matrix as one long list of coordinates and take its ordinary (Euclidean) length; this just fixes overall "size" so only shape, not scale, is being compared.}\par\smallskip
+  \[M^2=\min_{s,Q:\,Q^\top Q=I}\lVert A_c-sB_cQ\rVert_F^2.\]
+  \smallskip
+  \begin{itemize}
+    \footnotesize\setlength{\itemsep}{2pt}
+    \item Rows must correspond to exactly the same cells in the same order.
+    \item Rotation/reflection, translation and uniform scaling do not count as biological differences.
+    \item Lower disparity means a closer global fit after alignment; it does \textbf{not} establish local fidelity (whether each point's \emph{immediate} neighbours are correctly placed -- that's what $T$/$R$ measure instead) or class separation.
+    \item Nonlinear deformations can change neighbour identities and global shape differently.
+  \end{itemize}
+  \source{SciPy scipy.spatial.procrustes. With its normalisation and optimal scaling, the scalar disparity is symmetric even though the returned transformed matrices have different normalisation conventions.}
+\end{frame}
+
+% Backupfolien: Aufgabe 3
+\renewcommand{\slidelabel}{SSBI · Task 3 · Backup}
+\section{Backup: Task 3}
+\begin{frame}{Backup: Leiden 1/2: the graph and the objective}
+  \begin{columns}[T,onlytextwidth]
+    \column{.48\textwidth}
+    \textbf{Build a graph from marker profiles}
+    \begin{itemize}
+      \item Each cell becomes a node.
+      \item Find neighbouring cells in the 37-dimensional marker space.
+      \item Weighted edges represent local similarity between cells.
+    \end{itemize}
+    \small Neighbour count controls the scale of the graph. Our selected graph uses 30 neighbours.
+    \column{.48\textwidth}
+    \textbf{Find communities in that graph}\par
+    Leiden searches for a partition with a high graph-quality score. \par\vspace{3mm}
+    In our setup, the score rewards more internal connection weight than expected from node connectivity.\par\vspace{3mm}
+    \small Resolution controls the penalty for the expected connections. Higher values usually yield smaller communities.
+  \end{columns}
+  \takeaway{We set graph and resolution parameters; the number of clusters emerges. Here: resolution 1.2, 18 groups.}
+  \source{Traag, Waltman \& van Eck (2019), pp. 1--2; our notebook uses Scanpy / leidenalg. Graph construction precedes Leiden. The selected objective is the configuration-model (RB) objective, not CPM.}
+\end{frame}
+
+\begin{frame}{Backup: Leiden 2/2: move, refine and aggregate}
+  \begin{columns}[T,onlytextwidth]
+    \column{.56\textwidth}
+    \includegraphics[width=\linewidth,height=47mm,keepaspectratio]{figures/leiden_algorithm.pdf}
+    \column{.41\textwidth}\small
+    \textbf{1. Move nodes (a--b)}\par
+    Start with one group per node. Move nodes when this improves the quality score.\par\vspace{2mm}
+    \textbf{2. Refine groups (b--c)}\par
+    Within each group, rebuild connected subgroups. Weakly joined parts can stay separate.\par\vspace{2mm}
+    \textbf{3. Aggregate (c--d)}\par
+    Each refined subgroup becomes a node. Repeat on the smaller graph (d--f).
+  \end{columns}
+  \takeaway{Refinement keeps subgroups available for later moves, instead of permanently collapsing an entire group. Improvement from Louvain.}
+  \source{Figure 3, cropped: Traag, Waltman \& van Eck (2019), \href{https://doi.org/10.1038/s41598-019-41695-z}{From Louvain to Leiden}, \href{https://creativecommons.org/licenses/by/4.0/}{CC BY 4.0}.}
+\end{frame}
+
+\begin{frame}{Backup: K-means initialisation and Ward merges}
+  \begin{columns}[T,onlytextwidth]
+    \column{.49\textwidth}
+    \textbf{K-means++ and repeated starts}
+    \small
+    \begin{itemize}
+      \item Standard k-means++ samples centres in proportion to squared distance from existing centres.
+      \item scikit-learn uses a greedy variant with several candidates at each step.
+      \item Our \texttt{n\_init=10} retains the run with the lowest inertia.
+      \item A fixed seed reproduces a run. Our resampling also changes the seed.
+    \end{itemize}
+    \column{.47\textwidth}
+    \textbf{Ward minimises the increase in SSE}
+    \[
+      \Delta(A,B)=\frac{n_A n_B}{n_A+n_B}
+      \lVert\mu_A-\mu_B\rVert^2
+    \]
+    \small Ward prefers merges that add little within-cluster variation.\par
+    \vspace{3mm}
+    $n_A,n_B$: numbers of cells in groups $A,B$. $\mu_A,\mu_B$: their mean vectors. $\Delta$: added squared error.\par\vspace{2mm} Ward only merges. K-means can reassign cells.
+  \end{columns}
+  \source{scikit-learn KMeans and SciPy linkage documentation. SSE = sum of squared errors.}
+\end{frame}
+
+\begin{frame}{Backup: geometry and the singleton example}
+  \begin{columns}[T,onlytextwidth]
+    \column{.49\textwidth}
+    \textbf{Silhouette}
+    \[
+      s(i)=\frac{b(i)-a(i)}{\max\{a(i),b(i)\}}
+    \]
+    \small $a(i)$: mean distance to other cells in its cluster.\par
+    $b(i)$: smallest mean distance to another cluster.\par
+    \vspace{2mm}
+    Resolving a nearby subgroup can reduce silhouette even if the subgroup is biologically meaningful. This is a possibility, not an observed comparison in our run.
+    \column{.47\textwidth}
+    \textbf{Davies--Bouldin with cluster and singleton}
+    \[
+      S_c=\frac{1}{n_c}\sum_{x_i\in C_c}\lVert x_i-\mu_c\rVert
+    \]
+    \[
+      DB=\frac{S_{\rm large}+0}{\lVert\mu_{\rm large}-x_{\rm singleton}\rVert}
+    \]
+    \small $C_c$: cluster $c$; $n_c$: its cell count. $x_i$: a cell vector; $\mu_c$: the cluster mean.\par A distant singleton has zero scatter and can yield a low DB.
+  \end{columns}
+  \source{scikit-learn silhouette and Davies--Bouldin definitions. No claim that silhouette always selects too few clusters, or that DB is neutral across cluster shapes.}
+\end{frame}
+
+\begin{frame}{Backup: sensitivity to the stability cutoff}
+  \small\renewcommand{\arraystretch}{1.4}
+  \begin{tabular}{@{}lrrrrr@{}}
+    \toprule
+    Mean stability cutoff & 0.50 & 0.60 & 0.65 & 0.70 & 0.75\\
+    \midrule
+    K-means: selected clusters & 4 & 4 & 4 & 4 & 4\\
+    Leiden: selected clusters & 18 & 18 & 18 & 7 & 6\\
+    Ward: selected clusters & 6 & 6 & 2 & --- & ---\\
+    \bottomrule
+  \end{tabular}
+  \vspace{2mm}\par
+  \textbf{The cutoff affects the chosen resolution.}\par
+  K-means remains at four clusters over these tested thresholds.\par
+  Stricter thresholds select coarser Leiden solutions.
+  \vspace{3mm}\par
+  ``---'' means no eligible configuration. Single linkage remains at $k=2$ throughout.
+  \takeaway{The 0.6 threshold is a transparent heuristic. Sensitivity analysis shows which conclusions depend on it.}
+  \source{\texttt{notebooks/03\_clustering.ipynb}, 7 September 2026. Initial seed 42; 10 K-means starts; 44 reference and 440 subsampling fits. $k\in\{2,3,4,6,8,10,12\}$; neighbours $\in\{10,30,60\}$; resolutions $\in\{0.3,0.7,1.2\}$.}
+\end{frame}
+
+\begin{frame}{Backup: from K-means loss to Gaussian likelihood}
+  \small\setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}\setlength{\jot}{1pt}
+  \begin{align*}
+    (r,m)
+    &=\arg\min_{r,m}\sum_{i=1}^{N}\sum_{k=1}^{K}r_{ik}\lVert x_i-m_k\rVert^2\\[1mm]
+    &=\arg\max_{r,m}\left[\sum_{i=1}^{N}\sum_{k=1}^{K}r_{ik}
+       \left(-\frac{\lVert x_i-m_k\rVert^2}{2\sigma^2}\right)+\mathrm{const.}\right]\\[1mm]
+    &=\arg\max_{r,m}\prod_{i=1}^{N}\sum_{k=1}^{K}r_{ik}
+       \frac{\exp\!\left(-\lVert x_i-m_k\rVert^2/(2\sigma^2)\right)}{Z}\\[1mm]
+    &=\arg\max_{r,m}\prod_{i=1}^{N}\sum_{k=1}^{K}r_{ik}\mathcal{N}(x_i;m_k,\sigma^2 I_d)\\[1mm]
+    &=\arg\max_{r,m}p(X\mid m,r).
+  \end{align*}
+  \source{Adapted from Macke / Hennig, Probabilistic Machine Learning (2024), Lecture 11, slide 15, \href{https://creativecommons.org/licenses/by-nc-sa/3.0/}{CC BY-NC-SA 3.0}. Binary one-hot $r$; fixed shared $\sigma^2>0$; $Z=(2\pi\sigma^2)^{d/2}$. Component index corrected to $m_k$.}
+\end{frame}
+
+% Backupfolien: Aufgabe 4
+\renewcommand{\slidelabel}{SSBI · Task 4 · Backup}
+\section{Backup: Task 4}
+\begin{frame}{Backup: hyperparameters and paper deviations}
+  \relax
+  {\fontsize{8.3}{10.2}\selectfont
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{18mm}>{\raggedright\arraybackslash}p{65mm}>{\raggedright\arraybackslash}p{54mm}@{}}\toprule
+    & \textbf{Implemented settings} & \textbf{Selection / paper relationship}\\\midrule
+    \textbf{CellCNN} & 3,000 cells/input; 200 inputs/donor; 3/4/5 filters; top 1\%; Adam 0.01; batch 128; L2 $10^{-4}$; no dropout; $\leq100$ epochs; patience 5.
+    & Best validation accuracy; ties: AUC, loss, fewer filters, fold order. Fixed search; five rather than one test input. Selected net uses 9/10 donors.\\
+    \textbf{Citrus} & 10,000 cells/donor; Ward; 37 ArcSinh markers; minimum cluster fraction 0.0005; L1 logistic; cv.min; no marker z-scoring.
+    & 10,000 cells/30 repeats versus paper's 20,000/100. Inner trees fitted per fold; original lambda grid uses all 14 outer training donors. Final fit on 14 donors.\\
+    \textbf{SVM} & 10,000 cells/training donor; train-only scaler; L2 squared hinge; loss weight $C\in\{0.01,0.1,1\}$; top 1\% of full-test margins (count rounded up).
+    & Maximize mean inner AUC; ties: smaller $C$. Inner OOF threshold maximizes sensitivity + specificity. Final fit on 14 donors. Top-1-\% aggregation is our adaptation.\\\bottomrule
+  \end{tabular}}\par
+  \source{\papersource\ \citrussource}
+\end{frame}
+
+\begin{frame}{Backup: SVM approach 1 --- training the cell scorer}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.45\textwidth}
+      \eyebrow{Training data and scaling}
+      \small\compactmath Sample 10,000 cells per training donor without replacement, with fixed seeds. Each cell inherits its donor's label. Fit a shared scaler on these training cells only.
+      \[a_{ij}=\operatorname{asinh}(x_{ij}/5),\qquad
+        z_{ij}=\frac{a_{ij}-\mu_j}{\sigma_j}\]
+      {\scriptsize $\boldsymbol{i}$: cell; $\boldsymbol{j}$: marker; $\boldsymbol{x_{ij}}$: raw value; $\boldsymbol{a_{ij}}$: transformed value; 5: cofactor; $\boldsymbol{\mu_j,\sigma_j}$: training mean and standard deviation; $\boldsymbol{z_{ij}}$: standardized value.}\par\medskip
+      \small Equal cell counts give donors equal weight in the training loss. No extra class weighting.\par\smallskip
+      {\scriptsize Labels provide weak cell supervision. The 37 markers yield 37 learned weights and one intercept.}
+    \end{column}
+    \begin{column}{.51\textwidth}
+      \eyebrow{Linear score and squared-hinge loss}
+      \[m_i=\sum\nolimits_{j=1}^{37}w_jz_{ij}+b\]
+      \[\min\nolimits_{w,b}\left[\tfrac12(\|w\|^2+b^2)
+        +C\sum\nolimits_{i=1}^{N}\max(0,1-y_i m_i)^2\right]\]
+      {\scriptsize $\boldsymbol{w}$: vector of marker weights $w_j$; $\boldsymbol{b}$: intercept; $\boldsymbol{m_i}$: cell margin; $\boldsymbol{N}$: training-cell count; $\boldsymbol{y_i}$: donor label, $-1$ for CMV$-$ and $+1$ for CMV$+$.}\par\smallskip
+      {\scriptsize $\boldsymbol{C}$: loss weight; $\boldsymbol{\|w\|^2}$: sum of squared weights; $\boldsymbol{\min_{w,b}}$: optimize weights and intercept. The squared maximum is the squared-hinge loss.}\par\smallskip
+      \small Smaller $\boldsymbol{C}$: more regularization. Larger $\boldsymbol{C}$: more weight on fitting labels.\par\smallskip
+      {\scriptsize \texttt{LinearSVC} with \texttt{intercept\_scaling=1} also penalizes $b$. No probability calibration.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: SVM approach 2 --- model selection and test}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{1. Choose settings within 14 donors}
+      \small Use 3 inner donor folds. Test loss weights $C\in\{0.01,0.1,1\}$ on identical cell samples and scalers within each fold.\par\smallskip
+      Highest mean inner donor ROC-AUC wins; ties favour smaller $C$. For that $C$, collect one out-of-fold score per training donor.
+      \[J(\tau)=\operatorname{sens}(\tau)+\operatorname{spec}(\tau)-1\]
+      {\scriptsize $\boldsymbol{\tau}$: candidate donor threshold; $\boldsymbol{J}$: Youden index; $\boldsymbol{\operatorname{sens}}$: fraction of CMV$+$ donors predicted positive; $\boldsymbol{\operatorname{spec}}$: fraction of CMV$-$ donors predicted negative.}\par\smallskip
+      \small Maximize $J$ over finite ROC thresholds; ties choose the highest offered optimum.
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{2. Refit, then evaluate six test donors}
+      \small Resample 10,000 cells from each of the 14 training donors; fit a new scaler and SVM. Keep the inner-selected threshold.
+      \[k_d=\lceil0.01N_d\rceil,\qquad
+        s_d=\frac{1}{k_d}\sum_{i\in I_d}m_i\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{N_d}$: its full cell count; $\boldsymbol{k_d}$: count rounded up; $\boldsymbol{I_d}$: top-scoring cell indices; $\boldsymbol{i}$: cell; $\boldsymbol{m_i}$: margin; $\boldsymbol{s_d}$: donor score.}\par\smallskip
+      \small Predict CMV$+$ when $s_d\geq\tau$. AUC uses continuous scores; balanced accuracy uses thresholded labels.\par\medskip
+      {\scriptsize The uncalibrated threshold transfers from inner models to a refitted model. Changes in score scale can affect thresholded predictions. Outer test donors choose neither $C$ nor $\tau$.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: CellCNN and SVM across 100 splits}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.57\textwidth}
+      \includegraphics[width=\linewidth]{aufgaben_04_05/figures/performance_100.pdf}
+    \end{column}
+    \begin{column}{.40\textwidth}
+      \eyebrow{Separate two-method comparison}
+      {\fontsize{8}{10}\selectfont\input{aufgaben_04_05/data/performance_100}}\par\medskip
+      \small Medians across splits 0--99.\par
+      AUC: ROC-AUC; AP: average precision; BA: balanced accuracy.\par\medskip
+      600 held-out donor predictions per method, from the same 20 donors.
+    \end{column}
+  \end{columns}
+  \takeaway{Both median AUCs remain 0.875. More splits do not add independent donors.}
+  \par\smallskip{\scriptsize Boxes: Q1--Q3; dots: individual splits; dashed line: AUC 0.5.}
+\end{frame}
+
+% Backupfolien: Aufgabe 5
+\renewcommand{\slidelabel}{SSBI · Task 5 · Backup}
+\section{Backup: Task 5}
+\begin{frame}{Backup: CellCNN subset selection in detail}
+  \small\compactmath
+  {\small All quantities refer to one saved model and its original training reference.}\par\medskip
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{Response and reference maximum}
+      \[r_{if}=\max(0,w_f^\top z_i+b_f)\]
+      \[M_f=\max_{\ell\in T}r_{\ell f},\qquad q_{if}=r_{if}/M_f\]
+      {\scriptsize $\boldsymbol{i,\ell}$: cells; $\boldsymbol{f}$: filter; $\boldsymbol{z_i}$: 37 markers standardized by the saved scaler; $\boldsymbol{w_f}$: weights; $\boldsymbol{b_f}$: bias; $\boldsymbol{r_{if}}$: ReLU response; $\boldsymbol{w_f^\top z_i}$: weighted sum.}\par\smallskip
+      {\scriptsize $\boldsymbol{T}$: reference cells; $\boldsymbol{M_f}$: maximum response; $\boldsymbol{q_{if}}$: normalized score, defined for $M_f>0$.}\par\medskip
+      \small Reconstruct \textbf{20,000 cells per actual training donor} with the original seed: 9 or 10 donors, hence 180,000 or 200,000 reference cells.
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{Direction, subset and centroid}
+      \[\Delta_f=v_{f,+}-v_{f,-}\]
+      \[S_f=\{i\in T:q_{if}>0.5\},\qquad
+        c_f=\frac{1}{|S_f|}\sum_{i\in S_f}a_i\]
+      {\scriptsize $\boldsymbol{v_{f,+},v_{f,-}}$: weights from filter $f$ to the CMV$+$/CMV$-$ outputs; $\boldsymbol{\Delta_f}$: output contrast. Its sign gives the direction.}\par\smallskip
+      {\scriptsize $\boldsymbol{S_f}$: selected reference cells; $\boldsymbol{|S_f|}$: their count; $\boldsymbol{a_i}$: ArcSinh marker vector; $\boldsymbol{c_f}$: mean marker vector (centroid).}\par\medskip
+      \small Skip filters with zero maximum or zero output contrast. Equality at half-maximum is excluded.\par\smallskip
+      {\scriptsize Selected cells have equal weight; donor contributions vary. New cells can score above 1.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Citrus subset selection in detail}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{Which frequency features matter?}
+      \[\eta_d=\beta_0+\sum_j\beta_j h_{dj}\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{j}$: cluster; $\boldsymbol{h_{dj}}$: cluster-frequency feature; $\boldsymbol{\beta_0}$: intercept; $\boldsymbol{\beta_j}$: coefficient; $\boldsymbol{\eta_d}$: linear predictor for CMV$+$.}\par\smallskip
+      \small\compactmath \texttt{glmnet} standardizes frequency features internally.
+      \[q_j=|\beta_j|>10^{-10}\]
+      {\scriptsize $\boldsymbol{q_j}$: absolute coefficient; $\boldsymbol{10^{-10}}$: numerical zero tolerance.}\par\smallskip
+      \small Retain every effective cluster. A positive coefficient raises the CMV$+$ predictor as frequency increases, with other features fixed; a negative coefficient lowers it.
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{What the exports preserve}
+      \[c_j=\frac{1}{|A_j|}\sum_{i\in A_j}a_i\]
+      {\scriptsize $\boldsymbol{A_j}$: training cells belonging to cluster $j$; $\boldsymbol{|A_j|}$: their count; $\boldsymbol{i}$: cell; $\boldsymbol{a_i}$: ArcSinh marker vector; $\boldsymbol{c_j}$: saved cluster centroid.}\par\medskip
+      \small Training uses 10,000 cells/donor and retains clusters from 0.05\% of training cells. Parent and child clusters can share cells.\par\medskip
+      Stored centroids and coefficients do not preserve the full tree and cell memberships needed to assign arbitrary map cells.\par\smallskip
+      {\scriptsize Assigning cells to the nearest centroid would introduce a different selection rule. Null models remain in the 30-split recurrence denominator.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: SVM cell selection and recurrence}
+  \small\compactmath
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.48\textwidth}
+      \eyebrow{Exact selection within a test donor}
+      \[k_d=\lceil0.01N_d\rceil,\qquad t_{is}=m_{is}-\tau_s\]
+      {\scriptsize $\boldsymbol{d}$: donor; $\boldsymbol{s}$: outer split; $\boldsymbol{i}$: cell; $\boldsymbol{N_d}$: full cell count; $\boldsymbol{k_d}$: count rounded up; $\boldsymbol{m_{is}}$: cell margin; $\boldsymbol{\tau_s}$: learned donor threshold; $\boldsymbol{t_{is}}$: centered score.}\par\medskip
+      \small Let $\boldsymbol{I_{ds}}$ contain the $k_d$ highest-scoring cell indices. Break boundary ties by original FCS event number.\par\medskip
+      Within $\boldsymbol{I_{ds}}$: positive if $t_{is}>0$, negative if $t_{is}<0$, neither if $t_{is}=0$. Cells outside $I_{ds}$ are unselected.\par\medskip
+      {\scriptsize Example: 101 cells give 2 top cells. Margins 9 and 8 at threshold 8.5 give one positive and one negative selection.}
+    \end{column}
+    \begin{column}{.48\textwidth}
+      \eyebrow{Repeat across that donor's test visits}
+      \[f_i^+=\frac{n_i^+}{|\mathcal T_d|}\]
+      {\scriptsize $\boldsymbol{\mathcal T_d}$: all splits testing donor $d$; $\boldsymbol{|\mathcal T_d|}$: their count; $\boldsymbol{n_i^+}$: visits where cell $i$ is in $I_{ds}$ and $t_{is}>0$; $\boldsymbol{f_i^+}$: positive selection frequency.}\par\smallskip
+      \small\compactmath Include visits without selection: 3 positive selections in 8 test visits give 3/8.
+      \[s_{ds}-\tau_s=\frac{1}{k_d}\sum_{i\in I_{ds}}t_{is}\]
+      {\scriptsize $\boldsymbol{s_{ds}}$: mean of the selected cell margins, the donor score in split $s$.}\par\smallskip
+      \small Fixed-selection decomposition of the donor score; no causal cell-removal effect.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: CellCNN --- from cells to one plotted point}
+  \small
+  \eyebrow{Slide \ref{task5-recurrence}: one selected model per split, one subset profile per effective filter}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{1. Reconstruct the training reference}\par
+      20,000 cells per actual inner training donor; 9 or 10 donors give 180,000 or 200,000 reference cells. Reuse the original seed.\par\medskip
+      \textbf{2. Select cells for each filter}\par
+      Apply the saved scaler and filter. Keep responses strictly above half of that filter's reference maximum.\par\medskip
+      \textbf{3. Average the selected marker profiles}\par
+      Average each of the 37 ArcSinh-transformed markers across the selected cells. One filter gives one centroid, carrying its split and filter ID.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \eyebrow{Actual example: split 9, filter 2}
+      \begin{tabular}{@{}lr@{}}\toprule
+        Reference cells & 200,000\\
+        Half-maximum-selected cells & 1,633\\
+        Result & 1 centroid\\\bottomrule
+      \end{tabular}\par\medskip
+      This centroid becomes the representative of G1. The later cell map applies the same filter to a different, 10,000-cell display sample.\par\medskip
+      \textbf{Mean, not median}\par
+      Illustrative values for one marker: 1, 2, 9. Their mean is 4; their median is 2. We use the mean.\par\medskip
+      Across 30 selected models: 7 have 3 filters, 6 have 4, and 17 have 5. Together they yield \textbf{130 subset centroids}.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Citrus --- two levels of clustering}
+  \small
+  \eyebrow{Slide \ref{task5-recurrence}: original cell clusters first, groups of their profiles afterwards}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{1. Cluster cells within each split}\par\smallskip
+      The final Citrus model uses 10,000 cells from each of 14 training donors: \textbf{140,000 cells}.\par\medskip
+      A Ward tree defines cell clusters. L1-logistic regression uses their donor frequencies and retains effective coefficients of either sign.\par\medskip
+      For every selected cluster, average each ArcSinh marker over its training members. This gives \textbf{one centroid per selected cluster}.\par\medskip
+      Across 30 splits: \textbf{123 selected cluster centroids}. Three splits select no effective clusters; they remain in the recurrence denominator.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{2. Group profiles across the splits}\par\smallskip
+      Compare the 123 centroids in the common standardized marker space. Similar profiles form \textbf{17 groups}; 5 occur in at least 6 splits and are shown.\par\medskip
+      Each coloured point still belongs to an original cluster in a specific split. A colour identifies its profile group.\par\medskip
+      \eyebrow{Actual example: Citrus G1}
+      \textbf{28 cluster centroids} from \textbf{18 splits}.\par\smallskip
+      Its star is one existing member: cluster 139891 from split 25. It is not an average of all 28 cluster profiles.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Colours, stars and overlapping centroids}
+  \small
+  \eyebrow{Slide \ref{task5-recurrence}: grouping and display are separate operations}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Colour: a group of similar profiles}\par
+      Use all 37 markers on the shared exploratory z-scale. Group separately for each method with cosine distance, average linkage and a cut at 0.4.\par\smallskip
+      Average linkage averages pairwise distances between groups. It does not replace their members with one mean profile.\par\smallskip
+      Coefficient signs are ignored during grouping: a group may be positive, negative or mixed. Show groups present in at least \textbf{6 distinct splits}; each split counts once.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Star: an existing representative}\par
+      Choose the member with the smallest summed cosine distance to its group members. This is the \textbf{medoid}, not a median or a new mean profile.\par\medskip
+      \textbf{Position: the nearest map cell}\par
+      Reuse the Task 2 map: 10,000 cells, 500/donor. Assign each centroid the t-SNE position of its nearest map cell in standardized marker space (Euclidean distance).\par\smallskip
+      Several centroids can share a position. The star need not look central in the 2D map.
+    \end{column}
+  \end{columns}\par\medskip
+  {\scriptsize\renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrrr@{}}\toprule
+    & All centroids & Shown groups & Plotted centroids & Distinct positions\\\midrule
+    CellCNN & 130 & 4 of 15 & 111 & 44\\
+    Citrus & 123 & 5 of 17 & 77 & 52\\\bottomrule
+  \end{tabular}}
+\end{frame}
+
+\begin{frame}{Backup: Individual cells and SVM selection frequency}
+  \small
+  \eyebrow{Slide \ref{task5-selection}: each coloured point is one original cell in the 10,000-cell map}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Left: one CellCNN representative}\par\smallskip
+      Use the G1 representative: \textbf{split 9, filter 2}. Apply its saved scaler and filter to all 10,000 map cells from all 20 donors.\par\medskip
+      Keep the original half-maximum threshold from its training reference; do not recompute a maximum on the map.\par\medskip
+      \textbf{87 map cells} pass and are coloured turquoise. Colour indicates selection, not response strength or recurrence.\par\medskip
+      The centroid used 1,633 selected reference cells. The 87 points are a separate application to the map sample. This is exploratory and includes training donors.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Right: repeated SVM test evaluations}\par\smallskip
+      Each saved SVM scores only its outer test donors. Select the highest 1\% of each \textbf{full donor's} margins; positive selection also requires exceeding the learned donor threshold.\par\medskip
+      Count positive selections of the same map cell across \textbf{all test appearances of its donor}: 4--16 appearances, including those without selection.\par\medskip
+      \textbf{Example:} 3 positive selections in 8 test appearances give a frequency of \textbf{0.375}. Plot that cell once with this colour.\par\medskip
+      \textbf{93 map cells} pass at least once. Zero frequency stays grey; brighter colours mean more consistent positive selection.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Which cells enter each heatmap row?}
+  \small
+  \eyebrow{Slide \ref{task5-markers}: eight displayed markers; all profiles start on the ArcSinh scale}
+  {\renewcommand{\arraystretch}{1.15}\setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{22mm}>{\raggedright\arraybackslash}p{57mm}>{\raggedright\arraybackslash}p{57mm}@{}}\toprule
+    \textbf{Row} & \textbf{Cells used} & \textbf{How the profile is formed}\\\midrule
+    CellCNN G1 & Split 9/filter 2: 1,633 of 200,000 reference cells; 10 inner training donors.
+    & Mean markers of one G1 representative; not all G1 centroids or the 87 map cells.\\\addlinespace[3pt]
+    Citrus G1 & Split 25/cluster 139891: its members within 140,000 training cells from 14 donors.
+    & Mean markers of one G1 representative cluster; not all 28 G1 centroids.\\\addlinespace[3pt]
+    SVM positive OOF & Positively selected cells from full outer test donors in splits 0--29; 168 of 180 visits are nonempty.
+    & Average cells within visits; nonempty visits within donors; then the 20 donors equally.\\\bottomrule
+  \end{tabular}}\par\medskip\vspace{1mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Positive OOF}\par
+      Top-1-\% cells above the learned threshold, scored only when their donor was held out. Both CMV classes can contribute.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Equal donor weights}\par
+      Each donor contributes equally, regardless of cell count or test visits. Use full-donor selections, not just the 93 map cells.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Backup: Reading the shared marker scale}
+  \small
+  \eyebrow{Slide \ref{task5-markers}: expression relative to a common reference, not classifier weights}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.49\textwidth}
+      \textbf{Standardize each mean marker value}
+      \compactmath
+      \[z_j=\frac{c_j-\mu_j}{\sigma_j}\]
+      {\scriptsize\begin{tabular}{@{}l@{\quad}>{\raggedright\arraybackslash}p{.78\linewidth}@{}}
+        $\boldsymbol{j}$: & marker\\
+        $\boldsymbol{c_j}$: & profile's mean ArcSinh marker value\\
+        $\boldsymbol{\mu_j}$: & reference mean of that marker\\
+        $\boldsymbol{\sigma_j}$: & reference standard deviation\\
+        $\boldsymbol{z_j}$: & value shown in the heatmap
+      \end{tabular}}\par\medskip
+      \textbf{The shared reference}\par
+      10,000 map cells, 500 per donor, including both CMV classes. Reuse the stored exploratory scaler from Task 2 for every heatmap row.\par\smallskip
+      The model-specific scalers still govern cell selection; this shared scale is used for display.
+    \end{column}
+    \begin{column}{.47\textwidth}
+      \textbf{Read the number and colour together}\par\smallskip
+      \begin{tabular}{@{}rl@{}}\toprule
+        Value & Relative to the reference mean\\\midrule
+        $-1$ & 1 standard deviation below\\
+        $0$ & Equal to the reference mean\\
+        $+1$ & 1 standard deviation above\\\bottomrule
+      \end{tabular}\par\medskip
+      \textbf{Example: CellCNN NKG2C = 4.6}\par
+      4.6 reference standard deviations above the reference mean; not 4.6 times the expression.\par\medskip
+      Red: above reference. Blue: below. These signs do not describe CMV class or model direction. Zero means reference-level expression.\par\smallskip
+      Mean profiles can hide heterogeneous cells. These values are not cell-type gates.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Backupfolien: Aufgabe 6
+\renewcommand{\slidelabel}{SSBI · Task 6 · Backup}
+\section{Backup: Task 6}
+\begin{frame}{Backup: half-max population frequency}
+  % Retain the exact rule, including M=0 and missing positive-output filters.
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{.54\textwidth}
+      \eyebrow{Filter selection and fixed training threshold}
+      \[\Delta_k=V_{1k}-V_{0k},\qquad k^*=\arg\max_{k:\Delta_k>0}\Delta_k\]
+      \[M=\max_{x\in\text{inner-train cells}}h_{k^*}(x),\qquad t=\tfrac12M\]
+      \[f_i=\frac{\#\{x\in\text{test sample }i:h_{k^*}(x)>t\}}{N_i}\]
+      \small One fixed 20,000-cell sample per test donor. The strict rule also applies when $M=0$.
+    \end{column}
+    \begin{column}{.42\textwidth}
+      \eyebrow{Two population metrics}
+      \[\mathrm{AUC}_{\mathrm{freq}}=\operatorname{AUC}(y_i,f_i)\]
+      \[\mathrm{Effect}=\bar f_{\mathrm{CMV+}}-\bar f_{\mathrm{CMV-}}\]
+      \small Without a positive filter, values remain missing. No post-hoc flipping of AUC direction.\par\medskip
+      Frequency comparisons use \textbf{\CommonFrequencySplits{}} jointly evaluable splits.
+    \end{column}
+  \end{columns}
+  \takeaway{Half-max is cell selection, not clustering; CMV is a donor label, not a cell-type label.}
+  \source{The baseline has no positive-output filter in splits 44 and 84. These two splits are excluded from all common frequency comparisons, but retained for network metrics.}
+\end{frame}
+
+\begin{frame}{Backup: variation in classification across splits}
+  % Keep all three recorded network metrics; report the fixed BA threshold and
+  % distinguish split dispersion from confidence intervals.
+  \relax
+  {\centering\includegraphics[width=\textwidth,height=44mm,keepaspectratio]{aufgabe_06_vergleich/figures/network_metrics.pdf}\par}
+  \takeaway{\ClassificationTakeaway}
+  \source{100 test sets of six donors (2 CMV$+$, 4 CMV$-$). AP: average precision; BA: balanced accuracy at score threshold 0.5. Boxes: Q1--Q3; line: median; dots: splits. Not confidence intervals.}
+\end{frame}
+
+\begin{frame}{Backup: paired differences to CellCNN}
+  % The two panels have different eligible split counts; make both explicit.
+  \relax
+  {\centering\includegraphics[width=.94\textwidth,height=43mm,keepaspectratio]{aufgabe_06_vergleich/figures/paired_differences.pdf}\par}
+  \takeaway{\PairedTakeaway}
+  \source{Network: 100 paired splits; frequency: 98 common paired splits. Difference = model AUC minus CellCNN AUC within the same split. Positive values indicate higher AUC, not independent replication.}
+\end{frame}
+
+\begin{frame}{Backup: population frequencies of individual donors}
+  % One point per donor avoids displaying repeated test visits as independent
+  % individuals; all panels retain the same frequency axis.
+  \relax
+  {\centering\includegraphics[width=\textwidth,height=44mm,keepaspectratio]{aufgabe_06_vergleich/figures/donor_frequencies.pdf}\par}
+  \takeaway{Each donor contributes one point, averaging their available test visits first.}
+  \source{20 donors per model: 9 CMV$+$ (triangles), 11 CMV$-$ (circles); visits restricted to the same 98 common splits. Bars: mean of donor points. The selected filter may differ between splits.}
+\end{frame}
+
+\begin{frame}{Backup: the learnable rank mask}
+  % Keep the complete mathematical definition here; the main slide stays brief.
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{.58\textwidth}
+      \includegraphics[width=\linewidth,height=46mm,keepaspectratio]{aufgabe_06_vergleich/figures/learned_alphas.pdf}
+    \end{column}
+    \begin{column}{.39\textwidth}
+      \eyebrow{Rank fraction, not population frequency}
+      \[\alpha_k=\sigma(\theta_k),\qquad \alpha_k^{(0)}=0.01\]
+      \[m_{rk}=\sigma\!\left(\frac{\alpha_k-q_r}{0.002}\right)\]
+      \small $q_r=(r-\tfrac12)/N$ for descending response ranks. Temperature is fixed. Soft $\alpha=1\%$ is not identical to hard Top-1\%.
+    \end{column}
+  \end{columns}
+  \takeaway{\AlphaTakeaway}
+  \source{100 selected models per variant; all \QuadraticFilterCount{} Quadratic and \PrototypeFilterCount{} Prototype filter parameters are shown. The temperature is not fitted or tuned in this comparison.}
+\end{frame}
+
+\begin{frame}{Backup: scope of the controlled comparison}
+  \begin{itemize}
+    \item \textbf{Quadratic Hard vs.\ Soft:} same cell response and L2 penalty; the pooling function changes.
+    \item \textbf{CellCNN vs.\ Quadratic:} adds a quadratic term and its L2 penalty.
+    \item \textbf{Prototype vs.\ Quadratic:} different geometry, initialization and regularization; not an isolated alpha comparison.
+    % Add the omitted distinction between outer-training and actual fit donors.
+    \item \textbf{No refit:} the selected inner model uses 9--10 training donors, not all 14 outer-training donors.
+    \item \textbf{Limitation:} variants were developed after earlier results on these same 20 donors.
+  \end{itemize}
+  {\small L2 coefficient $10^{-4}$: CellCNN on $W,V$; Quadratic on $W,Q,V$; Prototype on $V$, plus $10^{-3}\operatorname{mean}((a-1)^2)$. No extra alpha or radius penalty.\par}
+  \takeaway{\FinalTakeaway}
+  \source{Nine candidates per outer split: three inner folds and 3/4/5 filters. The same donor splits, sampling seeds, learning rate and early-stopping procedure are used.}
+\end{frame}
+
+\end{document}
