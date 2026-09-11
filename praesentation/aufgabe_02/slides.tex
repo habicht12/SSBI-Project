@@ -118,7 +118,7 @@
   \source{Selected panels; colours indicate donor CMV status.}
 \end{frame}
 
-\begin{frame}{UMAP: neighbourhood scale versus point packing}
+\begin{frame}{UMAP}
   \begin{columns}[c,onlytextwidth]
   \begin{column}{.40\textwidth}
     \centering\includegraphics[height=51mm]{umap_selected.pdf}
@@ -341,21 +341,6 @@
 \begin{frame}{Backup: Procrustes aligns the maps before measuring mismatch}
   Centre and normalise each coordinate matrix to unit Frobenius norm:
   \[ A_c=\frac{A-\bar A}{\lVert A-\bar A\rVert_F},\qquad B_c=\frac{B-\bar B}{\lVert B-\bar B\rVert_F}.\]
-  \[M^2=\min_{s,Q:\,Q^\top Q=I}\lVert A_c-sB_cQ\rVert_F^2.\]
-  \smallskip
-  \begin{itemize}
-    \item Rows must correspond to exactly the same cells in the same order.
-    \item Rotation/reflection, translation and uniform scaling do not count as biological differences.
-    \item Lower disparity means a closer global fit after alignment; it does not establish local fidelity or class separation.
-    \item Nonlinear deformations can change neighbour identities and global shape differently.
-  \end{itemize}
-  \source{SciPy scipy.spatial.procrustes. With its normalisation and optimal scaling, the scalar disparity is symmetric even though the returned transformed matrices have different normalisation conventions.}
-\end{frame}
-
-\begin{frame}{Backup: Procrustes aligns the maps before measuring mismatch}
-  Centre and normalise each coordinate matrix to unit Frobenius norm:
-  \[ A_c=\frac{A-\bar A}{\lVert A-\bar A\rVert_F},\qquad B_c=\frac{B-\bar B}{\lVert B-\bar B\rVert_F}.\]
-  {\scriptsize $\lVert M\rVert_F=\sqrt{\sum_{ij}M_{ij}^2}$ -- treat the matrix as one long list of coordinates and take its ordinary (Euclidean) length; this just fixes overall "size" so only shape, not scale, is being compared.}\par\smallskip
   \[M^2=\min_{s,Q:\,Q^\top Q=I}\lVert A_c-sB_cQ\rVert_F^2.\]
   \smallskip
   \begin{itemize}

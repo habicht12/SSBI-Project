@@ -16,7 +16,7 @@
 
 \begin{document}
 
-\begin{frame}{Four cell-filter models, one evaluation protocol}
+\begin{frame}{Four cell-filter models}
   % Replace the vague "same data" claim with the actual cohort and outer split sizes.
   % Only outer splits are shared: the selected inner fold can differ by model.
   \eyebrow{20 donors · 37 markers · \texttt{gated\_alive}}
@@ -45,6 +45,7 @@
       \includegraphics[width=\linewidth,height=45mm,keepaspectratio]{network_roc.pdf}
     \end{column}
     \begin{column}{.35\textwidth}\scriptsize
+      \textcolor{Teal}{AUC} \\
       \input{data/network_table}
     \end{column}
   \end{columns}
@@ -71,9 +72,8 @@
     \end{column}
     \begin{column}{.39\textwidth}
       \eyebrow{Rank fraction, not population frequency}
-      \[\alpha_k=\sigma(\theta_k)\]
-      \small Starts at 1\%; fixed temperature $\tau=0.002$.\par\medskip
-      Alpha weights cell ranks within a bag. Half-max defines the separately evaluated population.
+      {Alpha weights cell ranks within a bag. 
+      Half-max defines the separately evaluated population.}
     \end{column}
   \end{columns}
   \takeaway{\AlphaTakeaway}
