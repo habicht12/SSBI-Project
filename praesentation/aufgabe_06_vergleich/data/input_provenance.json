@@ -1,0 +1,15 @@
+{
+  "source_branch": "GrHa-learnable-pooling",
+  "source_commit": "1f00db23b0a2fc4a4052d113285feef478fc69c4",
+  "source_directory": "results/tables/task6_comparison_100/comparison",
+  "input_sha256": {
+    "summary.csv": "c05c47a1011bb9b6cf7d100378d7a1183733a3151ad83274bb15d24c0903d6c2",
+    "paired_differences.csv": "76647a534342e6b3fd43477b350803fb56c184b467bc7afbbde7e06d2a6fcd8d",
+    "mean_rocs.csv": "7db9b6090a2dc021db2a871fe46f075d2c1a61bdb62fdd400d219212bff44475",
+    "split_metrics.csv": "07cf53efc0b5c6bf13a256b10523931c960909350c77dcf60f817782fb06e27e",
+    "frequencies.csv": "df21b7fb9cc99280d45ca6b345db5d0dda4dd812dbaefa896fe04e62c18fcfd4",
+    "learned_alphas.csv": "4ac0549d05b2e4c3c736ca269e1e2c6b9214ceb4db38ce49ebc8a9016295d52f"
+  },
+  "source_exporter": "src/task6_comparison.py",
+  "description": "Frozen benchmark tables; English rendering only, no model training."
+}

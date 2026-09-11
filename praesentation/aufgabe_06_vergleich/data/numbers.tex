@@ -1,8 +1,12 @@
+% Generated numerical claims; do not edit independently of the benchmark.
 \newcommand{\CommonFrequencySplits}{98}
-\newcommand{\NetworkTakeaway}{Höchste mittlere Network-AUC: Quadratic Top-1\,\% und Quadratic Soft-$\alpha$ (0,9125).}
-\newcommand{\ClassificationTakeaway}{Höchste Mittelwerte: AP bei Quadratic Top-1\,\% (0,907); BA bei Quadratic Top-1\,\% (0,801).}
-\newcommand{\FrequencyTakeaway}{Höchste mittlere Frequency-AUC: Quadratic Top-1\,\% (0,8610).}
-\newcommand{\EffectTakeaway}{Größter mittlerer Frequency-Effect: CellCNN (0,740 Prozentpunkte).}
-\newcommand{\PairedTakeaway}{Quadratic Soft-$\alpha$ gegen CellCNN: 53 besser, 37 gleich, 10 schlechter; mittlere Differenz +0,1050.}
-\newcommand{\AlphaTakeaway}{Median $\alpha$: Quadratic 0,96\,\%; Prototyp 1,04\,\%. Alpha beschreibt das Pooling, nicht die gemessene Zellhäufigkeit.}
-\newcommand{\FinalTakeaway}{Quadratic Hard und Soft erreichen beide 0,9125 mittlere Network-AUC. Lernbares Soft-Pooling erhöht sie hier nicht.}
+\newcommand{\NetworkTakeaway}{Quadratic Top-1\% and Soft-$\alpha$ share the highest mean network AUC (0.9125).}
+\newcommand{\ClassificationTakeaway}{Highest means: Quadratic Top-1\% for AP (0.907) and BA (0.801).}
+\newcommand{\FrequencyTakeaway}{Highest mean frequency AUC: Quadratic Top-1\% (0.8610).}
+\newcommand{\EffectTakeaway}{Largest mean frequency difference: CellCNN (0.740 percentage points).}
+\newcommand{\PairedTakeaway}{Quadratic Soft-$\alpha$ vs.\ CellCNN: 53 better, 37 tied, 10 worse; mean $\Delta$AUC $+0.1050$.}
+\newcommand{\AlphaTakeaway}{Median $\alpha$: Quadratic 0.96\%; Prototype 1.04\%. Alpha controls pooling, not measured population frequency.}
+\newcommand{\HardSoftCounts}{5 better, 90 tied, 5 worse}
+\newcommand{\QuadraticFilterCount}{416}
+\newcommand{\PrototypeFilterCount}{414}
+\newcommand{\FinalTakeaway}{Quadratic Hard and Soft both reach 0.9125 mean network AUC; learnable soft pooling does not improve it here.}

@@ -19,3 +19,6 @@ results/figures/*
 results/tables/*
 !results/figures/.gitkeep
 !results/tables/.gitkeep
+
+# Generated Task 6 presentation build files
+praesentation/aufgabe_06_vergleich/build/
