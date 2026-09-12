@@ -1,0 +1,106 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Arvaniti and Claassen(2017)]{arvaniti2017cellcnn}
+Eirini Arvaniti and Manfred Claassen.
+\newblock Sensitive detection of rare disease-associated cell subsets via
+  representation learning.
+\newblock \emph{Nature Communications}, 8:\penalty0 14825, 2017.
+\newblock \doi{10.1038/ncomms14825}.
+\newblock URL \url{https://doi.org/10.1038/ncomms14825}.
+
+\bibitem[Horowitz et~al.(2013)Horowitz, Strauss-Albee, Leipold, Kubo,
+  Nemat-Gorgani, Dogan, Dekker, Mackey, Maecker, Swan, Davis, Norman,
+  Guethlein, Desai, Parham, and Blish]{horowitz2013nk}
+Amir Horowitz, Dara~M. Strauss-Albee, Michael Leipold, Jessica Kubo, Neda
+  Nemat-Gorgani, Ozge~C. Dogan, Cornelia~L. Dekker, Sally Mackey, Holden
+  Maecker, Gary~E. Swan, Mark~M. Davis, Paul~J. Norman, Lisbeth~A. Guethlein,
+  Manisha Desai, Peter Parham, and Catherine~A. Blish.
+\newblock Genetic and environmental determinants of human {NK} cell diversity
+  revealed by mass cytometry.
+\newblock \emph{Science Translational Medicine}, 5\penalty0 (208):\penalty0
+  208ra145, 2013.
+\newblock \doi{10.1126/scitranslmed.3006702}.
+\newblock URL \url{https://doi.org/10.1126/scitranslmed.3006702}.
+
+\bibitem[Bendall et~al.(2011)Bendall, Simonds, Qiu, Amir, Krutzik, Finck,
+  Bruggner, Melamed, Trejo, Ornatsky, Balderas, Plevritis, Sachs, Pe'er,
+  Tanner, and Nolan]{bendall2011masscytometry}
+Sean~C. Bendall, Erin~F. Simonds, Peng Qiu, El-ad~David Amir, Peter~O. Krutzik,
+  Rachel Finck, Robert~V. Bruggner, Rachel Melamed, Angelica Trejo, Olga~I.
+  Ornatsky, Robert~S. Balderas, Sylvia~K. Plevritis, Karen Sachs, Dana Pe'er,
+  Scott~D. Tanner, and Garry~P. Nolan.
+\newblock Single-cell mass cytometry of differential immune and drug responses
+  across a human hematopoietic continuum.
+\newblock \emph{Science}, 332\penalty0 (6030):\penalty0 687--696, 2011.
+\newblock \doi{10.1126/science.1198704}.
+\newblock URL \url{https://doi.org/10.1126/science.1198704}.
+
+\bibitem[Nowicka et~al.(2017)Nowicka, Krieg, Crowell, Weber, Hartmann,
+  Guglietta, Becher, Levesque, and Robinson]{nowicka2017cytofworkflow}
+Malgorzata Nowicka, Carsten Krieg, Helena~L. Crowell, Lukas~M. Weber, Felix~J.
+  Hartmann, Silvia Guglietta, Burkhard Becher, Mitchell~P. Levesque, and
+  Mark~D. Robinson.
+\newblock {CyTOF} workflow: differential discovery in high-throughput
+  high-dimensional cytometry datasets.
+\newblock \emph{F1000Research}, 6:\penalty0 748, 2017.
+\newblock \doi{10.12688/f1000research.11622.3}.
+\newblock URL \url{https://doi.org/10.12688/f1000research.11622.3}.
+\newblock Discusses and recommends the arcsinh cofactor of 5 for CyTOF data.
+
+\bibitem[van~der Maaten and Hinton(2008)]{maaten2008tsne}
+Laurens van~der Maaten and Geoffrey Hinton.
+\newblock Visualizing data using t-{SNE}.
+\newblock \emph{Journal of Machine Learning Research}, 9\penalty0
+  (86):\penalty0 2579--2605, 2008.
+\newblock URL \url{https://www.jmlr.org/papers/v9/vandermaaten08a.html}.
+
+\bibitem[Pedregosa et~al.(2011)Pedregosa, Varoquaux, Gramfort, Michel, Thirion,
+  Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
+  Cournapeau, Brucher, Perrot, and Duchesnay]{pedregosa2011sklearn}
+Fabian Pedregosa, Ga{\"e}l Varoquaux, Alexandre Gramfort, Vincent Michel,
+  Bertrand Thirion, Olivier Grisel, Mathieu Blondel, Peter Prettenhofer, Ron
+  Weiss, Vincent Dubourg, Jake Vanderplas, Alexandre Passos, David Cournapeau,
+  Matthieu Brucher, Matthieu Perrot, and {\'E}douard Duchesnay.
+\newblock Scikit-learn: Machine learning in {Python}.
+\newblock \emph{Journal of Machine Learning Research}, 12:\penalty0 2825--2830,
+  2011.
+\newblock URL \url{https://www.jmlr.org/papers/v12/pedregosa11a.html}.
+\newblock PCA/t-SNE implementations used here:
+  \url{https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html},
+  \url{https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html}.
+
+\bibitem[Venna and Kaski(2001)]{venna2001trustworthiness}
+Jarkko Venna and Samuel Kaski.
+\newblock Neighborhood preservation in nonlinear projection methods: An
+  experimental study.
+\newblock In Georg Dorffner, Horst Bischof, and Kurt Hornik, editors,
+  \emph{Artificial Neural Networks --- ICANN 2001}, volume 2130 of
+  \emph{Lecture Notes in Computer Science}, pages 485--491, Berlin, Heidelberg,
+  2001. Springer.
+\newblock \doi{10.1007/3-540-44668-0_68}.
+\newblock URL \url{https://doi.org/10.1007/3-540-44668-0_68}.
+\newblock scikit-learn implementation used here:
+  \url{https://scikit-learn.org/stable/modules/generated/sklearn.manifold.trustworthiness.html}.
+
+\bibitem[McInnes et~al.(2018)McInnes, Healy, and Melville]{mcinnes2018umap}
+Leland McInnes, John Healy, and James Melville.
+\newblock {UMAP}: Uniform manifold approximation and projection for dimension
+  reduction.
+\newblock \emph{arXiv preprint arXiv:1802.03426}, 2018.
+\newblock URL \url{https://arxiv.org/abs/1802.03426}.
+\newblock Reference implementation: \url{https://umap-learn.readthedocs.io/}.
+
+\bibitem[Virtanen et~al.(2020)Virtanen, Gommers, Oliphant, et~al.]{scipy2020}
+Pauli Virtanen, Ralf Gommers, Travis~E. Oliphant, et~al.
+\newblock {SciPy} 1.0: Fundamental algorithms for scientific computing in
+  {Python}, 2020.
+\newblock URL \url{https://doi.org/10.1038/s41592-019-0686-2}.
+\newblock \texttt{scipy.spatial.procrustes} documentation:
+  \url{https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.procrustes.html}.
+
+\end{thebibliography}

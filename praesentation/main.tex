@@ -812,13 +812,13 @@ f_b=\frac1{N_b}\sum_i\mathbf1\{h_{k^*}(x_{bi})>t_{k^*}\}.\]
     \textcolor{Teal}{CellCNN} & $\operatorname{ReLU}(b_k+w_k^\top x)$ & hard Top-1\,\%\\[2mm]
     \textcolor{Indigo}{Quadratic Top-1\,\%} & $\operatorname{ReLU}(b_k+w_k^\top x+\sum_j q_{kj}x_j^2)$ & hard Top-1\,\%\\[2mm]
     \textcolor{Amber}{Quadratic Soft-$\alpha$} & $\operatorname{ReLU}(b_k+w_k^\top x+\sum_j q_{kj}x_j^2)$ & learnable Soft-$\alpha$\\[2mm]
-    \textcolor{Rust}{Prototype Soft-$\alpha$} & $\operatorname{ReLU}(\rho_k-\frac1d\sum_j a_{kj}(x_j-c_{kj})^2)$ & learnable Soft-$\alpha$\\\bottomrule
+    \textcolor{Rust}{Mahalanobis Soft-$\alpha$} & $\operatorname{ReLU}(\rho_k-\frac1d\sum_j a_{kj}(x_j-c_{kj})^2)$ & learnable Soft-$\alpha$\\\bottomrule
   \end{tabular}
   \par\smallskip
   % State the actual selection rule rather than another generic pipeline sentence.
-  {\small Population: largest positive output contrast; cells with $h>\tfrac12\max_{\text{inner-train}}h$.\par}
+  %{\small Population: largest positive output contrast; cells with $h>\tfrac12\max_{\text{inner-train}}h$.\par}
   % CMV labels encode donor status; these data do not establish clinical disease.
-  \takeaway{Donor prediction and CMV-status association of the selected population are evaluated separately.}
+  %\takeaway{Donor prediction and CMV-status association of the selected population are evaluated separately.}
   \source{Cohort: 9 CMV$+$, 11 CMV$-$. Each split: train 7$+$/7$-$, test 2$+$/4$-$. ArcSinh($x/5$); scaling and half-max reference use the selected model's inner-training donors only.}
 \end{frame}
 
@@ -844,7 +844,7 @@ f_b=\frac1{N_b}\sum_i\mathbf1\{h_{k^*}(x_{bi})>t_{k^*}\}.\]
   % A wider standalone aspect ratio uses the space without removing any observations.
   \relax
   {\centering\includegraphics[width=.94\textwidth,height=43mm,keepaspectratio]{aufgabe_06_vergleich/figures/frequency_effect.pdf}\par}
-  \takeaway{\EffectTakeaway}
+  %\takeaway{\EffectTakeaway}
   \source{98 jointly evaluable splits; test set: 2 CMV$+$ and 4 CMV$-$ donors. One fixed 20,000-cell sample per test donor. Effect = mean CMV$+$ frequency minus mean CMV$-$ frequency, in percentage points.}
 \end{frame}
 
@@ -857,8 +857,7 @@ f_b=\frac1{N_b}\sum_i\mathbf1\{h_{k^*}(x_{bi})>t_{k^*}\}.\]
     \end{column}
     \begin{column}{.39\textwidth}
       \eyebrow{Rank fraction, not population frequency}
-      \[\alpha_k=\sigma(\theta_k)\]
-      \small Starts at 1\%; fixed temperature $\tau=0.002$.\par\medskip
+     \par\medskip
       Alpha weights cell ranks within a bag. Half-max defines the separately evaluated population.
     \end{column}
   \end{columns}
@@ -871,8 +870,8 @@ f_b=\frac1{N_b}\sum_i\mathbf1\{h_{k^*}(x_{bi})>t_{k^*}\}.\]
     \item Quadratic Hard and Soft share the highest mean network AUC on this dataset.
     % Replace the unsupported possibility of gains on other datasets by the
     % observed, paired hard-versus-soft result: 5 better / 90 tied / 5 worse.
-    \item Soft vs.\ Hard: \HardSoftCounts; mean $\Delta$AUC $0.0000$.
-    \item \PairedTakeaway
+    %\item Soft vs.\ Hard: \HardSoftCounts; mean $\Delta$AUC $0.0000$.
+    %\item \PairedTakeaway
     \item Only 20 independent donors: repeated splits are descriptive, not independent replication.
   \end{itemize}
   \par\medskip
