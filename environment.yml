@@ -19,4 +19,6 @@ dependencies:
   - python-igraph=1.0
   - leidenalg=0.12
   - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cpu
       - flowkit==1.3.2
+      - torch==2.14.0+cpu

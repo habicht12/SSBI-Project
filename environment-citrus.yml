@@ -1,0 +1,22 @@
+name: ssbi-citrus
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - r-base=4.5
+  - r-remotes
+  - r-irkernel
+  - jupyter_client
+  - r-rcpp
+  - r-rcppeigen
+  - r-glmnet
+  - r-pamr
+  - r-samr
+  - r-ggplot2
+  - r-igraph
+  - r-survival
+  - r-reshape2
+  - bioconductor-flowcore
+  - cxx-compiler
+  - make

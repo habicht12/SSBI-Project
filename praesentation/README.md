@@ -1,5 +1,23 @@
 **Präsentation zum SSBI-Gruppenprojekt**
 
+## Gesamtpräsentation
+
+Die aktuelle gemeinsame Fassung für Aufgaben 2–6 ist [main.pdf](main.pdf),
+die bearbeitbare Quelle [main.tex](main.tex). Sie enthält die auf `GrHa`
+zusammengeführten Folien einschließlich Task-6-Erklärungen und die späteren
+Änderungen auf `main` (Stand `4045b3f`, 12.09.2026).
+
+Aus dem Repository-Hauptordner kompilieren:
+
+```bash
+latexmk -cd -pdf -interaction=nonstopmode -halt-on-error -outdir=build praesentation/main.tex
+```
+
+Die Ausgabe liegt unter `praesentation/build/main.pdf`. Für Overleaf den
+gesamten Präsentationsordner übernehmen und `main.tex` als Hauptdokument wählen.
+Die Gesamtquelle enthält eigene Kopien der Folieninhalte; Änderungen an den
+Einzelfolien werden nicht automatisch übernommen.
+
 ## Ordnerstruktur
 
 Jede Aufgabe mit eigenen Folien, Tabellen und Abbildungen liegt in einem
