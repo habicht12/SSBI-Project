@@ -3,6 +3,33 @@
 import numpy as np
 from sklearn import config_context
 from sklearn.neighbors import NearestNeighbors
+from sklearn.metrics import pairwise_distances
+
+
+def trustworthiness_chunked(values, embedding, n_neighbors=15, chunk_size=128):
+    """Exakte euklidische Trustworthiness mit zeilenweise begrenztem Speicher.
+
+    Gleiche Rangdefinition und Normierung wie sklearn.manifold.trustworthiness;
+    alle Beobachtungen werden ausgewertet, ohne eine zusätzliche Stichprobe.
+    """
+    values, embedding = np.asarray(values), np.asarray(embedding)
+    n = len(values)
+    if (values.ndim != 2 or embedding.ndim != 2 or len(embedding) != n
+            or not 1 <= n_neighbors < n / 2 or chunk_size < 1):
+        raise ValueError("Aligned matrices, 1 <= k < n/2 and chunk_size >= 1 required.")
+    neighbors = neighbor_indices(embedding, n_neighbors)
+    penalty = 0
+    for start in range(0, n, chunk_size):
+        stop = min(start + chunk_size, n)
+        distances = pairwise_distances(values[start:stop], values, metric="euclidean")
+        rows = np.arange(stop - start)
+        distances[rows, np.arange(start, stop)] = np.inf
+        order = np.argsort(distances, axis=1)
+        ranks = np.empty_like(order)
+        ranks[rows[:, None], order] = np.arange(1, n + 1)
+        excess = ranks[rows[:, None], neighbors[start:stop]] - n_neighbors
+        penalty += int(excess[excess > 0].sum())
+    return 1.0 - penalty * 2.0 / (n * n_neighbors * (2 * n - 3 * n_neighbors - 1))
 
 
 def neighbor_indices(values, k=15):
