@@ -1,0 +1,34 @@
+{
+  "renderer_sha256": "d7126effa3be2a3bc7cd44f40165a93164c5c9419bda8e49ece4437c59820927",
+  "inputs_sha256": {
+    "results/tables/report_preparation_20260913/embeddings_full.parquet": "7f222bb76f11092dc254d1dcdfc89b0428c2d70613017a523442670d05bbb3c9",
+    "labels.csv": "7c5352f0cbd4db597584484159392fe07d129e0a7a69efdef0fc12d3933e229b",
+    "nk_balanced_raw.parquet": "adf9b793f8186f83b5cafb5a41b0e64cb3125cc66550d88713d6bdff95feb94d",
+    "praesentation/report_assets/aufgabe_02/data/quality.csv": "9657157fffc39f31424e577caf36a4b7bcb1f5fd16dbbfd240a1c14486f814be",
+    "praesentation/report_assets/aufgabe_02/data/pairwise.csv": "06a44ba85d0704bd2a33a468f7fc226f184d9f7d40b8ce8604d501bca03dd25c",
+    "praesentation/report_assets/aufgaben_04_05/data/provenance.json": "f456ef4aff720cee749892e1df254c111e1e18f5cd043a737252921adb78c1f8",
+    "praesentation/report_assets/aufgaben_04_05/data/split_metrics.csv": "ad593113fcb8300a2c316971c0456eb1f25f7476ac745c1cf92ccdfb3fd829fe",
+    "praesentation/report_assets/aufgaben_04_05/data/metric_summary.csv": "5ee85f7df40551cfe995399e55ffbe86bb24f1c055f3a68123ec4fd99154e592",
+    "praesentation/report_assets/aufgaben_04_05/data/paired_differences.csv": "70fe9ac5c8945a577900c8b02758433c2cfbd10de1327814b556c3e6f0b99d47",
+    "praesentation/report_assets/aufgaben_04_05/data/paired_summary.csv": "4470949f81431ce278fd37ed8aa810e1afd1343436773b9425a6122784ddebc8",
+    "praesentation/report_assets/aufgaben_04_05/data/cell_selection_frequencies.csv": "7681a7b4149bfa199e0472a406f6b2fffb0c8eb77b021ca887a97d4f072758e3",
+    "praesentation/report_assets/aufgaben_04_05/data/profiles_by_test_visit.csv": "dbb743ad9adcbce5b2ee0151b39c9dbfb693ccc3cbb4e136eaa01c7566c2e867",
+    "praesentation/report_assets/aufgaben_04_05/data/profiles_by_donor.csv": "1f53fabcba82742a1e819e94a268bca9c42dd0d87f8dd1f1d44111aa11cbf6f2",
+    "praesentation/report_assets/aufgaben_04_05/data/oof_marker_profiles.csv": "87ed0acb0d2c13bb83a8a443b775e23688f4fdee6664fc8ce6021b4b1d9bb33d",
+    "praesentation/report_assets/aufgaben_04_05/data/groups.csv": "9eba6981369500933acd2b7c30000547751ed2bab21510fd2c20578b03924c51",
+    "praesentation/report_assets/aufgaben_04_05/data/group_profiles_by_split.csv": "5603c3625617140283206c5b140f6f551242577166d749f8b67d3309d52a8081",
+    "praesentation/report_assets/aufgaben_04_05/data/group_marker_profiles.csv": "c4ebcf4bfd7711c999d11a47127f7407eaca8fc8992f7e3a7aed20f578bb3691",
+    "praesentation/report_assets/aufgaben_04_05/data/cellcnn_filter_thresholds.csv": "ee8c19333323d6c5a3a5a9afe40a8842303c9c6b1670cff413e60d9bc56d706b",
+    "praesentation/report_assets/aufgaben_04_05/data/citrus_mapping_audit.csv": "e4eba6a8248ccb5c6784aa9097c22743dd2a357d0a97daad9daeefe28cde1032",
+    "praesentation/report_assets/aufgaben_04_05/data/citrus_input_checks.csv": "60596b2c60fe5379dc656abd91180293329567d830cec3168ad2b8b57fd38e3f"
+  },
+  "changes": "Remove explanatory footers and reduce canvas height. Same data, ordering, scales and plot encodings as V1.",
+  "figures_sha256": {
+    "figures/v02/classification.pdf": "97b57c65c0c4f5bee7edb7f72c718f8e467f7896e580671101e9797f432acd5d",
+    "figures/v02/classification.png": "2f4b95486aec8d664d94a9f98b0e229d0f2acd528995b4676a985549d164b647",
+    "figures/v02/dimensionality_reduction.pdf": "4ded8e88b80ef9ffcf4450a51a8ad0fbd671f61858b01b49c257c2b0a4fdece6",
+    "figures/v02/dimensionality_reduction.png": "18023c313d9745747be115ddb5e17c11b468eb3a3178154d77522f1d177e0e4a",
+    "figures/v02/subsets.pdf": "6b375d651a97ce6841929e58e69887856fc79861b0d514cb2bca6470da0910df",
+    "figures/v02/subsets.png": "27ac78469edda45159b4fad8a9dfb8ce3d87e05690931831561ebe743409d79b"
+  }
+}

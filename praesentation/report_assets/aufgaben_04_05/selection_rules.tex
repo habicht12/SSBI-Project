@@ -1,0 +1,31 @@
+% Optional compact method text for Task 5; requires amsmath.
+% Describes the exact CMV-positive-supporting selection used in the new plots.
+We examine subsets selected in the CMV-positive direction. For CellCNN, a cell is selected
+if any filter with positive output contrast exceeds half its original
+training-reference maximum. For SVM, it must belong to the full donor's top
+$\lceil 0.01N_d\rceil$ cell margins and exceed the saved inner-validation
+threshold. For Citrus, it must map to a training cluster with a positive
+classifier coefficient. The corresponding scores and selection rules are
+\[
+\begin{aligned}
+q^{\mathrm{CNN}}_{is}
+  &= \max_{f:\,\Delta_{fs}>0,\ M_{fs}>0} r_{ifs}/M_{fs},
+  &q^{\mathrm{CNN}}_{is}&>0.5,\\
+q^{\mathrm{SVM}}_{is}
+  &= m_{is}-\tau_s\quad(i\in I_{ds}),
+  &q^{\mathrm{SVM}}_{is}&>0,\\
+q^{\mathrm{Citrus}}_{is}
+  &= \max\bigl(\{0\}\cup\{\beta_{js}:i\in A_{js}\}\bigr),
+  &q^{\mathrm{Citrus}}_{is}&>10^{-10}.
+\end{aligned}
+\]
+Here $M_{fs}$ is the training-reference maximum and $\Delta_{fs}$ the
+CMV-positive minus CMV-negative output weight; the CellCNN maximum is zero
+if no filter is eligible. $I_{ds}$ contains the donor's top-scoring cells;
+SVM cells outside it are unselected. $A_{js}$ is Citrus membership inherited
+from the nearest original training cell in ArcSinh marker space.
+Each cell is counted at most once per split, including overlapping filters
+or clusters. The plotted frequency divides its positive selections by all
+outer test appearances of its donor; empty selections remain in the
+denominator. These rules describe model-associated subsets, not causal
+cell-removal effects.

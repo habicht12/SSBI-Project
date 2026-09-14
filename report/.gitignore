@@ -1,0 +1,5 @@
+build/*
+!build/main.pdf
+!build/supplement.pdf
+!build/main02.pdf
+!build/supplement02.pdf

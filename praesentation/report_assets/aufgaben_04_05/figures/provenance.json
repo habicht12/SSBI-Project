@@ -1,0 +1,22 @@
+{
+  "renderer_sha256": "d1e0ef59f1ccfa6f9890094ea11b3cbcfe87a8fd8dfa35e4959590b0c2437f49",
+  "input_provenance_sha256": "f456ef4aff720cee749892e1df254c111e1e18f5cd043a737252921adb78c1f8",
+  "main_figures": [
+    "task4_performance_paired.pdf",
+    "task5_report_combined.pdf"
+  ],
+  "output_sha256": {
+    "plot_overview.pdf": "a4409ee39524923dab69a5523fde114b6f2a4ae09e6592300d09d54c639c6868",
+    "report_figures.pdf": "de28294dca416b5ecf0bcbe004567cc7863c0c8137b96a0748b37fc4633e17cf",
+    "task4_performance_paired.pdf": "a866fa83af2f5d6ef8fea89dd2daf89c09f8dbc0bed24c4f0ca354028f8c814e",
+    "task4_performance_paired.png": "8a12a10fa815ea1c11bea9aec1d5a6e3a0b72acd462af896311bc65e36aecf66",
+    "task5_group_profiles_recurrence.pdf": "b0aaf21bedc6653cb4199159bb44746a9acb8da1d4de9f8bbb3ffab21ebdac6b",
+    "task5_group_profiles_recurrence.png": "c54d0f881455d636dc5fbc7db0b122c55e0fd02435b9731e62ffc3bd627572f8",
+    "task5_oof_marker_profiles.pdf": "da62defc9145ce8bc15c018456cd655a52a7098470ab6b83bbaa1679a59e76d7",
+    "task5_oof_marker_profiles.png": "2ce95661f70c945db22dc7ce50b6f5cec45c57460de8fe82d5861519884155df",
+    "task5_oof_selection.pdf": "3c9f5018d1451cf51e418fda59d2f9aec5a6961a18c5fb8f96ef6c6e58b597fd",
+    "task5_oof_selection.png": "aa6c670f08c538be79f18eae7a7adaa9fc7f282120c62e2011d99ef93daba2d1",
+    "task5_report_combined.pdf": "760b8d72abf55cd728531c07ef689aa60ca0a9dfa2ad299621a7e328dfcb23f1",
+    "task5_report_combined.png": "feefea1ca393e30d57064e8eb67e2e270d20ba9d2114ff9111814f441a043baa"
+  }
+}

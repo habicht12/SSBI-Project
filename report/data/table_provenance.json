@@ -1,0 +1,25 @@
+{
+  "generator_sha256": "11072c88d9735a36ba31858c4cc9da08d0377ef5fa2e1ae41650eeecf073b63b",
+  "table_sha256": {
+    "bonus_frequency.tex": "d5bc618f9363067097efda8b23dcfe441a6bb81923fae9ccfe24a4e3c525721e",
+    "bonus_network.tex": "2fd9adf712142f57b85a6f4f47934c7f1f0bd146d543cc9882005693adfd9c4f",
+    "bonus_paired.tex": "722a259409617e2c8d2142b499c81287cdbcc88c0015d956cd9f01242958506f",
+    "cell_selection.tex": "7fc507c00bceb38a0ea0b6e237f3023eb577652e8d08429564cef11bd5abf470",
+    "classification_100.tex": "d7d0c16b73b933e17ca40aa6efc3c6b777d34254e758d0f1416ff360351d0cee",
+    "classification_iqr.tex": "dda10c3e45f236bd4f7b4f289e5b510eb63fbc72f3dff7d2b266a3465065aea2",
+    "classification_mean.tex": "e7c4ebce7055c8eeaa34b150f077d6c2f6607a8b067aafe892f498a580241a1d",
+    "classification_median.tex": "bbf599631b1170f480b1450657176691482529c1d75045e3a0a4f2d80a08e4f0",
+    "cluster_stability.tex": "97fbf2364f696eda38254abf1c793e15a23e17da9171683d60e880051848258a",
+    "clustering_grid.tex": "70fd27144d909449e9c6a3777bf2f6940ad583789f858ff5896b1e1ac0ae04e0",
+    "clustering_winners.tex": "dd4256cff315c34196611555f7842ccba0cd5089f4eab8d7f8157cbacfea606b",
+    "donors.tex": "76034d4e07ec05e7f3a76caf30ab54b0fff553e926f3e92ca4382606e70e830b",
+    "groups.tex": "cf2bea61537cfec9aafdbfa449b6b2829d126e9e4391aa76f2f82144aa5362d4",
+    "learning_rate.tex": "f79fe28146b5ea39cc427a03d0f09ef1f8ead73892adb6856f6372c28a166cfd",
+    "markers.tex": "db4a4c5478e30d118466f0289b24166dc11aad7f30660973e6792d592e26c766",
+    "paired.tex": "01e24b1b1581bf306f8ec8dc711453d92a0992bfee5a97c095dc9bd1deb978db",
+    "pairs.tex": "d7f4d02585ffa7f9737b632d37ed5e53d181f7deb78bf2d0acfd49e782f408af",
+    "quality.tex": "b07bae176587c983b8b4a621fc946a35fb32756c9e4b1f3d5d24c900e866d608",
+    "tsne.tex": "61f1bc817072ace2f39a4c1451d3b1d79e59b212f6974db28adda4fa322186d7",
+    "umap.tex": "8355589e70f23ee6efea1c902a2d70d07b5391b094a40681353872abd8648275"
+  }
+}

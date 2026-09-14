@@ -1,0 +1,4 @@
+method,clusters,db,mean_stability
+k-means,4,2.363375629267268,0.995
+Hierarchical (ward),6,2.5223474942140367,0.611
+Leiden,18,2.3611750734036376,0.683

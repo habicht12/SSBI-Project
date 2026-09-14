@@ -56,10 +56,16 @@ python -m ipykernel install --user --name ssbi-group-project --display-name "Pyt
 
 ## Verbindliche Grundlage für den Bericht
 
-Maries vorhandener Berichtsteil liegt als [LaTeX](praesentation/report.tex)
-und [PDF](praesentation/report.pdf) vor. Ihr Text, ihre PDF und die bisherigen
-Berichtsabbildungen bleiben auf ausdrücklichen Wunsch unverändert. Neue
-Abschnitte zu Aufgaben 3–6 werden noch nicht geschrieben.
+Die aktuelle Version 2 liegt als [fünfseitiger Bericht main02](report/build/main02.pdf)
+und [separates Supplement supplement02](report/build/supplement02.pdf) vor. Sie behandelt alle sechs
+Aufgaben auf dem aktuellen Ergebnisstand; die Bonusaufgabe belegt rund ein Drittel
+der nutzbaren letzten Seite. Die erste Fassung bleibt erhalten.
+[Quellen, Kompilierung und Prüfungen](report/README.md).
+
+Maries vorhandener Berichtsteil liegt weiterhin als [LaTeX](praesentation/report.tex)
+und [PDF](praesentation/report.pdf) vor. Diese Dateien und ihre Korrekturfassung
+bleiben unverändert. Die neue Gesamtfassung wurde unabhängig davon formuliert;
+die alten automatisch generierten Voll- und Detailberichte wurden entfernt.
 
 Die gehaltene Gesamtpräsentation bleibt als [PDF](praesentation/main.pdf) und
 [LaTeX-Quelle](praesentation/main.tex) mit ihren bisherigen Assets unverändert.
@@ -148,8 +154,23 @@ Tabellen und Abbildungen werden nicht automatisch ersetzt.
 Die Aufgabe-5-Karte bleibt die ältere `gated_alive`-Referenz mit 10.000 Zellen
 (`02_interpretation_reference.ipynb`), nicht die aktuelle `gated_NK`-Karte mit
 40.000 Zellen aus Aufgabe 2. Ergebnisse und Methoden zu Aufgaben 3–5 wurden im
-vorangegangenen Benchmark geprüft und werden durch diese Vorbereitung nicht
+vorangegangenen Benchmark geprüft und werden durch diese Aufgabe-2-Vorbereitung nicht
 verändert.
+
+### Aufgaben 4/5: zusätzliche Report-Abbildungen
+
+Die [Report-Assets für Aufgaben 4 und 5](praesentation/report_assets/aufgaben_04_05/README.md)
+enthalten den gepaarten Leistungsvergleich und eine kompakte Darstellung mit
+drei Zellkarten sowie einer gemeinsamen Marker-Heatmap. CellCNN, SVM und Citrus
+verwenden hier dieselben 30 äußeren Testaufteilungen und dieselbe Spendergewichtung.
+Die neue Interpretation vereinigt positive CellCNN-Filter bzw. Citrus-Cluster;
+die dafür fehlenden Citrus-Mitgliedschaften wurden aus den ursprünglichen
+Trainingsbäumen rekonstruiert. Die Klassifikatoren wurden nicht neu ausgewählt.
+CSV-Ergebnisse, Auswahlregeln, Prüfungen und Reproduktionsbefehle liegen bei den
+Assets; der Exportcode ist [src/report_task45.py](src/report_task45.py).
+Die bisherigen Notebook- und Präsentationsabbildungen bleiben als ursprünglicher
+Stand erhalten. Die neue Gesamtfassung unter `report/` verwendet die zusätzlichen
+Report-Assets; die gehaltene Präsentation wird dadurch nicht verändert.
 
 ### Voraussetzungen und Ausführungsreihenfolge
 

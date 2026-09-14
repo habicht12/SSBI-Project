@@ -1,0 +1,49 @@
+{
+  "protected_v1_files_unchanged": 61,
+  "colleague_and_presentation_files_unchanged": 6,
+  "figure_input_and_output_hashes_match": true,
+  "main_figures": 4,
+  "body_format": "A4, 11pt, unchanged shared style",
+  "supplement_math_and_numeric_tokens_unchanged": true,
+  "semicolon_counts_tex": {
+    "main": 21,
+    "main02": 0,
+    "supplement": 76,
+    "supplement02": 29
+  },
+  "main_pages": 5,
+  "supplement_pages": 26,
+  "both_builds_without_overflow_or_unresolved_references": true,
+  "bonus_extent": {
+    "page": 5,
+    "height_points": 232.74950790405273,
+    "fraction_of_text_height": 0.3232630927880459
+  },
+  "main_content_bottom_as_fraction_of_text_height": [
+    1.0034,
+    0.9916,
+    0.9357,
+    0.9494,
+    0.9629
+  ],
+  "figure_heights_points": {
+    "dimensionality_reduction": {
+      "v1": 176.84976196289062,
+      "v2": 164.60975646972656
+    },
+    "classification": {
+      "v1": 188.39952087402344,
+      "v2": 165.35952758789062
+    },
+    "subsets": {
+      "v1": 249.59951782226562,
+      "v2": 226.5595245361328
+    }
+  },
+  "prose_footers_removed_and_canvas_reduced": true,
+  "added_numeric_claims_match_sources": true,
+  "pdf_sha256": {
+    "main02": "4f16948fdfa416ed7318b80d88fbbae22ef89210cddfb273ea6239dab389d370",
+    "supplement02": "f11f48d3bfac1843190c9055d989df4d2a794beb6a6ae3d5d43182bb29fd02d3"
+  }
+}

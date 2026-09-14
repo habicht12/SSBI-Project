@@ -1,0 +1,50 @@
+{
+  "exporter_sha256": "dd4d9c1b1ef82cf61613dc599aa9a832f610d65dd5dc321e93e5f6defc43e9dd",
+  "task2_coordinates_sha256": "7f222bb76f11092dc254d1dcdfc89b0428c2d70613017a523442670d05bbb3c9",
+  "task2_coordinates": "results/tables/report_preparation_20260913/embeddings_full.parquet",
+  "task2_checks": "All three Procrustes disparities recomputed and matched at 1e-12",
+  "task3": {
+    "source_notebook_sha256": "31d6fa894afc8de492d1106c739d8b268df43459b2efd323b12d3319db05ef09",
+    "cells": 20000,
+    "gate": "gated_alive",
+    "preprocessing": "Original notebook cells 1,3,5; sequential default_rng(42) sampling in donor-file order; arcsinh / 5; StandardScaler",
+    "fits": "Only k-means k=4, Ward k=6, Leiden n=30/resolution=1.2, seed 42; no grid or resampling rerun",
+    "checks": "Cluster counts, each original cluster size, rounded DB and all visible original top-marker annotations agree; the stored Leiden-16 higher-marker string is truncated, so only its visible prefix is compared",
+    "stability": "Original stored resampling results, not newly estimated",
+    "output_sha256": {
+      "cluster_profiles.csv": "3cc466ab2db5b034048ce39a31f49dfff3c1515688134fef98e0421ea8dfc82d",
+      "cluster_summary.csv": "ae4b01a1506dfe51308a353b47f8bfdd8d8b75c3897147a164282ab16f4a23da",
+      "cluster_memberships.csv": "24fc63b8e996c07fdf87919fb8507e80f80ee06e1dfd789794d4947b5016ac84"
+    }
+  },
+  "inputs": {
+    "praesentation/report_assets/aufgabe_02/data/provenance.json": "20aa5e30bc922da5deb21ac3b84a1b05ca7e6bab234212c9c865487a89b9f956",
+    "praesentation/report_assets/aufgaben_04_05/data/provenance.json": "f456ef4aff720cee749892e1df254c111e1e18f5cd043a737252921adb78c1f8",
+    "praesentation/report_assets/aufgabe_06/data/provenance.json": "352c87a05a0cdcb481f6b1977826334d473de2eda44b4ed3bdf02cde5c746681"
+  },
+  "figures_sha256": {
+    "figures/classification.pdf": "a866fa83af2f5d6ef8fea89dd2daf89c09f8dbc0bed24c4f0ca354028f8c814e",
+    "figures/classification.png": "8a12a10fa815ea1c11bea9aec1d5a6e3a0b72acd462af896311bc65e36aecf66",
+    "figures/clustering.pdf": "d78bd53b58b3ac1a3326eeaf2714829c674361e0147c13f65fe737b341c80445",
+    "figures/clustering.png": "3fa57f5046167ea537d9e443db563fd2e93487520fa09bab8e90c681176db462",
+    "figures/clustering_all_markers.pdf": "dd335ff397044fe2a377e2edb62727a5fc57bac195344f3ad1ad32110b8f4e6b",
+    "figures/clustering_all_markers.png": "c3f36250e011bfac2646f76781cfa5c5a8263095c15895e4b17fdf5b3e419be0",
+    "figures/dimensionality_reduction.pdf": "20cd01f8d9035c1f2aca30c4e829814d985269389baf46e24db527f0e5f17ef2",
+    "figures/dimensionality_reduction.png": "de82ea3355b66b5f307c42c239d783ece2668225c964d1b9abbe31186c7f7842",
+    "figures/subsets.pdf": "760b8d72abf55cd728531c07ef689aa60ca0a9dfa2ad299621a7e328dfcb23f1",
+    "figures/subsets.png": "feefea1ca393e30d57064e8eb67e2e270d20ba9d2114ff9111814f441a043baa",
+    "figures/supplement/arcsinh.pdf": "34057e76f09bcb61ea20f88258b61326abcef19f77f3df5e8ac83900197ef68b",
+    "figures/supplement/bonus_donor_frequencies.pdf": "c311a40e820e1c7f106e521b3c038cf27a0c4b6f72ea57bfb8e90b35fb9d2984",
+    "figures/supplement/bonus_learned_alphas.pdf": "79e7bae9d34d938379afb27b8ed97956087cd0a9dc1216085244edbaf9448274",
+    "figures/supplement/bonus_network_metrics.pdf": "73bb4c8db0ab3b53098a199c335c2c0756d3e3ea00ab2e047eefd070777620f9",
+    "figures/supplement/bonus_paired_differences.pdf": "38ef12d36374a862d78fd0e54ffac651a54020ee441a3ced936b56684560c74e",
+    "figures/supplement/pca_spectrum.pdf": "f7062a3b99ec0a7a166e84ff85bf87c2d0c94747241ecf4c5f0c911e8be982c3",
+    "figures/supplement/stability_eligibility.png": "3a78aa0e954045cccaf5ca4d93adfe56e0025daa0d347a9a6896809fd7f6bb47",
+    "figures/supplement/subsample.png": "f3f560bcc89fcca7a52214d39faf67977b822adaeb9850fa580dcd69b0ffe890",
+    "figures/supplement/task5_group_profiles_recurrence.pdf": "b0aaf21bedc6653cb4199159bb44746a9acb8da1d4de9f8bbb3ffab21ebdac6b",
+    "figures/supplement/task5_oof_marker_profiles.pdf": "da62defc9145ce8bc15c018456cd655a52a7098470ab6b83bbaa1679a59e76d7",
+    "figures/supplement/tsne_sweep.png": "d1f061264c7cbaabb3e46abef126bcfa26b09d6996635c4cdfee146cd685e9f5",
+    "figures/supplement/umap_grid_1.pdf": "56377163ec300eaba26dec7d7fa0b7293eeb345e2e5a413d2671c468bf5a7f6f",
+    "figures/supplement/umap_grid_2.pdf": "e654f1e5e72d232d4364504ae771648a82e226ad22475acb8664508f66d8f6fa"
+  }
+}

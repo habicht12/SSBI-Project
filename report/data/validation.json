@@ -1,0 +1,28 @@
+{
+  "protected_originals_unchanged": [
+    "praesentation/report.tex",
+    "praesentation/report.pdf",
+    "praesentation/report_korrigiert.tex",
+    "praesentation/report_korrigiert.pdf",
+    "praesentation/main.tex",
+    "praesentation/main.pdf"
+  ],
+  "legacy_detail_report_removed": true,
+  "main_pages": 5,
+  "supplement_pages": 26,
+  "main_figures": 4,
+  "bonus_extent": {
+    "page": 5,
+    "height_points": 232.74950790405273,
+    "fraction_of_text_height": 0.3232630927880459
+  },
+  "main_build_without_overflow_or_unresolved_references": true,
+  "supplement_build_without_overflow_or_unresolved_references": true,
+  "main_text_inside_page_bounds": true,
+  "all_figure_and_table_checksums_match": true,
+  "key_results_and_analysis_scopes_match": true,
+  "pdf_sha256": {
+    "main.pdf": "ccbbce113a1b0ef887ccd6d76759242e295d8414a6637e8b8ce84e78292a3efd",
+    "supplement.pdf": "ca2e6f38dd9369efce18870b6210e04afc9c038e25f85a224721a8f7f8950c9f"
+  }
+}
