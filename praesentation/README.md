@@ -1,5 +1,9 @@
 **Präsentation zum SSBI-Gruppenprojekt**
 
+[Gemeinsamer Einstieg für Report, Präsentation und Plotbearbeitung](../TEAM_EDITING.md).
+Die Gesamtpräsentation und die älteren Einzelfoliensätze sind jeweils mit
+bearbeitbaren Quellen und ihren Abbildungen auf `main` vorhanden.
+
 ## Gesamtpräsentation
 
 Die aktuelle gemeinsame Fassung für Aufgaben 2–6 ist [main.pdf](main.pdf),
@@ -60,6 +64,20 @@ Die exportierten Task-6-Daten und die Auswertungsbeschreibung bleiben im
 jeweiligen Aufgabenordner. Die vollständige Ergebnisdokumentation liegt unter
 `results/tables/task6_comparison_100/`, sofern sie in diesem Branch vorhanden
 ist.
+
+### Aufgaben 4 und 5
+
+Der [historische Einzelfoliensatz](aufgaben_04_05/slides.pdf) ist wieder mit
+seiner [LaTeX-Quelle](aufgaben_04_05/slides.tex) und den
+[englischen Sprechernotizen](aufgaben_04_05/speaker_notes_en.md) verfügbar.
+Seine Zellinterpretation entspricht dem damaligen Präsentationsstand.
+Die aktuellen, vergleichbaren Drei-Methoden-Reportplots liegen separat unter
+[report_assets/aufgaben_04_05](report_assets/aufgaben_04_05/README.md).
+
+```bash
+latexmk -cd -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build praesentation/aufgaben_04_05/slides.tex
+```
 
 `aufgabe_03_clustering.tex` erstellt einen eigenständigen Foliensatz zu **Aufgabe 3: Clustering** auf Englisch, ausgelegt auf **7–10 Minuten**. Er enthält acht Hauptfolien und drei Reservefolien. Die fertige [PDF](aufgabe_03_clustering.pdf) kann ohne LaTeX angesehen werden.
 

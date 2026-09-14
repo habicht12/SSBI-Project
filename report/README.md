@@ -1,5 +1,10 @@
 # Neuer Gesamtbericht
 
+[Team-Anleitung für Bearbeitung, Kompilierung und Ergebnisexports](../TEAM_EDITING.md).
+Auch die bisher lokal liegenden Eingabedateien der Report-Exporter sind jetzt
+gezielt auf `main` versioniert. Ein erneuter Plotexport benötigt dadurch keine
+privaten Arbeitsordner oder Modellcaches.
+
 ## Version 2
 
 - **[Hauptbericht main02: fünf Seiten](build/main02.pdf)**

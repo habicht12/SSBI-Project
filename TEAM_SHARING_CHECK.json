@@ -1,0 +1,137 @@
+{
+  "restored_sources": {
+    "praesentation/slides/aufgabe_03.tex": "eb16d15^",
+    "slides/aufgabe_03.tex": "df6b1fa^",
+    "praesentation/aufgaben_04_05/slides.tex": "d516499",
+    "praesentation/aufgaben_04_05/slides.pdf": "d516499",
+    "praesentation/aufgaben_04_05/speaker_notes.md": "d516499",
+    "praesentation/aufgaben_04_05/speaker_notes_en.md": "d516499",
+    "praesentation/aufgaben_04_05/data/provenance.json": "d516499"
+  },
+  "frozen_inputs_sha256": {
+    "results/tables/report_preparation_20260913/embeddings_full.parquet": "7f222bb76f11092dc254d1dcdfc89b0428c2d70613017a523442670d05bbb3c9",
+    "results/tables/benchmark_main_20260912/results/tables/task4_cellcnn_svm_100_split_metrics.csv": "96f01ee3b5f0413d2d13ca4b7e76f554b0aa68ad8f9e4705ce5ef37aade0ab09",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/data/quality.csv": "9657157fffc39f31424e577caf36a4b7bcb1f5fd16dbbfd240a1c14486f814be",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/data/pairwise.csv": "06a44ba85d0704bd2a33a468f7fc226f184d9f7d40b8ce8604d501bca03dd25c",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/data/tsne_sweep.csv": "d05bb9bcb712557c838eba974f83af514aefdeb8f3644a5dd64ffe9345a017c4",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/data/umap_sweep.csv": "58dba13c265b70510c76fc94b38ba92b5cf57570e16a152d45752a21bbb9a7af",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/figures/subsample.png": "f3f560bcc89fcca7a52214d39faf67977b822adaeb9850fa580dcd69b0ffe890",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/figures/arcsinh.pdf": "34057e76f09bcb61ea20f88258b61326abcef19f77f3df5e8ac83900197ef68b",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/figures/pca_spectrum.pdf": "f7062a3b99ec0a7a166e84ff85bf87c2d0c94747241ecf4c5f0c911e8be982c3",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/figures/tsne_sweep.png": "d1f061264c7cbaabb3e46abef126bcfa26b09d6996635c4cdfee146cd685e9f5",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/figures/umap_grid_1.pdf": "56377163ec300eaba26dec7d7fa0b7293eeb345e2e5a413d2671c468bf5a7f6f",
+    "results/tables/report_preparation_20260913/praesentation/report_assets/aufgabe_02/figures/umap_grid_2.pdf": "e654f1e5e72d232d4364504ae771648a82e226ad22475acb8664508f66d8f6fa"
+  },
+  "reason": "Small frozen dependencies needed by the shared report export scripts; no new analyses.",
+  "base_commit": "48c10ea1ee6cd5cb0d1803d7294a140f19fb4a00",
+  "checked_on": "2026-09-14",
+  "snapshot": "Only versioned files plus staged additions. No FCS archive, model checkpoints or local run caches.",
+  "build_checks": [
+    {
+      "document": "report/main.tex",
+      "exit_code": 0,
+      "seconds": 0.6
+    },
+    {
+      "document": "report/main02.tex",
+      "exit_code": 0,
+      "seconds": 0.5
+    },
+    {
+      "document": "report/supplement.tex",
+      "exit_code": 0,
+      "seconds": 1.9
+    },
+    {
+      "document": "report/supplement02.tex",
+      "exit_code": 0,
+      "seconds": 1.9
+    },
+    {
+      "document": "praesentation/main.tex",
+      "exit_code": 0,
+      "seconds": 6.4
+    },
+    {
+      "document": "praesentation/report.tex",
+      "exit_code": 0,
+      "seconds": 5.3
+    },
+    {
+      "document": "praesentation/report_korrigiert.tex",
+      "exit_code": 0,
+      "seconds": 5.9
+    },
+    {
+      "document": "praesentation/aufgabe_03_clustering.tex",
+      "exit_code": 0,
+      "seconds": 1.3
+    },
+    {
+      "document": "praesentation/aufgaben_04_05/slides.tex",
+      "exit_code": 0,
+      "seconds": 1.0
+    },
+    {
+      "document": "praesentation/aufgabe_02/slides.tex",
+      "exit_code": 0,
+      "seconds": 3.5
+    },
+    {
+      "document": "praesentation/aufgabe_06_vergleich/slides.tex",
+      "exit_code": 0,
+      "seconds": 0.9
+    },
+    {
+      "document": "slides/main.tex",
+      "exit_code": 0,
+      "seconds": 0.4,
+      "fix": "Relative paths for shared root figures and tables restored."
+    }
+  ],
+  "export_checks": [
+    {
+      "command": "python report/export_assets02.py",
+      "exit_code": 0,
+      "seconds": 3.4
+    },
+    {
+      "command": "python report/build_tables.py",
+      "exit_code": 0,
+      "seconds": 0.7
+    },
+    {
+      "command": "python report/export_assets.py",
+      "exit_code": 0,
+      "seconds": 2.8
+    },
+    {
+      "command": "python -m src.report_task45 --render-only",
+      "exit_code": 0,
+      "seconds": 7.2
+    },
+    {
+      "command": "python -m src.export_task6",
+      "exit_code": 0,
+      "seconds": 1.8
+    }
+  ],
+  "page_counts": {
+    "report/main.tex": 5,
+    "report/main02.tex": 5,
+    "report/supplement.tex": 26,
+    "report/supplement02.tex": 26,
+    "praesentation/main.tex": 98,
+    "praesentation/report.tex": 5,
+    "praesentation/report_korrigiert.tex": 5,
+    "praesentation/aufgabe_03_clustering.tex": 11,
+    "praesentation/aufgaben_04_05/slides.tex": 11,
+    "praesentation/aufgabe_02/slides.tex": 21,
+    "praesentation/aufgabe_06_vergleich/slides.tex": 11,
+    "slides/main.tex": 20
+  },
+  "original_project_files_read_by_latex": [],
+  "frozen_report_pdf_text_unchanged": true,
+  "protected_originals_unchanged": 67,
+  "software": "Existing project Python environment and TeX Live; third-party dependencies are installed separately."
+}

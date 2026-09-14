@@ -10,11 +10,11 @@ __MACOSX/
 # Local input data (each contributor provides the same original archive)
 NK_cell_dataset/
 
-# Local copies of source documents
-CellCNN.pdf
-Group_projects_ssbi_2026.pdf
+# The assignment and reference paper are shared with the report sources.
 
 # Generated analysis artefacts
+# Selected frozen inputs needed by the report exporters are explicitly tracked.
+# Other run directories, checkpoints and caches remain local.
 results/figures/*
 results/tables/*
 !results/figures/.gitkeep

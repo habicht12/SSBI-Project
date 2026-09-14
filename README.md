@@ -1,8 +1,14 @@
 # NK/CMV Single-Cell Analysis
 
 Dieses Repository enthält die Analysen des SSBI-Gruppenprojekts zum
-NK/CMV-Datensatz. Der Datensatz selbst wird nicht mit Git versioniert. Alle
-Mitwirkenden verwenden dieselbe Original-ZIP-Datei und entpacken sie lokal.
+NK/CMV-Datensatz. Die FCS-Originaldateien bleiben lokal. Alle Mitwirkenden
+verwenden dafür dieselbe Original-ZIP-Datei. Die zum Bearbeiten und Kompilieren
+benötigten Report-/Präsentationsquellen, Abbildungen und eingefrorenen
+Ergebnisexports liegen dagegen auf `main`.
+
+**Für Sebastian, Marie und Gregor:** [Präsentation und Report gemeinsam bearbeiten](TEAM_EDITING.md).
+Die Anleitung verlinkt die aktuellen Hauptdateien, ältere Fassungen,
+Sprechernotizen und die Befehle zum Kompilieren und erneuten Plotexport.
 
 ## Voraussetzungen
 
