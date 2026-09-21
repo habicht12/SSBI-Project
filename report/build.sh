@@ -13,7 +13,7 @@ if [[ $# -eq 0 ]]; then
 fi
 for document in "$@"; do
   case "$document" in
-    main|supplement|main02|supplement02) ;;
+    main|supplement|main02|supplement02|main03|supplement03) ;;
     *) echo "Unknown report target: $document" >&2; exit 2 ;;
   esac
   latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build "$document.tex"
