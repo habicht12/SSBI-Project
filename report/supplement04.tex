@@ -1,0 +1,331 @@
+\documentclass[11pt,a4paper]{article}
+\input{style}
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\begin{document}
+\begin{center}
+{\Large\bfseries Supplementary Material\par}
+\vspace{3pt}
+Benchmarking Comparative Single-Cell Analysis of CMV Status\\
+Sebastian Fay \quad Marie Schygulla \quad Gregor Habitzreither
+\end{center}
+
+\section{Reference study, dataset and preprocessing}
+\subsection{The reference study and the implemented comparison}
+CellCNN learns a sample representation from labelled bags of cells~\cite{cellcnn}. Its shared filters can respond to uncommon marker combinations, while pooling prevents a small informative subset from being averaged indiscriminately into the entire sample. The paper studies several settings, including stimulated immune cells, survival-associated subsets, CMV-associated NK populations and artificial leukaemia spike-ins. These experiments have different endpoints and should not be treated as a single CMV benchmark. Our project evaluates donor CMV classification and subset interpretation in the supplied cohort.
+
+The original CellCNN implementation used Theano/Keras. Our implementation reproduces the relevant linear-filter/ReLU/pooling design in PyTorch, with explicitly recorded adaptations (S3). Citrus is the original R package~\cite{citrus}. Published results are background evidence. All numerical results in the main report come from this project's current analyses.
+
+\subsection{Analysis scopes and donor balance}
+The supplied archive derives from the study of NK-cell diversity by Horowitz et al.~\cite{horowitz}. The supplied 20-donor subset is smaller than the publication's complete cohort. The archive provides NK-gated cells and live-cell PBMC files for the same donors. Labels belong to donors and do not identify infected individual cells. Four complete pairs of identical (monozygotic) twins are identifiable from the supplied donor identities, so twins can remain on opposite sides of a donor-wise split.
+
+\begin{table}[htb]\centering\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{.25\linewidth}>{\raggedright\arraybackslash}p{.18\linewidth}>{\raggedright\arraybackslash}p{.49\linewidth}@{}}\toprule
+Analysis & Gate & Sample and purpose\\\midrule
+Dimensionality reduction & \texttt{gated\_NK} & 2,000 cells/donor; 40,000 final cells, 5,000 for parameter sweeps\\
+Clustering & \texttt{gated\_alive} & 1,000 cells/donor; 20,000 cells clustered in 37D\\
+Classification & \texttt{gated\_alive} & Method-specific balanced training samples; donor-level test predictions\\
+Subset maps & \texttt{gated\_alive} & Fixed 500 cells/donor; 10,000 display cells, t-SNE perplexity 30\\
+Subset marker profiles & \texttt{gated\_alive} & Selected events from complete outer test donors\\
+Bonus population evaluation & \texttt{gated\_alive} & Fixed 20,000 evaluation cells/donor; a separate filter-specific frequency analysis\\\bottomrule
+\end{tabular}
+\caption{The gates and sampling scopes are deliberately distinguished. The interpretation map is not the 40,000-cell NK embedding of the main dimensionality-reduction comparison.}
+\end{table}
+
+Equal cell counts reduce domination of pooled exploratory analyses by larger files. They do not make cells independent biological replicates. The NK-subsampling check compares an approximate NKG2C/CD57 phenotype between the balanced subset and the full NK gate (Fig.~\ref{fig:subsampling}). This does not establish preservation of every rare population. The original inputs, labels and marker order are verified by file hashes. Finite negative marker values are retained, and no additional manual cell-type gate is fitted for classification.
+
+\clearpage
+\begin{table}[htb]\centering\small
+\input{tables/donors.tex}
+\caption{Donor inventory from the current raw-data summaries. Test visits are the appearances in the 30 common outer splits. The same counts apply to every method. NK/alive is a percentage, not an additional classifier feature.}
+\label{tab:donors}
+\end{table}
+
+\subsection{Transformation and scaling}
+We apply $a_{ij}=\arcsinh(x_{ij}/5)$ to each analysis marker. This compresses large intensities while retaining finite negative background measurements. For Task 2, we qualitatively examined how cofactors 1, 3, 5, 8, 10 and 15 affect marker-intensity histograms, then chose the default cofactor 5. This choice was fixed for subsequent analyses, not optimised by outer test performance. Exploratory maps and clustering use marker scaling fitted to their own balanced samples. CellCNN and SVM use a scaler fitted only on the relevant training donors. Citrus clusters unstandardised ArcSinh marker values. Its logistic regression standardises cluster-frequency features internally.
+
+\begin{figure}[htb]\centering
+\includegraphics[width=.42\linewidth]{supplement/subsample.png}
+\caption{Phenotype-specific subsampling check within the NK gate. The ``adaptive NK'' axis label denotes an approximate NKG2C/CD57 phenotype defined by exploratory two-component mixture-model crossovers, not a validated functional cell type. Fractions refer to NK-gated cells, not all PBMCs. Similarity here does not establish preservation of every rare population.}
+\label{fig:subsampling}
+\end{figure}
+\section{Dimensionality reduction and clustering}
+\subsection{Projection parameters and comparison measures}
+PCA, t-SNE and UMAP use the same 40,000-cell NK sample. Of the 36 fitted PCA components, the first 29 retain 91.4978\% of variance and define the high-dimensional reference for the nonlinear methods and quality scores. The first two retain 20.2911\%. Retaining variance is not equivalent to proving removal of measurement noise.
+
+t-SNE uses PCA initialisation, Barnes--Hut optimisation, 750 iterations and seed 42. Its six perplexities are 5, 30, 50, 60, 70 and 100. UMAP tests neighbours $\{5,15,50,100\}$, minimum distance $\{0,0.1,0.5,1\}$ and learning rate $\{0.1,0.5,1,5\}$, with seed 42 and otherwise the recorded library defaults. The sweep uses a fixed 5,000-cell subset of the selected PC scores. Additional tunable choices include PCA whitening/solver, t-SNE learning rate/initialisation and the metric, initialisation and iteration settings of UMAP. These settings are held fixed in this analysis.
+
+For neighbourhood size $k=15$, trustworthiness is
+\[
+T(k)=1-\frac{2}{nk(2n-3k-1)}\sum_i\sum_{j\in U_k(i)}\bigl(r(i,j)-k\bigr),
+\]
+where $U_k(i)$ contains low-dimensional neighbours absent from the high-dimensional neighbourhood and $r(i,j)$ is their high-dimensional rank~\cite{trust}. False neighbours are penalised more when originally distant. The final 40,000-cell calculation uses exact ranks in row blocks. kNN preservation is the mean fraction of shared neighbours, $|N_k^A(i)\cap N_k^B(i)|/k$, without partial credit for near misses. Distance correlation is Pearson correlation of pairwise distances within one fixed 2,000-cell subset.
+
+For Procrustes comparison, corresponding cells are aligned by centring, rotation/reflection and scaling. The sum of squared residuals is the reported disparity $M^2$~\cite{scipy}. It evaluates aligned global shape, whereas neighbourhood overlap evaluates local agreement. Both are geometric comparisons, not biological validation.
+
+\begin{table}[htb]\centering\small
+\input{tables/tsne.tex}
+\caption{The complete t-SNE sweep. Perplexity 70 wins by trustworthiness, whereas perplexity 30 has slightly higher exact-neighbour overlap. Parameter selection therefore depends on the declared criterion.}
+\label{tab:tsnesweep}
+\end{table}
+
+\begin{table}[htb]\centering\small
+\input{tables/learning_rate.tex}
+\caption{UMAP learning-rate selection: mean trustworthiness of the two fixed configurations $(n,d)=(5,0)$ and $(50,0.1)$. Learning rate 0.1 wins this mean. Selection does not use the best single configuration across all rates.}
+\end{table}
+
+\begin{figure}[htb]\centering
+\includegraphics[width=.48\linewidth]{supplement/pca_spectrum.pdf}\hfill
+\includegraphics[width=.49\linewidth]{v03/pca_donor.pdf}
+\caption{PCA variance curve (left) and the first two PCs for 40,000 NK-gated cells (right, red: CMV-positive, blue: negative). The retained 29 PCs explain 91.50\% of variance, whereas the displayed two explain 20.29\%.}
+\end{figure}
+\begin{figure}[htb]\centering
+\includegraphics[width=\linewidth]{supplement/tsne_sweep.png}
+\caption{t-SNE on the 5,000-cell sweep subset. Left to right: perplexities 5, 30, 50, 60, 70 and 100; numerical quality measures are in Table~\ref{tab:tsnesweep}. Red: CMV-positive donors; blue: negative donors. Perplexity changes the neighbourhood scale and visual organisation. The layouts are not independently annotated populations.}
+\end{figure}
+\begin{table}[htb]\centering\small
+\input{tables/quality.tex}
+\caption{Final embedding quality against the 29-PC reference. Trustworthiness and kNN overlap use 40,000 cells, while distance correlation uses the fixed 2,000-cell subset.}
+\end{table}
+\begin{table}[htb]\centering\small
+\input{tables/pairs.tex}
+\caption{All three pairwise comparisons of the final 40,000-cell embeddings. t-SNE/UMAP has both the highest neighbour overlap and lowest Procrustes disparity.}
+\end{table}
+
+The $4\times4\times4$ UMAP grid selects learning rate 0.1 by mean trustworthiness over the two fixed reference configurations, then 5 neighbours and minimum distance 0 within that rate; the complete 64-row results remain in the repository's Task-2 \texttt{umap\_sweep.csv} export.
+
+\begin{figure}[p]\centering
+\includegraphics[width=\linewidth]{v03/umap_sweep.png}
+\caption{UMAP on the 5,000-cell sweep subset at learning rate 0.1. Rows: 5, 15, 50 and 100 neighbours; columns: minimum distance 0, 0.1, 0.5 and 1. Red: CMV-positive donors; blue: negative donors. Smaller minimum distance packs cells more tightly, while neighbour count changes local connectivity.}
+\end{figure}
+
+\clearpage
+\subsection{Clustering grid and stability}
+The clustering sample is drawn by one NumPy generator with seed 42, advanced sequentially in the supplied donor-file order. Each donor contributes 1,000 finite-marker events. K-means uses ten initialisations for $k\in\{2,3,4,6,8,10,12\}$. Hierarchical clustering evaluates the same cuts for single, average, complete and Ward linkage. Leiden uses a weighted undirected neighbour graph constructed with Scanpy, neighbour counts $\{10,30,60\}$, resolutions $\{0.3,0.7,1.2\}$, the \texttt{leidenalg} backend and convergence iterations~\cite{leiden}. All fits and DB scores use standardised 37D data.
+
+DB gives each cluster equal weight:
+\[
+DB=\frac1K\sum_c\max_{j\ne c}\frac{S_c+S_j}{\|\mu_c-\mu_j\|},
+\]
+where $S_c$ is mean distance to centroid $\mu_c$~\cite{db}. A global mean silhouette weights a cluster's contribution by its cell count, so a rare cluster contributes little to that average. DB avoids this specific size weighting, which matters when small populations are of interest. Equal cluster weighting also gives small artefactual groups influence, however, and is not evidence of a meaningful rare population. Single linkage gives the concrete counterexample: 19,999 cells plus one event, despite DB $=0.264$ and stability $=1$. Single, average and complete linkage select partitions dominated by one giant cluster. The complete results include these solutions.
+
+For each of ten repeats, 80\% of the initially sampled cells are retained without replacement within each donor. Scaling and clustering are refitted, and both partitions are compared on the same retained cell IDs. Let $R_t$ be those IDs in repeat $t$, $C_c$ an original cluster and $D_{kt}$ a refitted cluster. For $C_c\cap R_t\ne\varnothing$, its best Jaccard overlap is
+\[
+J_{ct}=\max_k\frac{|(C_c\cap R_t)\cap D_{kt}|}{|(C_c\cap R_t)\cup D_{kt}|}.
+\]
+We take the median over assessed repeats for each cluster, then the unweighted mean over clusters. Unlike global partition agreement such as ARI, which can be dominated by large groups, this follows each population individually. If $C_c\cap R_t=\varnothing$, the cluster is unassessable in that repeat, rather than assigned Jaccard zero. A singleton or tiny cluster may appear perfectly stable whenever its members survive, so stability alone does not validate a rare population and must be read with cluster sizes and marker profiles.
+
+DB assesses partition geometry and resampling stability assesses reproducibility after cell removal. They are complementary diagnostics; statistical independence is not assumed. Within each method/linkage, configurations must first pass the heuristic stability cutoff 0.6, then DB is minimised. We intentionally avoid a single weighted objective because it would impose an arbitrary trade-off between geometric quality and reproducibility. This procedure tests cell removal and algorithmic/scaling changes within the original sample, not generalisation to new donors.
+
+\begin{table}[htb]\centering\footnotesize
+\input{tables/clustering_winners.tex}
+\caption{Selected configurations for every method/linkage, including the degenerate hierarchical solutions. A high largest-cluster fraction reveals information not captured by the score alone.}
+\end{table}
+{\footnotesize\input{tables/clustering_grid.tex}}
+
+\clearpage
+{\small\input{tables/cluster_stability.tex}}
+\begin{figure}[htb]\centering
+\includegraphics[width=\linewidth]{supplement/stability_eligibility.png}
+\caption{Original stability eligibility results for the full grid. High average stability can coexist with weak individual clusters.}
+\end{figure}
+
+\clearpage
+\begin{figure}[p]\centering
+\includegraphics[width=\linewidth]{clustering_all_markers.pdf}
+\caption{All 37 markers for the three selected partitions. Relative expression is cluster median minus sample median, divided by sample IQR, after ArcSinh. Display colours are clipped to $\pm2$. Unclipped numerical profiles are exported in \texttt{data/cluster\_profiles.csv}. Marker averages do not establish co-expression within individual cells.}
+\label{fig:allmarkers}
+\end{figure}
+
+\clearpage
+\section{Classification and subset implementation}
+\subsection{Shared splits and model selection}
+Splits 0--29 are the common three-method benchmark. CellCNN/SVM also have 100 stored splits. Every outer training set has 14 donors (7 CMV-positive, 7 negative), and each test set has two positive and four negative donors. Three fixed inner folds are shared across methods. All scaler fits and training inputs exclude outer test donors.
+
+\begin{table}[htb]\centering\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{.15\linewidth}>{\raggedright\arraybackslash}p{.40\linewidth}>{\raggedright\arraybackslash}p{.37\linewidth}@{}}\toprule
+Method & Training and representation & Inner selection and outer evaluation\\\midrule
+CellCNN & 200 bags of 3,000 cells per inner training donor; 20,000 cells/donor for scaler fitting; 3, 4 or 5 linear/ReLU filters; top-1\% mean pooling; two-output layer & Nine candidates (three folds $\times$ three filter counts). Validation accuracy, then AUC, regularised loss, fewer filters and fold order. Retain the winning network; average five test-input probabilities\\
+Citrus & 10,000 cells/training donor; Ward tree; clusters from 0.05\% of training cells; abundance features; L1-logistic regression & Original \texttt{cv.min} inner-error selection. Final tree and regression use all 14 training donors; 10,000 sampled cells/test donor for benchmark predictions\\
+Linear SVM & 10,000 cells/training donor; donor labels assigned to cells; training-only scaler; L2 squared-hinge loss & $C\in\{0.01,0.1,1\}$ by mean inner AUC, smaller $C$ for ties; refit on all 14 training donors; full-donor top-1\% mean margin\\\bottomrule
+\end{tabular}
+\caption{Implementation details that materially determine the comparison. CellCNN is a paper-guided reimplementation and Citrus uses the original package. SVM donor aggregation is a project adaptation.}
+\end{table}
+
+CellCNN uses Adam with learning rate 0.01, batch size 128, L2 coefficient $10^{-4}$, at most 100 epochs and patience five. The validation-loss improvement tolerance is $10^{-6}$. No dropout is used. Inner training and validation bags are materialised with separate seeds. The retained network was trained on nine or ten inner training donors and is not refitted on all 14. Validation and test average five probabilities from up to 20,000 sampled cells per input. A fixed 3/4/5-filter search replaces the publication's random search. Averaging multiple test inputs is another adaptation.
+
+For Citrus, final training uses 140,000 cells. Its original mapping attaches a new cell to the nearest training event, then transfers that event's memberships in the nested hierarchy. Regression operates on cluster frequencies, not cell labels. The minimum cluster size is 70 events in the final training set. The existing lambda path is constructed using the full outer training set, while inner trees and fitted weights use the specified training folds. Thirty splits and 10,000 cells/donor are computational reductions relative to the larger paper protocol.
+
+For SVM, $m_i=w^Tz_i+b$ is a margin, not a probability. With $I_d$ the highest-scoring $k_d=\lceil0.01N_d\rceil$ cells, $s_d=k_d^{-1}\sum_{i\in I_d}m_i$. The threshold maximises sensitivity plus specificity on inner out-of-fold donor scores. CellCNN/Citrus use threshold 0.5, whereas SVM retains its inner-trained threshold. AUC and AP use scores, whereas BA uses the declared thresholded decisions. AP summarises precision at positive-recall increments.
+
+\subsection{Quantitative cell-subset scores}
+\label{sec:testsubsets}
+For Task 5, these rules define the test-cell selections shown in main-report Figure 4 and discussed in Sections 2.5 and 3.4. A test appearance (termed a ``visit'' in the plots and tables) means that a donor belongs to the outer test set of one split; it is not a separate clinical visit.
+
+For cell $i$, split $s$, filter $f$ and cluster $j$, the positive-direction scores are
+\[
+\begin{aligned}
+q^{\mathrm{CNN}}_{is}&=\max_{f:\,\Delta_{fs}>0,\,M_{fs}>0}r_{ifs}/M_{fs}, &q^{\mathrm{CNN}}_{is}&>0.5,\\
+q^{\mathrm{SVM}}_{is}&=m_{is}-\tau_s\quad(i\in I_{ds}), &q^{\mathrm{SVM}}_{is}&>0,\\
+q^{\mathrm{Citrus}}_{is}&=\max(\{0\}\cup\{\beta_{js}:i\in A_{js}\}), &q^{\mathrm{Citrus}}_{is}&>10^{-10}.
+\end{aligned}
+\]
+Here $\Delta_{fs}=v_{f,+}-v_{f,-}$ is the output-weight contrast. CellCNN's $M_{fs}$ is the maximum response on the original scaler-reference draw: 20,000 cells per actual inner training donor with the original candidate seed. It is never recomputed from test or display cells. A filter with zero reference maximum is ineligible. An empty maximum is defined as zero. New cells may exceed the reference maximum. SVM cells outside $I_{ds}$ are unselected. Boundary ties use the original FCS event index. Citrus's $A_{js}$ denotes transferred training-cluster membership, and $10^{-10}$ excludes numerical zeros.
+
+The plotted cell frequency is
+\[
+f_i=\frac{\sum_{s\in\mathcal T_d}\mathbf1\{\text{cell }i\text{ passes the method's selection rule in }s\}}
+{|\mathcal T_d|},
+\]
+where $\mathcal T_d$ contains all outer test appearances of its donor. Each cell counts at most once per split even if several filters or nested clusters select it. All methods use identical denominators of 4--16 test appearances. In Citrus, splits 19, 24 and 26 contain no effective clusters, and split 27 contains only negative coefficients. All four therefore contribute zero positive selections and remain in the denominator.
+
+Main-report Figure 4A--C displays the same 10,000 live-PBMC reference cells for all three methods on a fixed t-SNE map (perplexity 30). Colour records how often each cell is selected across its donor's test appearances. This display sample is distinct from the 40,000 NK-gated cells used for Task 2 in main-report Figure 1.
+
+The marker profiles in main-report Figure 4D instead use selected cells from the \emph{complete test-donor datasets}, including cells outside the display sample. We first average marker values across selected cells within each nonempty test appearance, then average these profiles within each donor, and finally give each contributing donor equal weight. An appearance with no selected cells has no marker profile and is omitted from profile averaging; it still counts in the selection-frequency denominator. All three methods have 20 contributing donors, from both CMV classes. For comparison, profiles are displayed as $(c_j-\mu_j)/\sigma_j$, where $c_j$ is the selected-cell mean for marker $j$ and $\mu_j,\sigma_j$ come from the fixed reference map's exploratory scaler. These values describe marker expression, not model weights.
+
+\subsection{Reconstruction and numerical checks}
+For the Citrus interpretation in Task 5 (main-report Figure 4C--D), the original Citrus exports retained coefficients and cluster means but not tree memberships. We reconstructed only the original final Ward trees with their original donor draws and seeds, retaining the selected classifiers. Every saved cluster profile in a reconstructed tree agrees within $5.33\times10^{-15}$. Full test-donor cells are then mapped to these trees. Original 10,000-cell benchmark predictions are not replaced by new full-donor predictions.
+
+Exact nearest-training-cell selection is accelerated by proving nonselection when an actual point outside the positive cluster union is closer than the exact nearest positive member. An approximate query supplies only possible negative witnesses. Unresolved cases use an exact full search, with explicit first-row tie handling. ``Negative'' here means outside the selected training union, not a CMV-negative donor.
+
+\begin{table}[htb]\centering\small
+\begin{tabular}{@{}ll@{}}\toprule
+Component & Recorded implementation\\\midrule
+Python analysis & NumPy 2.5.2; pandas 2.3.3; SciPy 1.18.0\\
+Classical learning / projections & scikit-learn 1.9.0; Scanpy 1.12.4; umap-learn 0.5.12\\
+Neural models / FCS reader & PyTorch 2.14.0; FlowKit 1.3.2\\
+Citrus runtime & R 4.5.3; Citrus 0.8; Rclusterpp 0.2.6\\\bottomrule
+\end{tabular}
+\caption{Recorded software context. Native Citrus and Rclusterpp commits and full input/code hashes are retained in the repository provenance files.}
+\end{table}
+
+\clearpage
+\section{Modified CellCNN: detailed methods}
+\subsection{Common protocol and linear baseline}
+All four models use the same 100 outer donor splits and the same three-fold/filter-count candidate design. The baseline is the original linear/ReLU CellCNN. Training bag size, sampling, Adam settings, filter counts, early stopping and five-input test averaging remain as in S3. For the baseline and hard quadratic model, the per-filter pooled response is the mean of the largest $\max(1,\lfloor0.01N\rfloor)$ responses. This floor convention differs from SVM's ceiling convention. Both are retained faithfully.
+
+\subsection{Diagonal quadratic responses}
+For standardised cell vector $z$, filter $f$ computes
+\[
+r_f(z)=\max\left(0,b_f+w_f^Tz+\sum_{j=1}^{37}q_{fj}z_j^2\right).
+\]
+There are no cross-marker products $z_jz_\ell$ for $j\ne\ell$. Positive or negative squared-marker coefficients allow non-monotone responses in individual markers. The new quadratic weights start at zero, so the hard-pooling model starts with the same linear response and random initialisation sequence as the baseline. Its loss is cross-entropy plus $10^{-4}$ times the squared linear, quadratic and output weight matrices, excluding biases. L2 on $q$ penalises the added curvature and shrinks it toward zero, where the response is linear; nonlinearity must therefore improve the training objective enough to offset this penalty.
+
+\subsection{Learnable soft-fraction pooling}
+Sort responses within a bag in descending order, $r_{(j)f}$, and assign midpoint ranks $u_j=(j-\tfrac12)/N$, $j=1,\ldots,N$. The learnt fraction and pooling weights are
+\[
+\alpha_f=\operatorname{sigmoid}(\theta_f),\qquad
+g_{jf}=\operatorname{sigmoid}\left(\frac{\alpha_f-u_j}{0.002}\right),\qquad
+h_f=\frac{\sum_jg_{jf}r_{(j)f}}{\max(\sum_jg_{jf},10^{-6})}.
+\]
+Each filter starts at $\alpha_f=0.01$. The fraction is bounded in $(0,1)$ and trained jointly with the classifier. This is a smooth weighting of sorted responses, not a binary selection mask, and is not exactly hard top-1\% at its initial finite temperature. The quadratic soft model uses the same diagonal response and weight penalties as the hard quadratic model.
+
+\subsection{Mahalanobis/ReLU prototype variant}
+The prototype response is
+\[
+d_f(z)=\max\left(0,\frac1{37}\sum_{j=1}^{37}a_{fj}(z_j-c_{fj})^2\right),
+\qquad r_f(z)=\max(0,\rho_f-d_f(z)).
+\]
+Positive weights are parameterised as $\tilde a_{fj}=\operatorname{softplus}(u_{fj})+10^{-6}$ and normalised to mean one within each filter. Radii use $\rho_f=\operatorname{softplus}(v_f)+10^{-6}$. The learned metric is therefore diagonal, without a full covariance matrix. Soft pooling is defined as above.
+
+At $p=37$, the diagonal metric has 37 axis weights per filter before normalisation, whereas a full symmetric metric has $37\cdot38/2=703$ independent entries. Both also require prototype centres. With only 20 donors, including four identifiable pairs of identical twins, learning a full metric would add substantial flexibility relative to the number of independent biological samples and risk fitting donor-specific geometry. The many cells do not supply additional independent donors.
+
+Initial centres are sampled from a donor-balanced training-only pool of 2,000 cells per donor, using a separate seed offset of 300,000. Weights start equally, and each initial radius is the 1\% quantile of its prototype distances, bounded below by $2\times10^{-6}$. Training adds output-weight L2 ($10^{-4}$) and a geometry penalty $10^{-3}\operatorname{mean}[(a-1)^2]$. Centres, radii and geometry are not given the quadratic model's weight penalty. Validation loss contains cross-entropy and output L2 but excludes the geometry penalty. Consequently this is an exploratory architecture comparison, not an isolated test of response geometry with every regulariser held identical.
+
+The geometry penalty favours $a_{fj}$ near one, shrinking unequal marker sensitivities toward isotropic distance geometry. This differs from quadratic L2, which shrinks added curvature toward zero and the linear response. Linear filters and distance-to-prototype filters impose different response geometries, so their performance comparison does not establish that isotropy itself is detrimental.
+
+\subsection{Separate population-frequency evaluation}
+Network AUC evaluates the complete learned representation for donor prediction, whereas frequency AUC asks whether one selected high-response population has a donor-level frequency associated with CMV status. For each model and split $s$, choose one filter by its learned positive output contrast $\Delta_{fs}=v_{f,+}-v_{f,-}$:
+\[
+f_s^*=\mathop{\arg\max}_{f:\Delta_{fs}>0}\Delta_{fs},\qquad
+t_s=\tfrac12\max_{z\in\mathcal R_s}r_{f_s^*,s}(z),\qquad
+F_{ds}=\frac1{N_d}\sum_{i=1}^{N_d}\mathbf1\{r_{f_s^*,s}(z_{di})>t_s\}.
+\]
+Here $\mathcal R_s$ contains all available cells of the selected model's actual nine or ten inner training donors, transformed with its training-fitted scaler. Inner validation and outer test donors are excluded. This reference differs from Task 5's sampled scaler-reference draw. The threshold is not recomputed on outer test donors or the display map. Evaluation uses a fixed $N_d=20{,}000$ cells per donor (seed 63,000 plus sorted donor index). ROC-AUC is calculated from the held-out donors' CMV labels and frequencies $F_{ds}$, without reversing the score direction based on test results. This single-filter evaluation also differs from the union-of-positive-filters definition in Task 5.
+
+The baseline lacks a positive filter in splits 44 and 84. Those frequencies remain missing, not zero. Population-frequency comparisons use the same 98 jointly evaluable splits for all four models, whereas network-score comparisons use all 100. Frequency effect means positive-donor frequency minus negative-donor frequency within a split. It is not a causal disease effect.
+
+\section{Additional results}
+\subsection{Classification distributions}
+\begin{table}[htb]\centering\small
+\input{tables/classification_iqr.tex}
+\caption{Three-method benchmark on the 30 common splits: median [Q1, Q3]. AUC and AP are score-based, while BA uses the method's declared decision threshold.}
+\end{table}
+\begin{table}[htb]\centering\small
+\input{tables/classification_mean.tex}
+\caption{Means over the same 30 splits. Means and medians are deliberately reported separately.}
+\end{table}
+\begin{table}[htb]\centering\small
+\input{tables/classification_100.tex}
+\caption{Additional CellCNN/SVM comparison over all 100 stored splits: median [Q1, Q3]. This is a separate comparison, not an extension of Citrus to 100 splits.}
+\end{table}
+\begin{table}[htb]\centering\footnotesize
+\input{tables/paired.tex}
+\caption{Paired AUC differences on identical donor splits. Better/equal/worse counts describe the first method relative to the second. No independence-based significance test is inferred from these overlapping repeats.}
+\end{table}
+
+\newpage
+\subsection{Task 5: test-cell selection and recurring training populations}
+Table~\ref{tab:testselection} supplements main-report Figure 4A--D with test-cell selection counts and marker-profile availability. The selection rules and averaging procedure are described in Section~\ref{sec:testsubsets}.
+
+A separate, complementary Task-5 analysis asks whether similar \emph{training populations} recur across the 30 splits. Table~\ref{tab:traininggroups} and Figure~\ref{fig:traininggroups} report this analysis for CellCNN and Citrus. Here each population is represented by its centroid, a mean marker-profile vector. In contrast, main-report Figure 4 tracks selection of the same held-out cells and summarises their marker profiles; its results do not use these training-population groups.
+
+We group similar centroids separately for each method using a common exploratory z-scale, cosine distance and average-linkage clustering with distance cutoff 0.4. Only groups present in at least six of 30 splits are shown. This grouping rule is a project adaptation of filter-grouping code, not a verified reproduction of the paper's NK-centroid analysis. For each group, we average member centroids within each split, then take the median across splits containing the group. A split with several members therefore does not receive extra weight. Absent groups have no marker profile, but their absence counts when recurrence is expressed over all 30 splits.
+
+\begin{table}[htb]\centering\small
+\input{tables/cell_selection.tex}
+\caption{Task-5 test-cell selections underlying main-report Figure 4: counts on the 10,000-cell display sample and profile availability over 180 full-test-donor appearances per method. A cell's frequency denominator is its donor's number of test appearances, not 30.}
+\label{tab:testselection}
+\end{table}
+\begin{table}[htb]\centering\small
+\input{tables/groups.tex}
+\caption{Recurring training-population groups for Task 5. Centroids counts member profiles; Splits counts distinct splits containing the group. Positive and Negative count splits with members supporting the respective CMV prediction direction, not numbers of donors. Both directions may occur in one split. For example, CellCNN group 1 contains 58 centroids distributed over all 30 splits.}
+\label{tab:traininggroups}
+\end{table}
+
+\begin{figure}[p]\centering
+\includegraphics[width=\linewidth]{supplement/task5_group_profiles_recurrence.pdf}
+\caption{Complementary Task-5 training-population analysis: marker summaries and recurrence of all retained CellCNN and Citrus groups from Table~\ref{tab:traininggroups}. These profiles summarise training populations; main-report Figure 4 instead evaluates held-out cells.}
+\label{fig:traininggroups}
+\vspace{8pt}
+\includegraphics[width=\linewidth]{supplement/task5_oof_marker_profiles.pdf}
+\caption{Task-5 held-out selected-cell profiles, extending main-report Figure 4D: dots are means across equally weighted donors, and lines are Q1--Q3 of donor profiles, not confidence intervals. The contribution count is 20 donors for each method.}
+\end{figure}
+
+\clearpage
+\subsection{Complete four-model bonus comparison}
+\begin{table}[htb]\centering\small
+\input{tables/bonus_network.tex}
+\caption{Network-score metrics over 100 shared splits. AP and BA are means. AUC includes both mean and median.}
+\end{table}
+\begin{table}[htb]\centering\small
+\input{tables/bonus_frequency.tex}
+\caption{Filter-population frequency results over the same 98 jointly evaluable splits. Effects are mean percentage-point differences between the positive and negative test donors.}
+\end{table}
+\begin{table}[htb]\centering\small
+\input{tables/bonus_paired.tex}
+\caption{Network-AUC differences from the CellCNN baseline over 100 splits. Equal mean AUC for the two quadratic variants is not a claim that their probabilities or every secondary metric coincide.}
+\end{table}
+
+Both quadratic variants increase mean network AUC from 0.8075 to 0.9125, a gain of 0.1050. The soft variant is better/equal/worse than baseline in 53/37/10 splits. Frequency AUC changes little: 0.8559 for baseline, 0.8610 for Quadratic Top-1\% and 0.8559 for Quadratic Soft-$\alpha$. Thus improved network prediction does not establish improved recovery of a single phenotype-associated population, and soft pooling adds no clear advantage here. The prototype has lower network and frequency AUC (0.7375 and 0.7245), but its different initialisation and regularisation preclude attributing this solely to the distance geometry.
+
+\begin{figure}[p]\centering
+\includegraphics[width=\linewidth]{supplement/bonus_network_metrics.pdf}
+\caption{All four neural models on the common 100-split network benchmark.}
+\vspace{8pt}
+\includegraphics[width=\linewidth]{supplement/bonus_paired_differences.pdf}
+\caption{Paired network and population-frequency AUC differences from the baseline. The frequency panel uses only jointly evaluable splits.}
+\label{fig:bonuspaired}
+\end{figure}
+\begin{figure}[p]\centering
+\includegraphics[width=\linewidth]{supplement/bonus_donor_frequencies.pdf}
+\caption{One point per donor, averaging its available test frequencies in the common 98 splits. The selected filter may change between splits.}
+\vspace{8pt}
+\includegraphics[width=.8\linewidth]{supplement/bonus_learned_alphas.pdf}
+\caption{Learned pooling fractions over selected-model filters, with the 1\% initialisation shown. The distribution characterises fitted parameters. It does not independently demonstrate a performance gain from learning the fraction.}
+\end{figure}
+
+\clearpage
+\input{references}
+\end{document}

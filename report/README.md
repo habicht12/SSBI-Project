@@ -5,6 +5,21 @@ Auch die bisher lokal liegenden Eingabedateien der Report-Exporter sind jetzt
 gezielt auf `main` versioniert. Ein erneuter Plotexport benötigt dadurch keine
 privaten Arbeitsordner oder Modellcaches.
 
+## Version 4
+
+- [Hauptbericht main04: fünf Seiten](build/main04.pdf)
+- [Supplement supplement04](build/supplement04.pdf)
+- Quellen: [main04.tex](main04.tex), [supplement04.tex).
+
+Version 04 erläutert den qualitativen ArcSinh-Cofaktorvergleich und die Bezüge
+der Aufgabe-5-Auswertungen zu Abbildung 4. Die ergänzenden Trainingsgruppen
+werden ausdrücklich von den Testzellprofilen getrennt. Markierte technische
+Zusatztexte und die separate Markerliste wurden entfernt; Version 03 bleibt
+einschließlich ihrer PDF-Markierungen erhalten. Abbildungen und Ergebnisse
+sind unverändert.
+
+Kompilieren: `bash report/build.sh main04 supplement04` aus dem Projektstamm.
+
 ## Version 2
 
 - **[Hauptbericht main02: fünf Seiten](build/main02.pdf)**
