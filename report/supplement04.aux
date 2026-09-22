@@ -1,0 +1,105 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{cellcnn}
+\citation{citrus}
+\citation{horowitz}
+\@writefile{toc}{\contentsline {section}{\numberline {S1}Reference study, dataset and preprocessing}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.1}The reference study and the implemented comparison}{1}{subsection.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.2}Analysis scopes and donor balance}{1}{subsection.1.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S1}{\ignorespaces The gates and sampling scopes are deliberately distinguished. The interpretation map is not the 40,000-cell NK embedding of the main dimensionality-reduction comparison.}}{1}{table.caption.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S2}{\ignorespaces Donor inventory from the current raw-data summaries. Test visits are the appearances in the 30 common outer splits. The same counts apply to every method. NK/alive is a percentage, not an additional classifier feature.}}{2}{table.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:donors}{{S2}{2}{Donor inventory from the current raw-data summaries. Test visits are the appearances in the 30 common outer splits. The same counts apply to every method. NK/alive is a percentage, not an additional classifier feature}{table.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S1.3}Transformation and scaling}{2}{subsection.1.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S1}{\ignorespaces Phenotype-specific subsampling check within the NK gate. The ``adaptive NK'' axis label denotes an approximate NKG2C/CD57 phenotype defined by exploratory two-component mixture-model crossovers, not a validated functional cell type. Fractions refer to NK-gated cells, not all PBMCs. Similarity here does not establish preservation of every rare population.}}{2}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:subsampling}{{S1}{2}{Phenotype-specific subsampling check within the NK gate. The ``adaptive NK'' axis label denotes an approximate NKG2C/CD57 phenotype defined by exploratory two-component mixture-model crossovers, not a validated functional cell type. Fractions refer to NK-gated cells, not all PBMCs. Similarity here does not establish preservation of every rare population}{figure.caption.3}{}}
+\citation{trust}
+\citation{scipy}
+\@writefile{toc}{\contentsline {section}{\numberline {S2}Dimensionality reduction and clustering}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S2.1}Projection parameters and comparison measures}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S3}{\ignorespaces The complete t-SNE sweep. Perplexity 70 wins by trustworthiness, whereas perplexity 30 has slightly higher exact-neighbour overlap. Parameter selection therefore depends on the declared criterion.}}{3}{table.caption.4}\protected@file@percent }
+\newlabel{tab:tsnesweep}{{S3}{3}{The complete t-SNE sweep. Perplexity 70 wins by trustworthiness, whereas perplexity 30 has slightly higher exact-neighbour overlap. Parameter selection therefore depends on the declared criterion}{table.caption.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {S4}{\ignorespaces UMAP learning-rate selection: mean trustworthiness of the two fixed configurations $(n,d)=(5,0)$ and $(50,0.1)$. Learning rate 0.1 wins this mean. Selection does not use the best single configuration across all rates.}}{3}{table.caption.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S5}{\ignorespaces Final embedding quality against the 29-PC reference. Trustworthiness and kNN overlap use 40,000 cells, while distance correlation uses the fixed 2,000-cell subset.}}{3}{table.caption.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S2}{\ignorespaces PCA variance curve (left) and the first two PCs for 40,000 NK-gated cells (right, red: CMV-positive, blue: negative). The retained 29 PCs explain 91.50\% of variance, whereas the displayed two explain 20.29\%.}}{4}{figure.caption.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S3}{\ignorespaces t-SNE on the 5,000-cell sweep subset. Left to right: perplexities 5, 30, 50, 60, 70 and 100; numerical quality measures are in Table~\ref {tab:tsnesweep}. Red: CMV-positive donors; blue: negative donors. Perplexity changes the neighbourhood scale and visual organisation. The layouts are not independently annotated populations.}}{4}{figure.caption.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S6}{\ignorespaces All three pairwise comparisons of the final 40,000-cell embeddings. t-SNE/UMAP has both the highest neighbour overlap and lowest Procrustes disparity.}}{4}{table.caption.9}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S4}{\ignorespaces UMAP on the 5,000-cell sweep subset at learning rate 0.1. Rows: 5, 15, 50 and 100 neighbours; columns: minimum distance 0, 0.1, 0.5 and 1. Red: CMV-positive donors; blue: negative donors. Smaller minimum distance packs cells more tightly, while neighbour count changes local connectivity.}}{5}{figure.caption.10}\protected@file@percent }
+\citation{leiden}
+\citation{db}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S2.2}Clustering grid and stability}{6}{subsection.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S7}{\ignorespaces Selected configurations for every method/linkage, including the degenerate hierarchical solutions. A high largest-cluster fraction reveals information not captured by the score alone.}}{6}{table.caption.11}\protected@file@percent }
+\gdef \LT@i {\LT@entry 
+    {1}{22.40399pt}\LT@entry 
+    {5}{50.54796pt}\LT@entry 
+    {5}{21.25002pt}\LT@entry 
+    {1}{57.55365pt}\LT@entry 
+    {1}{54.83516pt}\LT@entry 
+    {1}{45.01578pt}\LT@entry 
+    {5}{37.69452pt}\LT@entry 
+    {1}{46.4306pt}}
+\@writefile{lot}{\contentsline {table}{\numberline {S8}{\ignorespaces The original 44 clustering configurations. Scores and stability are stored at three-decimal precision.}}{7}{table.8}\protected@file@percent }
+\newlabel{tab:clustergrid}{{S8}{7}{The original 44 clustering configurations. Scores and stability are stored at three-decimal precision}{table.8}{}}
+\gdef \LT@ii {\LT@entry 
+    {5}{47.88881pt}\LT@entry 
+    {1}{43.74994pt}\LT@entry 
+    {1}{33.16652pt}\LT@entry 
+    {1}{52.9726pt}\LT@entry 
+    {5}{39.77777pt}\LT@entry 
+    {5}{39.77777pt}\LT@entry 
+    {1}{46.9168pt}}
+\@writefile{lot}{\contentsline {table}{\numberline {S9}{\ignorespaces Cluster-wise stability for the three illustrated partitions.}}{8}{table.9}\protected@file@percent }
+\newlabel{tab:clusterstability}{{S9}{8}{Cluster-wise stability for the three illustrated partitions}{table.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S5}{\ignorespaces Original stability eligibility results for the full grid. High average stability can coexist with weak individual clusters.}}{8}{figure.caption.12}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S6}{\ignorespaces All 37 markers for the three selected partitions. Relative expression is cluster median minus sample median, divided by sample IQR, after ArcSinh. Display colours are clipped to $\pm 2$. Unclipped numerical profiles are exported in \texttt  {data/cluster\_profiles.csv}. Marker averages do not establish co-expression within individual cells.}}{9}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:allmarkers}{{S6}{9}{All 37 markers for the three selected partitions. Relative expression is cluster median minus sample median, divided by sample IQR, after ArcSinh. Display colours are clipped to $\pm 2$. Unclipped numerical profiles are exported in \texttt {data/cluster\_profiles.csv}. Marker averages do not establish co-expression within individual cells}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {S3}Classification and subset implementation}{10}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S3.1}Shared splits and model selection}{10}{subsection.3.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S10}{\ignorespaces Implementation details that materially determine the comparison. CellCNN is a paper-guided reimplementation and Citrus uses the original package. SVM donor aggregation is a project adaptation.}}{10}{table.caption.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S3.2}Quantitative cell-subset scores}{10}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:testsubsets}{{S3.2}{10}{Quantitative cell-subset scores}{subsection.3.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S3.3}Reconstruction and numerical checks}{11}{subsection.3.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S11}{\ignorespaces Recorded software context. Native Citrus and Rclusterpp commits and full input/code hashes are retained in the repository provenance files.}}{11}{table.caption.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {S4}Modified CellCNN: detailed methods}{12}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S4.1}Common protocol and linear baseline}{12}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S4.2}Diagonal quadratic responses}{12}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S4.3}Learnable soft-fraction pooling}{12}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S4.4}Mahalanobis/ReLU prototype variant}{12}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S4.5}Separate population-frequency evaluation}{13}{subsection.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {S5}Additional results}{13}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S5.1}Classification distributions}{13}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S12}{\ignorespaces Three-method benchmark on the 30 common splits: median [Q1, Q3]. AUC and AP are score-based, while BA uses the method's declared decision threshold.}}{13}{table.caption.16}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S13}{\ignorespaces Means over the same 30 splits. Means and medians are deliberately reported separately.}}{13}{table.caption.17}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S14}{\ignorespaces Additional CellCNN/SVM comparison over all 100 stored splits: median [Q1, Q3]. This is a separate comparison, not an extension of Citrus to 100 splits.}}{13}{table.caption.18}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S15}{\ignorespaces Paired AUC differences on identical donor splits. Better/equal/worse counts describe the first method relative to the second. No independence-based significance test is inferred from these overlapping repeats.}}{14}{table.caption.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S5.2}Task 5: test-cell selection and recurring training populations}{14}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S16}{\ignorespaces Task-5 test-cell selections underlying main-report Figure 4: counts on the 10,000-cell display sample and profile availability over 180 full-test-donor appearances per method. A cell's frequency denominator is its donor's number of test appearances, not 30.}}{14}{table.caption.20}\protected@file@percent }
+\newlabel{tab:testselection}{{S16}{14}{Task-5 test-cell selections underlying main-report Figure 4: counts on the 10,000-cell display sample and profile availability over 180 full-test-donor appearances per method. A cell's frequency denominator is its donor's number of test appearances, not 30}{table.caption.20}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {S17}{\ignorespaces Recurring training-population groups for Task 5. Centroids counts member profiles; Splits counts distinct splits containing the group. Positive and Negative count splits with members supporting the respective CMV prediction direction, not numbers of donors. Both directions may occur in one split. For example, CellCNN group 1 contains 58 centroids distributed over all 30 splits.}}{14}{table.caption.21}\protected@file@percent }
+\newlabel{tab:traininggroups}{{S17}{14}{Recurring training-population groups for Task 5. Centroids counts member profiles; Splits counts distinct splits containing the group. Positive and Negative count splits with members supporting the respective CMV prediction direction, not numbers of donors. Both directions may occur in one split. For example, CellCNN group 1 contains 58 centroids distributed over all 30 splits}{table.caption.21}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S7}{\ignorespaces Complementary Task-5 training-population analysis: marker summaries and recurrence of all retained CellCNN and Citrus groups from Table~\ref {tab:traininggroups}. These profiles summarise training populations; main-report Figure 4 instead evaluates held-out cells.}}{15}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:traininggroups}{{S7}{15}{Complementary Task-5 training-population analysis: marker summaries and recurrence of all retained CellCNN and Citrus groups from Table~\ref {tab:traininggroups}. These profiles summarise training populations; main-report Figure 4 instead evaluates held-out cells}{figure.caption.22}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S8}{\ignorespaces Task-5 held-out selected-cell profiles, extending main-report Figure 4D: dots are means across equally weighted donors, and lines are Q1--Q3 of donor profiles, not confidence intervals. The contribution count is 20 donors for each method.}}{15}{figure.caption.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {S5.3}Complete four-model bonus comparison}{16}{subsection.5.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S18}{\ignorespaces Network-score metrics over 100 shared splits. AP and BA are means. AUC includes both mean and median.}}{16}{table.caption.23}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S19}{\ignorespaces Filter-population frequency results over the same 98 jointly evaluable splits. Effects are mean percentage-point differences between the positive and negative test donors.}}{16}{table.caption.24}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S20}{\ignorespaces Network-AUC differences from the CellCNN baseline over 100 splits. Equal mean AUC for the two quadratic variants is not a claim that their probabilities or every secondary metric coincide.}}{16}{table.caption.25}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S9}{\ignorespaces All four neural models on the common 100-split network benchmark.}}{17}{figure.caption.26}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S10}{\ignorespaces Paired network and population-frequency AUC differences from the baseline. The frequency panel uses only jointly evaluable splits.}}{17}{figure.caption.26}\protected@file@percent }
+\newlabel{fig:bonuspaired}{{S10}{17}{Paired network and population-frequency AUC differences from the baseline. The frequency panel uses only jointly evaluable splits}{figure.caption.26}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S11}{\ignorespaces One point per donor, averaging its available test frequencies in the common 98 splits. The selected filter may change between splits.}}{18}{figure.caption.27}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S12}{\ignorespaces Learned pooling fractions over selected-model filters, with the 1\% initialisation shown. The distribution characterises fitted parameters. It does not independently demonstrate a performance gain from learning the fraction.}}{18}{figure.caption.27}\protected@file@percent }
+\bibcite{cellcnn}{{1}{}{{}}{{}}}
+\bibcite{horowitz}{{2}{}{{}}{{}}}
+\bibcite{citrus}{{3}{}{{}}{{}}}
+\bibcite{tsne}{{4}{}{{}}{{}}}
+\bibcite{umap}{{5}{}{{}}{{}}}
+\bibcite{trust}{{6}{}{{}}{{}}}
+\bibcite{db}{{7}{}{{}}{{}}}
+\bibcite{leiden}{{8}{}{{}}{{}}}
+\bibcite{scipy}{{9}{}{{}}{{}}}
+\bibcite{sklearn}{{10}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{19}

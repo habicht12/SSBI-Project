@@ -15,10 +15,10 @@ Sebastian Fay \quad Marie Schygulla \quad Gregor Habitzreither
 \subsection{The reference study and the implemented comparison}
 CellCNN learns a sample representation from labelled bags of cells~\cite{cellcnn}. Its shared filters can respond to uncommon marker combinations, while pooling prevents a small informative subset from being averaged indiscriminately into the entire sample. The paper studies several settings, including stimulated immune cells, survival-associated subsets, CMV-associated NK populations and artificial leukaemia spike-ins. These experiments have different endpoints and should not be treated as a single CMV benchmark. Our project evaluates donor CMV classification and subset interpretation in the supplied cohort.
 
-The original CellCNN implementation used Theano/Keras. Our implementation reproduces the relevant linear-filter/ReLU/pooling design in PyTorch, with explicitly recorded adaptations (S3). Citrus is the original R package~\cite{citrus}. Published results are background evidence. All numerical results in the main report come from this project's current analyses.
+The original CellCNN implementation used Theano/Keras. Our implementation reproduces the relevant linear-filter/ReLU/pooling design in PyTorch, with explicitly recorded adaptations (S3). Citrus is the original R package~\cite{citrus}. All numerical results in the main report come from this project's current analyses.
 
 \subsection{Analysis scopes and donor balance}
-The supplied archive derives from the study of NK-cell diversity by Horowitz et al.~\cite{horowitz}. The supplied 20-donor subset is smaller than the publication's complete cohort. The archive provides NK-gated cells and live-cell PBMC files for the same donors. Labels belong to donors and do not identify infected individual cells. Four complete pairs of identical (monozygotic) twins are identifiable from the supplied donor identities, so twins can remain on opposite sides of a donor-wise split.
+Our data is a 20-donor subset of NK-cell diversity by Horowitz et al.~\cite{horowitz}. The provided data contains NK-gated cells and live-cell PBMC files for the same donors. Labels belong to donors and do not identify infected individual cells. Four complete pairs of identical (monozygotic) twins are identifiable from the supplied donor identities, so twins can remain on opposite sides of a donor-wise split.
 
 \begin{table}[htb]\centering\small
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{.25\linewidth}>{\raggedright\arraybackslash}p{.18\linewidth}>{\raggedright\arraybackslash}p{.49\linewidth}@{}}\toprule
@@ -33,7 +33,7 @@ Bonus population evaluation & \texttt{gated\_alive} & Fixed 20,000 evaluation ce
 \caption{The gates and sampling scopes are deliberately distinguished. The interpretation map is not the 40,000-cell NK embedding of the main dimensionality-reduction comparison.}
 \end{table}
 
-Equal cell counts reduce domination of pooled exploratory analyses by larger files. They do not make cells independent biological replicates. The NK-subsampling check compares an approximate NKG2C/CD57 phenotype between the balanced subset and the full NK gate (Fig.~\ref{fig:subsampling}). This does not establish preservation of every rare population. The original inputs, labels and marker order are verified by file hashes. Finite negative marker values are retained, and no additional manual cell-type gate is fitted for classification.
+Equal cell counts reduce domination of pooled exploratory analyses by larger files. They do not make cells independent biological replicates. The NK-subsampling check compares an approximate NKG2C/CD57 phenotype between the balanced subset and the full NK gate (Fig.~\ref{fig:subsampling}). This does not establish preservation of every rare population. Finite negative marker values are retained, and no additional manual cell-type gate is fitted for classification.
 
 \clearpage
 \begin{table}[htb]\centering\small
@@ -54,7 +54,7 @@ We apply $a_{ij}=\arcsinh(x_{ij}/5)$ to each analysis marker. This compresses la
 \subsection{Projection parameters and comparison measures}
 PCA, t-SNE and UMAP use the same 40,000-cell NK sample. Of the 36 fitted PCA components, the first 29 retain 91.4978\% of variance and define the high-dimensional reference for the nonlinear methods and quality scores. The first two retain 20.2911\%. Retaining variance is not equivalent to proving removal of measurement noise.
 
-t-SNE uses PCA initialisation, Barnes--Hut optimisation, 750 iterations and seed 42. Its six perplexities are 5, 30, 50, 60, 70 and 100. UMAP tests neighbours $\{5,15,50,100\}$, minimum distance $\{0,0.1,0.5,1\}$ and learning rate $\{0.1,0.5,1,5\}$, with seed 42 and otherwise the recorded library defaults. The sweep uses a fixed 5,000-cell subset of the selected PC scores. Additional tunable choices include PCA whitening/solver, t-SNE learning rate/initialisation and the metric, initialisation and iteration settings of UMAP. These settings are held fixed in this analysis.
+t-SNE uses PCA initialisation, Barnes--Hut optimisation, 750 iterations and seed 42. Its six perplexities are 5, 15, 30, 40, 50, 60, 70 and 100. UMAP tests neighbours $\{5,15,50,100\}$, minimum distance $\{0,0.1,0.5,1\}$ and learning rate $\{0.1,0.5,1,5\}$, with seed 42 and otherwise the recorded library defaults. The sweep uses a fixed 5,000-cell subset of the selected PC scores. Additional tunable choices include PCA whitening/solver, t-SNE learning rate/initialisation and the metric, initialisation and iteration settings of UMAP. These settings are held fixed in this analysis.
 
 For neighbourhood size $k=15$, trustworthiness is
 \[
